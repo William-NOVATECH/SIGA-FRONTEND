@@ -1,0 +1,89 @@
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h2>Asignaciones de Carga Docente</h2>
+    <div class="actions">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Buscar asignaciones..."
+          
+          (input)="onSearch()"
+          class="search-input"
+        />
+      </div>
+      <button (click)="onRefresh()" class="btn btn-secondary" [disabled]="loading">
+        {{ loading ? 'Cargando...' : 'Actualizar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    Cargando asignaciones...
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredAsignaciones.length === 0" class="empty-state">
+    No se encontraron asignaciones
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && filteredAsignaciones.length > 0" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Grupo</th>
+          <th>Asignatura</th>
+          <th>Docente</th>
+          <th>Fecha Asignación</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let asignacion of filteredAsignaciones">
+          <td>
+            <strong>{{ asignacion.grupo.codigo_grupo }}</strong>
+          </td>
+          <td>{{ asignacion.asignatura.nombre_asignatura }}</td>
+          <td>
+            {{ asignacion.docente.nombres }} {{ asignacion.docente.apellidos }}
+          </td>
+          <td>{{ asignacion.fecha_asignacion | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
+              {{ asignacion.estado }}
+            </span>
+          </td>
+          <td class="actions-cell">
+  <!-- Botón VER primero -->
+  <button 
+    (click)="onView(asignacion.id_grupo_asignatura_docente)" 
+    class="btn btn-sm btn-view"
+  >
+    Ver
+  </button>
+  <button 
+    (click)="onEdit(asignacion.id_grupo_asignatura_docente)" 
+    class="btn btn-sm btn-edit"
+  >
+    Editar
+  </button>
+  <button 
+    (click)="onDelete(asignacion.id_grupo_asignatura_docente)" 
+    class="btn btn-sm btn-delete"
+  >
+    Eliminar
+  </button>
+</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

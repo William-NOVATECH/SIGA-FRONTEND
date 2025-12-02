@@ -1,0 +1,149 @@
+<div class="container">
+  <!-- Header Principal -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1 class="page-title">Detalles de Carga Docente</h1>
+      <button class="back-btn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Volver
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="carga" class="info-section">
+    <!-- Información Principal -->
+    <h2 class="section-title">Información Principal</h2>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">ID Carga</div>
+        <div class="info-value">#{{ carga.id_carga }}</div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-label">Tipo Vinculación</div>
+        <div class="info-value">
+          <span [class]="'tipo-badge ' + carga.tipo_vinculacion">
+            {{ carga.tipo_vinculacion }}
+          </span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-label">Estado</div>
+        <div class="info-value">
+          <span [class]="'status-badge ' + carga.estado">
+            {{ carga.estado }}
+          </span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-label">Fecha Asignación</div>
+        <div class="info-value">{{ carga.fecha_asignacion | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+    </div>
+
+    <!-- Información del Docente -->
+    <h2 class="section-title" style="margin-top: 2rem;">Información del Docente</h2>
+    <div *ngIf="carga.docente; else noDocente" class="info-grid">
+      <div class="info-card">
+        <div class="info-label">ID Docente</div>
+        <div class="info-value">{{ carga.id_docente }}</div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-label">Código</div>
+        <div class="info-value">{{ carga.docente.codigo_docente || 'No disponible' }}</div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-label">Nombre</div>
+        <div class="info-value">{{ carga.docente.nombres }} {{ carga.docente.apellidos }}</div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-label">Identificación</div>
+        <div class="info-value">{{ carga.docente.identificacion || 'No disponible' }}</div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-label">Estado</div>
+        <div class="info-value">
+          <span [class]="'status-badge ' + (carga.docente.estado || '')">
+            {{ carga.docente.estado || 'No disponible' }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <ng-template #noDocente>
+      <div class="alert alert-warning">
+        Información del docente no disponible (ID: {{ carga.id_docente }})
+      </div>
+    </ng-template>
+
+    <!-- Información del Grupo -->
+    <h2 class="section-title" style="margin-top: 2rem;">Información del Grupo</h2>
+    <div *ngIf="carga.grupo; else noGrupo">
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-label">Código Grupo</div>
+          <div class="info-value">{{ carga.grupo.codigo_grupo }}</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-label">Nombre</div>
+          <div class="info-value">{{ carga.grupo.nombre_grupo || 'No disponible' }}</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-label">Periodo</div>
+          <div class="info-value">{{ carga.grupo.periodo_academico || 'No disponible' }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="carga.grupo.asignatura; else noAsignatura" class="info-grid" style="margin-top: 1rem;">
+        <div class="info-card">
+          <div class="info-label">Asignatura</div>
+          <div class="info-value">{{ carga.grupo.asignatura.nombre_asignatura }}</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-label">Código</div>
+          <div class="info-value">{{ carga.grupo.asignatura.codigo_asignatura || 'No disponible' }}</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-label">Créditos</div>
+          <div class="info-value">{{ carga.grupo.asignatura.creditos || 'No disponible' }}</div>
+        </div>
+      </div>
+      <ng-template #noAsignatura>
+        <div class="alert alert-warning">
+          Información de asignatura no disponible
+        </div>
+      </ng-template>
+    </div>
+    <ng-template #noGrupo>
+      <div class="alert alert-warning">
+        Información del grupo no disponible (ID: {{ carga.id_grupo }})
+      </div>
+    </ng-template>
+
+    <!-- Observaciones -->
+    <div *ngIf="carga.observaciones" style="margin-top: 2rem;">
+      <h2 class="section-title">Observaciones</h2>
+      <div class="info-card">
+        <div class="info-value" style="font-weight: normal; line-height: 1.6;">
+          {{ carga.observaciones }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!carga" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <p>No se encontraron detalles para mostrar.</p>
+  </div>
+</div>

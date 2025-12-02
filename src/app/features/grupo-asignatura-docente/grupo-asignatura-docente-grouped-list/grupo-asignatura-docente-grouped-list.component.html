@@ -1,0 +1,150 @@
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h2>Asignaciones de Carga Docente</h2>
+    <div class="actions">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Buscar por grupo, carrera..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+          class="search-input"
+        />
+      </div>
+      <button (click)="onRefresh()" class="btn btn-secondary" [disabled]="loading">
+        {{ loading ? 'Cargando...' : 'Actualizar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    Cargando grupos...
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredGrupos.length === 0" class="empty-state">
+    No se encontraron grupos con asignaciones
+  </div>
+
+  <!-- Lista de Grupos -->
+  <div *ngIf="!loading && filteredGrupos.length > 0" class="grupos-list">
+    
+    <div *ngFor="let grupo of filteredGrupos" class="grupo-item">
+      
+      <!-- Header del Grupo -->
+      <div class="grupo-header" (click)="toggleGrupo(grupo.id_grupo)">
+        <div class="grupo-info">
+          <span class="expand-icon">{{ grupoExpandido === grupo.id_grupo ? '▼' : '►' }}</span>
+          <h3 class="grupo-codigo">{{ grupo.codigo_grupo }}</h3>
+          <span class="grupo-nombre" *ngIf="grupo.nombre_grupo">- {{ grupo.nombre_grupo }}</span>
+          <span class="carrera-info">
+            | {{ grupo.carrera.nombre_carrera || 'Carrera no especificada' }}
+            <span *ngIf="grupo.carrera.codigo_carrera">({{ grupo.carrera.codigo_carrera }})</span>
+          </span>
+        </div>
+        
+        <div class="grupo-stats">
+          <span class="asignaciones-count">{{ grupo.asignaciones.length }} asignatura(s)</span>
+          <span class="fecha-actualizacion">
+            Actualizado: {{ getFechaActualizacion(grupo) | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Tabla de Asignaciones (Se muestra solo si el grupo está expandido) -->
+      <div *ngIf="grupoExpandido === grupo.id_grupo" class="asignaciones-table-container">
+        
+        <div class="table-header">
+          <h4>Asignaturas del Grupo {{ grupo.codigo_grupo }}</h4>
+          <button (click)="onCreateAsignacion(grupo.id_grupo)" class="btn btn-primary">
+            + Agregar Asignatura
+          </button>
+        </div>
+
+        <table class="asignaciones-table" *ngIf="grupo.asignaciones.length > 0">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Asignatura</th>
+              <th>Docente</th>
+              <th>Código Docente</th>
+              <th>Fecha Asignación</th>
+              <th>Estado</th>
+              <th>Observaciones</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let asignacion of grupo.asignaciones">
+              <td>
+                <strong>{{ asignacion.asignatura.codigo_asignatura }}</strong>
+              </td>
+              <td>{{ asignacion.asignatura.nombre_asignatura }}</td>
+              <td>
+                {{ asignacion.docente.nombres }} {{ asignacion.docente.apellidos }}
+              </td>
+              <td>
+                <span *ngIf="asignacion.docente.codigo_docente" class="docente-codigo">
+                  {{ asignacion.docente.codigo_docente }}
+                </span>
+                <span *ngIf="!asignacion.docente.codigo_docente" class="no-codigo">
+                  N/A
+                </span>
+              </td>
+              <td>{{ asignacion.fecha_asignacion | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
+                  {{ asignacion.estado }}
+                </span>
+              </td>
+              <td>
+                <span *ngIf="asignacion.observaciones" class="observaciones-text">
+                  {{ asignacion.observaciones }}
+                </span>
+                <span *ngIf="!asignacion.observaciones" class="no-observaciones">
+                  -
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button 
+                  (click)="onView(asignacion.id_grupo_asignatura_docente)" 
+                  class="btn btn-sm btn-view"
+                >
+                  Ver
+                </button>
+                <button 
+                  (click)="onEdit(asignacion.id_grupo_asignatura_docente)" 
+                  class="btn btn-sm btn-edit"
+                >
+                  Editar
+                </button>
+                <button 
+                  (click)="onDelete(asignacion.id_grupo_asignatura_docente)" 
+                  class="btn btn-sm btn-delete"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Mensaje si no hay asignaciones -->
+        <div *ngIf="grupo.asignaciones.length === 0" class="no-asignaciones">
+          <p>No hay asignaturas asignadas a este grupo.</p>
+          <button (click)="onCreateAsignacion(grupo.id_grupo)" class="btn btn-primary">
+            + Agregar primera asignatura
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,41 @@
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0">{{ getPageTitle() }}</h1>
+      <p class="text-muted mb-0">
+        <span *ngIf="mode === 'create'">Asigne un docente a un grupo</span>
+        <span *ngIf="mode === 'edit'">Modifique la asignación del docente</span>
+        <span *ngIf="mode === 'view'">Visualice los detalles de la asignación</span>
+      </p>
+    </div>
+    <button 
+      class="btn btn-secondary" 
+      (click)="onCancel()">
+      <i class="bi bi-arrow-left me-2"></i>
+      Volver
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading && (mode === 'edit' || mode === 'view')" class="text-center">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando información...</p>
+  </div>
+
+  <!-- Formulario -->
+  <div *ngIf="!loading && (mode === 'create' || mode === 'edit')">
+    <app-carga-docente-form
+      [carga]="carga"
+      (submitForm)="onSubmitForm($event)"
+      (cancel)="onCancel()">
+    </app-carga-docente-form>
+  </div>
+
+  <!-- Detalles -->
+  <div *ngIf="!loading && mode === 'view' && carga">
+    <app-carga-docente-details [carga]="carga"></app-carga-docente-details>
+  </div>
+</div>

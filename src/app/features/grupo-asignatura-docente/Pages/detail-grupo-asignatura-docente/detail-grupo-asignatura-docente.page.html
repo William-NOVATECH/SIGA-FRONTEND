@@ -1,0 +1,113 @@
+<div class="page-container">
+  <div class="detail-header">
+    <button (click)="onBack()" class="btn btn-back">
+      ← Volver a la lista
+    </button>
+    <h1>Detalles de Asignación</h1>
+    <div class="header-actions">
+      <button (click)="onEdit()" class="btn btn-edit" [disabled]="!asignacion">
+        ✏️ Editar
+      </button>
+      <button (click)="onDelete()" class="btn btn-delete" [disabled]="!asignacion">
+        🗑️ Eliminar
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    Cargando detalles...
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-message">
+    ❌ {{ error }}
+  </div>
+
+  <!-- Detalles -->
+  <div *ngIf="asignacion && !loading" class="detail-card">
+    <div class="card-header">
+      <h2>Información de la Asignación</h2>
+      <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
+        {{ asignacion.estado }}
+      </span>
+    </div>
+
+    <div class="card-body">
+      <div class="detail-grid">
+        
+        <!-- Grupo y Carrera -->
+         <!-- En la sección de Grupo y Carrera -->
+<div class="detail-section">
+  <h3>🏫 Grupo y Carrera</h3>
+  <div class="detail-item">
+    <label>Código Grupo:</label>
+    <span>{{ asignacion.grupo.codigo_grupo }}</span>
+  </div>
+  <div class="detail-item">
+    <label>Nombre Grupo:</label>
+    <span>{{ asignacion.grupo.nombre_grupo || 'N/A' }}</span>
+  </div>
+  <div class="detail-item">
+    <label>Carrera:</label>
+    <span class="info-value">
+      {{ asignacion.grupo.carrera.nombre_carrera || 'No especificada' }}
+      <span *ngIf="asignacion.grupo.carrera.codigo_carrera" class="codigo">
+        ({{ asignacion.grupo.carrera.codigo_carrera }})
+      </span>
+    </span>
+  </div>
+</div>
+        <!-- Asignatura -->
+         <div class="detail-section">
+          <h3>📚 Asignatura</h3>
+           <div class="detail-item" *ngIf="asignacion.asignatura">
+            <label>Código:</label>
+            <span>{{ asignacion.asignatura.codigo_asignatura || 'N/A' }}</span>
+          </div>
+          <div class="detail-item" *ngIf="asignacion.asignatura">
+            <label>Nombre:</label>
+            <span>{{ asignacion.asignatura.nombre_asignatura }}</span>
+          </div>
+        </div>
+
+        <!-- Docente -->
+          <div class="detail-section">
+          <h3>👨‍🏫 Docente</h3>
+            <div class="detail-item" *ngIf="asignacion.docente">
+            <label>Código:</label>
+            <span>{{ asignacion.docente.codigo_docente || 'N/A' }}</span>
+          </div>
+          <div class="detail-item" *ngIf="asignacion.docente">
+            <label>Nombre:</label>
+            <span>
+              {{ asignacion.docente.nombres }} 
+              {{ asignacion.docente.apellidos }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Información de Asignación -->
+        <div class="detail-section">
+          <h3>📋 Información de Asignación</h3>
+          <div class="detail-item">
+            <label>Fecha de Asignación:</label>
+            <span class="info-value">{{ asignacion.fecha_asignacion | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Estado:</label>
+            <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
+              {{ asignacion.estado }}
+            </span>
+          </div>
+          <div class="detail-item" *ngIf="asignacion.observaciones">
+            <label>Observaciones:</label>
+            <span class="observaciones">{{ asignacion.observaciones }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

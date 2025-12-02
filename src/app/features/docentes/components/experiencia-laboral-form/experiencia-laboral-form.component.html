@@ -1,0 +1,66 @@
+<div class="experiencia-laboral-form">
+  <button *ngIf="!showForm && !isEditMode" class="btn btn-primary" (click)="toggleForm()">
+    + Agregar Experiencia Laboral
+  </button>
+
+  <div *ngIf="showForm" class="form-container">
+    <h4>{{ isEditMode ? 'Editar' : 'Nueva' }} Experiencia Laboral</h4>
+
+    <!-- Error -->
+    <div *ngIf="error" class="error-message">
+      {{ error }}
+    </div>
+
+    <form [formGroup]="experienciaForm" (ngSubmit)="onSubmit()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="cargo_ejercido">Cargo Ejercido *</label>
+          <input type="text" id="cargo_ejercido" formControlName="cargo_ejercido"
+                 [class.error]="f['cargo_ejercido'].invalid && f['cargo_ejercido'].touched">
+          <div *ngIf="f['cargo_ejercido'].invalid && f['cargo_ejercido'].touched" class="error-text">
+            Cargo ejercido es requerido
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="institucion_empresa">Institución/Empresa *</label>
+          <input type="text" id="institucion_empresa" formControlName="institucion_empresa"
+                 [class.error]="f['institucion_empresa'].invalid && f['institucion_empresa'].touched">
+          <div *ngIf="f['institucion_empresa'].invalid && f['institucion_empresa'].touched" class="error-text">
+            Institución/empresa es requerida
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fecha_inicio">Fecha de Inicio *</label>
+          <input type="date" id="fecha_inicio" formControlName="fecha_inicio"
+                 [class.error]="f['fecha_inicio'].invalid && f['fecha_inicio'].touched">
+          <div *ngIf="f['fecha_inicio'].invalid && f['fecha_inicio'].touched" class="error-text">
+            Fecha de inicio es requerida
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fecha_fin">Fecha de Fin</label>
+          <input type="date" id="fecha_fin" formControlName="fecha_fin">
+          <small>Dejar vacío si es el trabajo actual</small>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="descripcion_funciones">Descripción de Funciones</label>
+          <textarea id="descripcion_funciones" formControlName="descripcion_funciones" rows="4"
+                    placeholder="Describa las funciones y responsabilidades del cargo..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="saving">
+          {{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Guardar') }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="saving">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

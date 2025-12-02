@@ -1,0 +1,146 @@
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="header-title">Gestión de Carreras</h1>
+        <p class="header-subtitle">Administra las carreras académicas de la institución</p>
+      </div>
+      <button 
+        (click)="createCarrera()"
+        class="btn-primary"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Nueva Carrera
+      </button>
+    </div>
+  </div>
+
+  <!-- Mensaje de error -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- Tabla de carreras -->
+  <div *ngIf="!loading" class="table-container">
+    <!-- Header de Tabla -->
+    <div class="table-header">
+      <div class="flex justify-between items-center">
+        <h3 class="table-title">Lista de Carreras</h3>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Departamento</th>
+            <th>Duración</th>
+            <th>Título</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Filas de datos -->
+          <tr *ngFor="let carrera of carreras" class="table-row">
+            <!-- Código -->
+            <td class="code-cell">{{ carrera.codigo_carrera }}</td>
+            
+            <!-- Nombre -->
+            <td>
+              <div class="font-medium text-gray-900">{{ carrera.nombre_carrera }}</div>
+            </td>
+            
+            <!-- Departamento -->
+            <td>
+              <span class="department-badge">{{ carrera.departamento.nombre_departamento }}</span>
+            </td>
+            
+            <!-- Duración -->
+            <td class="duration-cell">
+              {{ carrera.duracion_semestres || '-' }} semestres
+            </td>
+            
+            <!-- Título -->
+            <td class="title-cell">
+              {{ carrera.titulo_otorga || '-' }}
+            </td>
+            
+            <!-- Estado -->
+            <td>
+              <span 
+                [class]="carrera.estado === 'activa' ? 'status-badge status-active' : 'status-badge status-inactive'"
+              >
+                <span class="status-dot"></span>
+                {{ carrera.estado === 'activa' ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            
+            <!-- Acciones -->
+            <td>
+              <div class="action-buttons">
+                <button 
+                  (click)="viewCarrera(carrera.id_carrera)"
+                  class="action-btn btn-view"
+                  title="Ver detalles"
+                >
+                  👁️
+                </button>
+                <button 
+                  (click)="editCarrera(carrera.id_carrera)"
+                  class="action-btn btn-edit"
+                  title="Editar"
+                >
+                  ✏️
+                </button>
+                <button 
+                  (click)="deleteCarrera(carrera.id_carrera)"
+                  class="action-btn btn-delete"
+                  title="Eliminar"
+                >
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Estado vacío -->
+          <tr *ngIf="carreras.length === 0">
+            <td colspan="7">
+              <div class="empty-state">
+                <div class="empty-icon">🎓</div>
+                <h3 class="empty-title">No se encontraron carreras</h3>
+                <p class="empty-description">Comienza creando la primera carrera académica</p>
+                <button 
+                  (click)="createCarrera()"
+                  class="btn-primary"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  Crear primera carrera
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Contador -->
+  <div *ngIf="!loading && carreras.length > 0" class="counter">
+    Total: {{ carreras.length }} carrera(s)
+  </div>
+</div>

@@ -1,0 +1,25 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Gestión de Carga Docente</h1>
+    <div class="page-actions">
+      <button (click)="onCreateBulk()" class="btn btn-secondary">
+        Nueva asignación
+      </button>
+      <!-- <button (click)="onCreateNew()" class="btn btn-primary">
+        Nueva Asignación
+      </button> -->
+    </div>
+  </div>
+
+  <app-grupo-asignatura-docente-grouped-list
+  [grupos]="grupos"
+   [loading]="loading"
+   [error]="error"
+   (view)="onView($event)"       
+  (edit)="onEdit($event)"
+   (delete)="onDelete($event)"
+   (refresh)="onRefresh()"
+   (viewGrupo)="onViewGrupo($event)"
+   (createAsignacion)="onCreateAsignacion($event)"
+ ></app-grupo-asignatura-docente-grouped-list>
+</div>

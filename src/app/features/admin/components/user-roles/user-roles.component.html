@@ -1,0 +1,337 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <!-- Card de Asignación de Roles -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-user-plus me-2"></i>
+            Asignar Nuevo Rol
+          </h3>
+          <p class="card-subtitle">Asigna un rol adicional a un usuario del sistema</p>
+        </div>
+        
+        <div class="card-body">
+          <form [formGroup]="asignacionForm" (ngSubmit)="asignarRol()">
+            <div class="row g-3">
+              <div class="col-md-5">
+                <label for="id_usuario" class="form-label">Usuario</label>
+                <select 
+                  id="id_usuario" 
+                  class="form-select" 
+                  formControlName="id_usuario"
+                  [class.is-invalid]="asignacionForm.get('id_usuario')?.invalid && asignacionForm.get('id_usuario')?.touched">
+                  <option value="">Seleccionar usuario...</option>
+                  <option *ngFor="let usuario of usuarios" [value]="usuario.id_usuario">
+                    {{ getUsuarioDisplay(usuario) }}
+                  </option>
+                </select>
+                <div class="invalid-feedback">
+                  Por favor selecciona un usuario
+                </div>
+              </div>
+
+              <div class="col-md-5">
+                <label for="id_rol" class="form-label">Rol</label>
+                <select 
+                  id="id_rol" 
+                  class="form-select" 
+                  formControlName="id_rol"
+                  [class.is-invalid]="asignacionForm.get('id_rol')?.invalid && asignacionForm.get('id_rol')?.touched">
+                  <option value="">Seleccionar rol...</option>
+                  <option *ngFor="let rol of roles" [value]="rol.id_rol">
+                    {{ rol.nombre_rol }} (Nivel: {{ rol.nivel_acceso }})
+                  </option>
+                </select>
+                <div class="invalid-feedback">
+                  Por favor selecciona un rol
+                </div>
+              </div>
+
+              <div class="col-md-2">
+                <label for="estado" class="form-label">Estado</label>
+                <select id="estado" class="form-select" formControlName="estado">
+                  <option value="activo">Activo</option>
+                  <option value="inactivo">Inactivo</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <button 
+                type="submit" 
+                class="btn btn-primary"
+                [disabled]="!asignacionForm.valid">
+                <i class="fas fa-plus me-1"></i>
+                Asignar Nuevo Rol
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal de Edición de Rol -->
+     <!-- Modal de Edición de Rol -->
+<div *ngIf="editandoRol && usuarioEditando && usuarioRolEditando" 
+     class="modal fade show d-block" 
+     style="background: rgba(0,0,0,0.5); z-index: 1050;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title">
+          <i class="fas fa-edit me-2"></i>
+          Editar Rol Asignado
+        </h5>
+        <button type="button" class="btn-close" (click)="cancelarEdicionRol()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>Usuario:</strong> {{ usuarioEditando.username }} ({{ usuarioEditando.email }})<br>
+          <strong>Rol actual:</strong> {{ usuarioRolEditando.rol.nombre_rol }}
+        </div>
+        
+        <form [formGroup]="edicionRolForm" (ngSubmit)="guardarCambiosRol()">
+          <div class="row g-3">
+            <!-- Cambiar Rol -->
+            <div class="col-md-6">
+              <label for="nuevo_rol" class="form-label">Cambiar a otro rol</label>
+              <select 
+                id="nuevo_rol" 
+                class="form-select" 
+                formControlName="nuevo_rol"
+                [class.is-invalid]="edicionRolForm.get('nuevo_rol')?.invalid && edicionRolForm.get('nuevo_rol')?.touched">
+                <option [value]="usuarioRolEditando.rol.id_rol">
+                  {{ usuarioRolEditando.rol.nombre_rol }} (Actual)
+                </option>
+                <option *ngFor="let rol of rolesDisponibles" [value]="rol.id_rol">
+                  {{ rol.nombre_rol }} (Nivel: {{ rol.nivel_acceso }})
+                </option>
+              </select>
+              <div class="form-text">
+                Selecciona un rol diferente si deseas cambiarlo
+              </div>
+            </div>
+
+            <!-- Cambiar Estado -->
+            <div class="col-md-6">
+              <label for="nuevo_estado" class="form-label">Estado del rol</label>
+              <select 
+                id="nuevo_estado" 
+                class="form-select" 
+                formControlName="nuevo_estado">
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+              <div class="form-text">
+                Un rol inactivo no otorga permisos al usuario
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-top">
+            <div class="d-flex justify-content-between">
+              <button 
+                type="button" 
+                class="btn btn-outline-secondary"
+                (click)="cancelarEdicionRol()">
+                <i class="fas fa-times me-1"></i>
+                Cancelar
+              </button>
+              
+              <button 
+                type="submit" 
+                class="btn btn-primary"
+                [disabled]="!edicionRolForm.valid">
+                <i class="fas fa-save me-1"></i>
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <!-- Card de Lista de Usuarios y Roles -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-users-cog me-2"></i>
+            Usuarios y Roles Asignados
+          </h3>
+          <p class="card-subtitle">Gestiona los roles asignados a cada usuario</p>
+        </div>
+        
+        <div class="card-body">
+          <!-- Buscador -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="input-group">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Buscar usuarios por username o email..."
+                  [(ngModel)]="terminoBusqueda"
+                  (keyup.enter)="buscarUsuarios()">
+                <button 
+                  class="btn btn-outline-secondary" 
+                  type="button" 
+                  (click)="buscarUsuarios()"
+                  [disabled]="buscando">
+                  <i *ngIf="!buscando" class="fas fa-search"></i>
+                  <div *ngIf="buscando" class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Buscando...</span>
+                  </div>
+                  Buscar
+                </button>
+                <button 
+                  class="btn btn-outline-danger" 
+                  type="button" 
+                  (click)="limpiarBusqueda()"
+                  [disabled]="!terminoBusqueda">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div *ngIf="loading" class="text-center py-4">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando usuarios y roles...</p>
+          </div>
+
+          <!-- Error State -->
+          <div *ngIf="error && !loading" class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ error }}
+            <button class="btn btn-sm btn-outline-danger ms-2" (click)="cargarDatosIniciales()">
+              Reintentar
+            </button>
+          </div>
+
+          <!-- Lista de Usuarios -->
+          <div *ngIf="!loading && !error" class="row">
+            <div class="col-12">
+              <div *ngFor="let usuario of usuariosFiltrados" class="card mb-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 class="mb-0">
+                      <i class="fas fa-user me-2"></i>
+                      {{ usuario.username }}
+                      <small class="text-muted">({{ usuario.email }})</small>
+                    </h5>
+                  </div>
+                  <div>
+                    <span class="badge" [ngClass]="usuario.estado === 'activo' ? 'bg-success' : 'bg-secondary'">
+                      {{ usuario.estado }}
+                    </span>
+                    <small class="text-muted ms-2">ID: {{ usuario.id_usuario }}</small>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- Sin roles -->
+                  <div *ngIf="getRolesUsuario(usuario).length === 0" class="text-center py-3">
+                    <i class="fas fa-user-slash fa-2x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">Este usuario no tiene roles asignados</p>
+                  </div>
+
+                  <!-- Con roles -->
+                  <div *ngIf="getRolesUsuario(usuario).length > 0" class="table-responsive">
+                    <table class="table table-sm table-hover">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Rol Asignado</th>
+                          <th>Descripción</th>
+                          <th>Nivel Acceso</th>
+                          <th>Estado</th>
+                          <th class="text-center">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let usuarioRol of getRolesUsuario(usuario)">
+                          <td>
+                            <strong>{{ usuarioRol.rol.nombre_rol }}</strong>
+                          </td>
+                          <td>
+                            {{ usuarioRol.rol.descripcion || 'Sin descripción' }}
+                          </td>
+                          <td>
+                            <span class="badge bg-info">Nivel {{ usuarioRol.rol.nivel_acceso }}</span>
+                          </td>
+                          <td>
+                            <span [class]="'badge ' + getBadgeClass(usuarioRol.estado)">
+                              {{ usuarioRol.estado }}
+                            </span>
+                          </td>
+                          <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                              <!-- Editar Rol -->
+                              <button 
+                                class="btn btn-outline-warning"
+                                (click)="iniciarEdicionRol(usuario, usuarioRol)"
+                                title="Editar rol asignado">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                              
+                              <!-- Cambiar Estado -->
+                              <button 
+                                *ngIf="usuarioRol.estado === 'activo'"
+                                class="btn btn-outline-secondary"
+                                (click)="cambiarEstadoRol(usuario, usuarioRol, 'inactivo')"
+                                title="Desactivar rol">
+                                <i class="fas fa-pause"></i>
+                              </button>
+                              <button 
+                                *ngIf="usuarioRol.estado === 'inactivo'"
+                                class="btn btn-outline-success"
+                                (click)="cambiarEstadoRol(usuario, usuarioRol, 'activo')"
+                                title="Activar rol">
+                                <i class="fas fa-play"></i>
+                              </button>
+                              
+                              <!-- Remover Rol -->
+                              <button 
+                                class="btn btn-outline-danger"
+                                (click)="removerRol(usuario, usuarioRol)"
+                                title="Remover rol">
+                                <i class="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="usuariosFiltrados.length === 0 && !loading && !error" class="text-center py-5">
+            <div class="empty-state">
+              <i class="fas fa-users fa-3x text-muted mb-3"></i>
+              <h4>No se encontraron usuarios</h4>
+              <p class="text-muted">No hay usuarios que coincidan con tu búsqueda.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between align-items-center">
+          <small class="text-muted">
+            Mostrando {{ usuariosFiltrados.length }} de {{ usuarios.length }} usuarios
+          </small>
+          <small class="text-muted">
+            Total de roles asignados: {{ getTotalRolesAsignados() }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

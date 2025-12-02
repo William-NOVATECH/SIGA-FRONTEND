@@ -1,0 +1,138 @@
+<div class="form-container">
+  <h2>Asignaciones</h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    
+    <!-- Grupo -->
+    <div class="form-group">
+      <label for="id_grupo">Grupo *</label>
+      <select 
+        id="id_grupo" 
+        formControlName="id_grupo"
+        [class.error]="form.get('id_grupo')?.invalid && form.get('id_grupo')?.touched"
+      >
+        <option value="">Seleccionar grupo</option>
+        <option *ngFor="let grupo of grupos" [value]="grupo.id_grupo">
+          {{ grupo.codigo_grupo }} - {{ grupo.nombre_grupo }}
+        </option>
+      </select>
+      <div *ngIf="form.get('id_grupo')?.invalid && form.get('id_grupo')?.touched" class="error-message">
+        Grupo es requerido
+      </div>
+    </div>
+
+    <!-- Estado -->
+    <div class="form-group">
+      <label for="estado">Estado *</label>
+      <select 
+        id="estado" 
+        formControlName="estado"
+        [class.error]="form.get('estado')?.invalid && form.get('estado')?.touched"
+      >
+        <option *ngFor="let estado of estados" [value]="estado.value">
+          {{ estado.label }}
+        </option>
+      </select>
+      <div *ngIf="form.get('estado')?.invalid && form.get('estado')?.touched" class="error-message">
+        Estado es requerido
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="form-group">
+      <label for="observaciones">Observaciones</label>
+      <textarea 
+        id="observaciones" 
+        formControlName="observaciones"
+        rows="3"
+        placeholder="Observaciones opcionales..."
+      ></textarea>
+    </div>
+
+    <!-- Asignaturas y Docentes -->
+    <div class="asignaturas-section">
+      <div class="section-header">
+        <h3>Asignaturas y Docentes</h3>
+        <button type="button" (click)="addAsignaturaDocente()" class="btn btn-sm btn-add">
+          + Agregar Asignatura
+        </button>
+      </div>
+
+      <div formArrayName="asignaturas_docentes">
+        <div 
+          *ngFor="let item of asignaturasDocentesArray.controls; let i = index" 
+          [formGroupName]="i"
+          class="asignatura-item"
+        >
+          <div class="item-header">
+            <h4>Asignatura {{ i + 1 }}</h4>
+            <button 
+              *ngIf="asignaturasDocentesArray.length > 1"
+              type="button" 
+              (click)="removeAsignaturaDocente(i)" 
+              class="btn btn-sm btn-remove"
+            >
+              Eliminar
+            </button>
+          </div>
+
+          <div class="item-fields">
+            <!-- Asignatura -->
+            <div class="form-group">
+              <label>Asignatura *</label>
+              <select 
+                formControlName="id_asignatura"
+                [class.error]="item.get('id_asignatura')?.invalid && item.get('id_asignatura')?.touched"
+              >
+                <option value="">Seleccionar asignatura</option>
+                <option *ngFor="let asignatura of asignaturas" [value]="asignatura.id_asignatura">
+                  {{ asignatura.codigo_asignatura }} - {{ asignatura.nombre_asignatura }}
+                </option>
+              </select>
+              <div *ngIf="item.get('id_asignatura')?.invalid && item.get('id_asignatura')?.touched" class="error-message">
+                Asignatura es requerida
+              </div>
+            </div>
+
+    <!-- Docente -->
+<div class="form-group">
+  <label>Docente *</label>
+  <select 
+    formControlName="id_docente"
+    [class.error]="item.get('id_docente')?.invalid && item.get('id_docente')?.touched"
+  >
+    <option value="">Seleccionar docente</option>
+    <option *ngFor="let docente of docentes" [value]="docente.id_docente">
+      {{ docente.nombres }} {{ docente.apellidos }}
+      <span *ngIf="docente.codigo_docente">({{ docente.codigo_docente }})</span>
+    </option>
+  </select>
+  <div *ngIf="item.get('id_docente')?.invalid && item.get('id_docente')?.touched" class="error-message">
+    Docente es requerido
+  </div>
+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button 
+        type="button" 
+        (click)="onCancel()" 
+        class="btn btn-secondary"
+        [disabled]="loading"
+      >
+        Cancelar
+      </button>
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="loading || form.invalid"
+      >
+        {{ loading ? 'Creando...' : 'Crear Asignaciones' }}
+      </button>
+    </div>
+  </form>
+</div>

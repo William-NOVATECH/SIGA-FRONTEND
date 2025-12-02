@@ -1,0 +1,209 @@
+<div class="docente-detail">
+  <!-- Mostrar mensaje cuando no hay docenteId -->
+  <div *ngIf="!docenteId" class="empty-state">
+    No se ha seleccionado un docente
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading && docenteId" class="loading">
+    Cargando información del docente...
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading && docenteId" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="docente && !loading && docenteId" class="detail-content">
+    <!-- Header -->
+    <div class="detail-header">
+      <div class="docente-info">
+        <h2>{{ docente.nombres }} {{ docente.apellidos }}</h2>
+        <p class="codigo">Código: {{ docente.codigo_docente }}</p>
+        <p class="identificacion">Identificación: {{ docente.identificacion }}</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-warning" (click)="onEdit()">
+          Editar Docente
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-button" 
+              [class.active]="activeTab === 'info'"
+              (click)="setActiveTab('info')">
+        Información General
+      </button>
+      <button class="tab-button"
+              [class.active]="activeTab === 'formacion'"
+              (click)="setActiveTab('formacion')">
+        Formación Académica ({{ formaciones.length }})
+      </button>
+      <button class="tab-button"
+              [class.active]="activeTab === 'experiencia'"
+              (click)="setActiveTab('experiencia')">
+        Experiencia Laboral ({{ experiencias.length }})
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Información General -->
+      <div *ngIf="activeTab === 'info'" class="tab-pane">
+        <div class="info-grid">
+          <div class="info-section">
+            <h3>Información Personal</h3>
+            <div class="info-item">
+              <label>Fecha de Nacimiento:</label>
+              <span>{{ docente.fecha_nacimiento || 'No especificada' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Género:</label>
+              <span>{{ docente.genero || 'No especificado' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Estado:</label>
+              <span [class]="'status-badge ' + (docente.estado || '')">{{ docente.estado }}</span>
+            </div>
+          </div>
+
+          <div class="info-section">
+            <h3>Información Institucional</h3>
+            <div class="info-item">
+              <label>Departamento:</label>
+             <span>{{ docente.departamento?.nombre_departamento || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Cargo:</label>
+              <span>{{ docente.cargo?.nombre_cargo || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Fecha de Ingreso:</label>
+              <span>{{ docente.fecha_ingreso || 'No especificada' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formación Académica -->
+<div *ngIf="activeTab === 'formacion'" class="tab-pane">
+  <div class="section-header">
+    <h3>Formación Académica</h3>
+    <app-formacion-academica-form 
+      *ngIf="docenteId"
+      [docenteId]="docenteId"
+      (saved)="onFormacionSaved()">
+    </app-formacion-academica-form>
+  </div>
+
+  <div *ngIf="formaciones.length === 0" class="empty-state">
+    No hay formación académica registrada
+  </div>
+
+  <div *ngIf="formaciones.length > 0" class="items-list">
+    <div *ngFor="let formacion of formaciones" class="item-card">
+      <div class="item-content">
+        <h4>{{ formacion.titulo }}</h4>
+        <p class="institution">{{ formacion.institucion }}</p>
+        <div class="item-details">
+          <span class="level">{{ formacion.nivel_formacion }}</span>
+          <span *ngIf="formacion.anio_graduacion" class="year">
+            Año: {{ formacion.anio_graduacion }}
+          </span>
+          <span *ngIf="formacion.pais" class="country">
+            {{ formacion.pais }}
+          </span>
+        </div>
+        <!-- <p *ngIf="formacion.documento_titulo" class="document-link">
+          <a [href]="formacion.documento_titulo" target="_blank">Ver documento</a>
+        </p> -->
+      </div>
+      <div class="item-actions">
+        <!-- Botón de editar -->
+        <button class="btn btn-sm btn-warning" 
+                (click)="onEditFormacion(formacion.id_formacion)">
+          Editar
+        </button>
+        <button class="btn btn-sm btn-danger" 
+                (click)="onDeleteFormacion(formacion.id_formacion)">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <!-- Experiencia Laboral -->
+<div *ngIf="activeTab === 'experiencia'" class="tab-pane">
+  <div class="section-header">
+    <h3>Experiencia Laboral</h3>
+    <app-experiencia-laboral-form
+      *ngIf="docenteId"
+      [docenteId]="docenteId"
+      (saved)="onExperienciaSaved()">
+    </app-experiencia-laboral-form>
+  </div>
+
+  <div *ngIf="experiencias.length === 0" class="empty-state">
+    No hay experiencia laboral registrada
+  </div>
+
+  <div *ngIf="experiencias.length > 0" class="items-list">
+    <div *ngFor="let experiencia of experiencias" class="item-card">
+      <div class="item-content">
+        <h4>{{ experiencia.cargo_ejercido }}</h4>
+        <p class="institution">{{ experiencia.institucion_empresa }}</p>
+        <div class="item-details">
+          <span class="period">
+            {{ formatDate(experiencia.fecha_inicio) }} - {{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actual' }}
+          </span>
+        </div>
+        <p *ngIf="experiencia.descripcion_funciones" class="description">
+          {{ experiencia.descripcion_funciones }}
+        </p>
+      </div>
+      <div class="item-actions">
+        <!-- Botón de editar -->
+        <button class="btn btn-sm btn-warning"
+                (click)="onEditExperiencia(experiencia.id_experiencia)">
+          Editar
+        </button>
+        <button class="btn btn-sm btn-danger"
+                (click)="onDeleteExperiencia(experiencia.id_experiencia)">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal de Edición de Formación -->
+<div *ngIf="editingFormacionId" class="modal-overlay">
+  <div class="modal-content">
+    <h3>Editar Formación Académica</h3>
+    <app-formacion-academica-form
+      [docenteId]="docenteId!"
+      [formacionId]="editingFormacionId"
+      (saved)="onFormacionSaved()"
+      (cancel)="editingFormacionId = undefined">
+    </app-formacion-academica-form>
+  </div>
+</div>
+
+<!-- Modal de Edición de Experiencia -->
+<div *ngIf="editingExperienciaId" class="modal-overlay">
+  <div class="modal-content">
+    <h3>Editar Experiencia Laboral</h3>
+    <app-experiencia-laboral-form
+      [docenteId]="docenteId!"
+      [experienciaId]="editingExperienciaId"
+      (saved)="onExperienciaSaved()"
+      (cancel)="editingExperienciaId = undefined">
+    </app-experiencia-laboral-form>
+  </div>
+</div>
+    </div>
+  </div>
+</div>

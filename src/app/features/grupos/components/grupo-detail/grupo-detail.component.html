@@ -1,0 +1,80 @@
+<div class="container">
+  <!-- Header Principal -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1 class="page-title">Detalle del Grupo</h1>
+      <button (click)="onBack()" class="back-btn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Volver
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Cargando información del grupo...</p>
+  </div>
+
+  <div *ngIf="!isLoading && grupo" class="info-section">
+    <h2 class="section-title">Información del Grupo</h2>
+    
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">ID del Grupo</div>
+        <div class="info-value">{{ grupo.id_grupo }}</div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-label">Código del Grupo</div>
+        <div class="info-value">{{ grupo.codigo_grupo }}</div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-label">Nombre del Grupo</div>
+        <div class="info-value">{{ grupo.nombre_grupo || 'Sin nombre' }}</div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-label">Carrera</div>
+        <!-- ✅ CORREGIDO: Cambiar getNombreAsignatura por getNombreCarrera -->
+        <div class="info-value">{{ getNombreCarrera() }}</div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-label">Periodo Académico</div>
+        <div class="info-value">{{ grupo.periodo_academico }}</div>
+      </div>
+
+      <!-- ✅ NUEVO: Rango de Asignaturas -->
+      <div class="info-card">
+        <div class="info-label">Rango de Asignaturas</div>
+        <div class="info-value">{{ getInfoAsignaturas() }}</div>
+      </div>
+    </div>
+
+    <div class="status-section">
+      <div class="info-label">Estado</div>
+      <span 
+        [class]="grupo.estado === 'activo' ? 'status-badge status-active' : 'status-badge status-inactive'">
+        {{ grupo.estado }}
+      </span>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && grupo" class="actions-section">
+    <div class="action-buttons">
+      <button (click)="onEdit()" class="edit-btn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+        Editar Grupo
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && !grupo" class="loading-state">
+    <p>No se encontró el grupo solicitado.</p>
+  </div>
+</div>

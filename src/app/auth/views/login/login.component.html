@@ -1,0 +1,103 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-content">
+      <!-- Columna izquierda - Logo e información -->
+      <div class="login-left">
+        <div class="logo-section">
+          <div class="logo-placeholder">
+            <img src="../../../../assets/images/login.png" alt="Logo UNAM" class="logo-image" />
+          </div>
+          <h1>Sistema Institucional Para La Gestión Académica (SIGA)</h1>
+          <h2>Portal Web</h2>
+        </div>
+        
+        <div class="info-section">
+          <h2>Centro Universitario Regional de Carazo</h2>
+        </div>
+
+        <div class="copyright">
+          <p>© UNAM - Managua - 2025</p>
+        </div>
+      </div>
+
+      <!-- Columna derecha - Formulario -->
+      <div class="login-right">
+        <div class="login-form-section">
+          <div class="form-header">
+            <h3>Iniciar Sesión</h3>
+          </div>
+
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+            <div class="field">
+              <label for="username">Usuario</label>
+              <div class="input-container">
+                <span class="p-input-icon-left">
+                  <i class="pi pi-user"></i>
+                  <input 
+                    id="username"
+                    type="text" 
+                    pInputText 
+                    formControlName="username" 
+                    placeholder="Ingrese su nombre de usuario"
+                    class="custom-input"
+                    [class]="{'ng-invalid ng-dirty': submitted && f['username'].errors}"
+                    autocomplete="username">
+                </span>
+              </div>
+              <small *ngIf="submitted && f['username'].errors" class="error-message">
+                <span *ngIf="f['username'].errors['required']">El usuario es requerido</span>
+              </small>
+            </div>
+
+            <div class="field">
+              <label for="password">Contraseña</label>
+              <div class="input-container">
+                <span class="p-input-icon-left p-input-icon-right">
+                  <i class="pi pi-lock"></i>
+                  <input 
+                    id="password"
+                    [type]="passwordFieldType" 
+                    pInputText 
+                    formControlName="password" 
+                    placeholder="Ingrese su contraseña"
+                    class="custom-input"
+                    [class]="{'ng-invalid ng-dirty': submitted && f['password'].errors}"
+                    autocomplete="current-password">
+                  <i 
+                    class="pi password-toggle-icon" 
+                    [ngClass]="showPassword ? 'pi-eye-slash' : 'pi-eye'"
+                    (click)="togglePasswordVisibility()">
+                  </i>
+                </span>
+              </div>
+              <small *ngIf="submitted && f['password'].errors" class="error-message">
+                <span *ngIf="f['password'].errors['required']">La contraseña es requerida</span>
+                <span *ngIf="f['password'].errors['minlength']">La contraseña debe tener al menos 6 caracteres</span>
+              </small>
+            </div>
+
+            <div class="form-actions">
+               <button 
+                 pButton 
+                 type="submit" 
+                 label="Iniciar Sesión" 
+                 class="p-button-raised login-button"
+                 [loading]="loading"
+                 [disabled]="loading"
+                  icon="pi pi-sign-in">
+                </button>
+            </div>
+
+            <div class="register-section">
+              <p>¿Aún no tiene cuenta? 
+                 <a routerLink="/auth/register" class="register-link">Regístrese aquí</a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>

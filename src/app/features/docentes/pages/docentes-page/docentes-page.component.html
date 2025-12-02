@@ -1,0 +1,43 @@
+<div class="docentes-page">
+  <div class="page-header">
+    <h1>Gestión de Docentes</h1>
+    <div class="header-actions">
+      <button *ngIf="currentView === 'list'" 
+              class="btn btn-primary"
+              (click)="onNewDocente()">
+        Nuevo Docente
+      </button>
+      
+      <button *ngIf="currentView !== 'list'" 
+              class="btn btn-secondary"
+              (click)="onBackToList()">
+        ← Volver al listado
+      </button>
+
+      <a [routerLink]="['/docentes/cargos']" class="btn btn-outline">
+        Gestionar Cargos
+      </a>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <app-docente-list 
+      *ngIf="currentView === 'list'"
+      (edit)="onEditDocente($event)"
+      (viewDetail)="onViewDetail($event)">
+    </app-docente-list>
+
+    <app-docente-form 
+      *ngIf="currentView === 'form'"
+      [docenteId]="docenteId"
+      (saved)="onBackToList()"
+      (cancel)="onBackToList()">
+    </app-docente-form>
+
+    <app-docente-detail 
+      *ngIf="currentView === 'detail'"
+      [docenteId]="docenteId"
+      (edit)="onEditDocente($event)">
+    </app-docente-detail>
+  </div>
+</div>

@@ -1,0 +1,79 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Gestión de Roles</h3>
+          <p class="card-subtitle">Lista de todos los roles disponibles en el sistema</p>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="loading" class="text-center py-4">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando roles...</p>
+          </div>
+
+          <!-- Error State -->
+          <div *ngIf="error && !loading" class="alert alert-danger">
+            {{ error }}
+            <button class="btn btn-sm btn-outline-danger ms-2" (click)="cargarRoles()">
+              Reintentar
+            </button>
+          </div>
+
+          <!-- Roles Table -->
+          <div *ngIf="!loading && !error" class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre del Rol</th>
+                  <th>Descripción</th>
+                  <th>Nivel de Acceso</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let rol of roles">
+                  <td><strong>#{{ rol.id_rol }}</strong></td>
+                  <td>
+                    <span class="fw-bold">{{ rol.nombre_rol }}</span>
+                  </td>
+                  <td>
+                    {{ rol.descripcion || 'Sin descripción' }}
+                  </td>
+                  <td>
+                    <span [class]="'badge ' + getBadgeClass(rol.nivel_acceso)">
+                      {{ getNivelAccesoTexto(rol.nivel_acceso) }} ({{ rol.nivel_acceso }})
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge bg-success">Activo</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="roles.length === 0 && !loading && !error" class="text-center py-5">
+            <div class="empty-state">
+              <i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>
+              <h4>No hay roles configurados</h4>
+              <p class="text-muted">No se encontraron roles en el sistema.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <small class="text-muted">
+            Total de roles: {{ roles.length }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

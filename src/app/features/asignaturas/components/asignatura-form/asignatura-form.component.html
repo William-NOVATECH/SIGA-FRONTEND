@@ -1,0 +1,372 @@
+<div class="form-container">
+  <div class="form-card">
+    <!-- Header con Gradiente -->
+    <div class="form-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h1>{{ isEdit ? 'Editar Asignatura' : 'Crear Asignatura' }}</h1>
+          <p>{{ isEdit ? 'Actualiza la información de la asignatura existente' : 'Completa el formulario para registrar una nueva asignatura' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido del Formulario -->
+    <div class="form-content">
+      <!-- Mensaje de error -->
+      <div *ngIf="errorMessage" class="error-message">
+        <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Formulario -->
+      <form [formGroup]="asignaturaForm" (ngSubmit)="onSubmit()">
+        <div class="form-grid">
+          <!-- Código de la Asignatura -->
+          <div class="form-group half-width">
+            <label for="codigo_asignatura" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+              </svg>
+              Código de la Asignatura
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="text"
+                id="codigo_asignatura"
+                formControlName="codigo_asignatura"
+                class="form-input"
+                placeholder="Ej: MAT101"
+                [class.ng-invalid]="codigo_asignatura?.invalid && codigo_asignatura?.touched"
+                [class.ng-touched]="codigo_asignatura?.touched"
+              >
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                </svg>
+              </div>
+            </div>
+            <div *ngIf="codigo_asignatura?.invalid && codigo_asignatura?.touched" class="error-text">
+              <svg class="error-text-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div *ngIf="codigo_asignatura?.errors?.['required']">El código de la asignatura es obligatorio</div>
+              <div *ngIf="codigo_asignatura?.errors?.['maxlength']">El código no puede exceder los 20 caracteres</div>
+            </div>
+          </div>
+
+          <!-- Nombre de la Asignatura -->
+          <div class="form-group full-width">
+            <label for="nombre_asignatura" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+              Nombre de la Asignatura
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="text"
+                id="nombre_asignatura"
+                formControlName="nombre_asignatura"
+                class="form-input"
+                placeholder="Ingrese el nombre completo de la asignatura"
+                [class.ng-invalid]="nombre_asignatura?.invalid && nombre_asignatura?.touched"
+                [class.ng-touched]="nombre_asignatura?.touched"
+              >
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+            </div>
+            <div *ngIf="nombre_asignatura?.invalid && nombre_asignatura?.touched" class="error-text">
+              <svg class="error-text-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div *ngIf="nombre_asignatura?.errors?.['required']">El nombre de la asignatura es obligatorio</div>
+              <div *ngIf="nombre_asignatura?.errors?.['maxlength']">El nombre no puede exceder los 200 caracteres</div>
+            </div>
+          </div>
+
+          <!-- Carrera -->
+          <div class="form-group half-width">
+            <label for="id_carrera" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v6l9-5m-9 5l-9-5"></path>
+              </svg>
+              Carrera
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <select
+                id="id_carrera"
+                formControlName="id_carrera"
+                class="form-select"
+                [class.ng-invalid]="id_carrera?.invalid && id_carrera?.touched"
+                [class.ng-touched]="id_carrera?.touched"
+              >
+                <option value="">Seleccione una carrera</option>
+                <option *ngFor="let carrera of carreras" [value]="carrera.id_carrera">
+                  {{ carrera.nombre_carrera }} ({{ carrera.codigo_carrera }})
+                </option>
+              </select>
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v6l9-5m-9 5l-9-5"></path>
+                </svg>
+              </div>
+              <div class="select-arrow">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+            <div *ngIf="loadingCarreras" class="select-loading">
+              Cargando carreras...
+            </div>
+            <div *ngIf="id_carrera?.invalid && id_carrera?.touched" class="error-text">
+              <svg class="error-text-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div *ngIf="id_carrera?.errors?.['required']">La carrera es obligatoria</div>
+            </div>
+          </div>
+
+          <!-- Semestre -->
+          <div class="form-group half-width">
+            <label for="semestre" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+              </svg>
+              Semestre
+            </label>
+            <div class="input-group">
+              <select
+                id="semestre"
+                formControlName="semestre"
+                class="form-select"
+              >
+                <option value="">Seleccione semestre</option>
+                <option *ngFor="let sem of semestres" [value]="sem">
+                  {{ sem }}° Semestre
+                </option>
+              </select>
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+              <div class="select-arrow">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Créditos -->
+          <div class="form-group half-width">
+            <label for="creditos" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+              </svg>
+              Créditos
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="number"
+                id="creditos"
+                formControlName="creditos"
+                min="1"
+                max="10"
+                class="form-input"
+                placeholder="Ej: 4"
+                [class.ng-invalid]="creditos?.invalid && creditos?.touched"
+                [class.ng-touched]="creditos?.touched"
+              >
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+              </div>
+            </div>
+            <div *ngIf="creditos?.invalid && creditos?.touched" class="error-text">
+              <svg class="error-text-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div *ngIf="creditos?.errors?.['required']">Los créditos son obligatorios</div>
+              <div *ngIf="creditos?.errors?.['min']">Mínimo 1 crédito</div>
+              <div *ngIf="creditos?.errors?.['max']">Máximo 10 créditos</div>
+            </div>
+          </div>
+
+          <!-- Horas Semanales -->
+          <div class="form-group half-width">
+            <label for="horas_semanales" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Horas Semanales
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="number"
+                id="horas_semanales"
+                formControlName="horas_semanales"
+                min="1"
+                max="20"
+                class="form-input"
+                placeholder="Ej: 5"
+                [class.ng-invalid]="horas_semanales?.invalid && horas_semanales?.touched"
+                [class.ng-touched]="horas_semanales?.touched"
+              >
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <div *ngIf="horas_semanales?.invalid && horas_semanales?.touched" class="error-text">
+              <svg class="error-text-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div *ngIf="horas_semanales?.errors?.['required']">Las horas semanales son obligatorias</div>
+              <div *ngIf="horas_semanales?.errors?.['min']">Mínimo 1 hora</div>
+              <div *ngIf="horas_semanales?.errors?.['max']">Máximo 20 horas</div>
+            </div>
+          </div>
+
+          <!-- Tipo de Asignatura -->
+          <div class="form-group half-width">
+            <label for="tipo" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+              </svg>
+              Tipo de Asignatura
+            </label>
+            <div class="input-group">
+              <select
+                id="tipo"
+                formControlName="tipo"
+                class="form-select"
+              >
+                <option *ngFor="let tipo of tiposAsignatura" [value]="tipo.value">
+                  {{ tipo.label }}
+                </option>
+              </select>
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+              </div>
+              <div class="select-arrow">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estado -->
+          <div class="form-group half-width">
+            <label for="estado" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Estado
+            </label>
+            <div class="input-group">
+              <select
+                id="estado"
+                formControlName="estado"
+                class="form-select"
+              >
+                <option *ngFor="let estado of estados" [value]="estado.value">
+                  {{ estado.label }}
+                </option>
+              </select>
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="select-arrow">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prerequisitos -->
+          <div class="form-group full-width">
+            <label for="prerequisitos" class="form-label">
+              <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+              </svg>
+              Prerequisitos
+            </label>
+            <div class="input-group">
+              <textarea
+                id="prerequisitos"
+                formControlName="prerequisitos"
+                rows="3"
+                class="form-textarea"
+                placeholder="Ingrese los prerequisitos de la asignatura"
+              ></textarea>
+              <div class="input-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="form-actions">
+          <button
+            type="button"
+            (click)="onCancel()"
+            class="btn-secondary"
+          >
+            <svg class="btn-secondary-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="asignaturaForm.invalid || loading"
+            class="btn-primary"
+          >
+            <span *ngIf="loading" class="flex items-center gap-2">
+              <div class="loading-spinner"></div>
+              Procesando...
+            </span>
+            <span *ngIf="!loading" class="flex items-center gap-2">
+              <svg class="btn-primary-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              {{ isEdit ? 'Actualizar Asignatura' : 'Crear Asignatura' }}
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

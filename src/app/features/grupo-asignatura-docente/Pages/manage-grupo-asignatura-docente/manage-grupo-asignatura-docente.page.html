@@ -1,0 +1,26 @@
+<div class="page-container">
+  <div *ngIf="loading && !asignacion" class="loading-full">
+    Cargando...
+  </div>
+
+  <app-grupo-asignatura-docente-form
+    *ngIf="mode === 'create' || mode === 'edit'"
+    [asignacion]="asignacion"
+    [loading]="loading"
+    [grupos]="grupos"
+    [asignaturas]="asignaturas"
+    [docentes]="docentes"
+    (submitForm)="onSubmitForm($event)"
+    (cancel)="onCancel()"
+  ></app-grupo-asignatura-docente-form>
+
+  <app-grupo-asignatura-docente-bulk-form
+    *ngIf="mode === 'bulk-create'"
+    [loading]="loading"
+    [grupos]="grupos"
+    [asignaturas]="asignaturas"
+    [docentes]="docentes"
+    (submitForm)="onSubmitBulkForm($event)"
+    (cancel)="onCancel()"
+  ></app-grupo-asignatura-docente-bulk-form>
+</div>

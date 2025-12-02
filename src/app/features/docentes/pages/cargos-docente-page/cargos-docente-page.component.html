@@ -1,0 +1,36 @@
+<div class="cargos-page">
+  <div class="page-header">
+    <h1>Gestión de Cargos Docentes</h1>
+    <div class="header-actions">
+      <button *ngIf="currentView === 'list'" 
+              class="btn btn-primary"
+              (click)="onNewCargo()">
+        Nuevo Cargo
+      </button>
+      
+      <button *ngIf="currentView !== 'list'" 
+              class="btn btn-secondary"
+              (click)="onBackToList()">
+        ← Volver al listado
+      </button>
+
+      <button class="btn btn-outline" (click)="onBackToDocentes()">
+        ← Volver a Docentes
+      </button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <app-cargo-docente-list 
+      *ngIf="currentView === 'list'"
+      (edit)="onEditCargo($event)">
+    </app-cargo-docente-list>
+
+    <app-cargo-docente-form 
+      *ngIf="currentView === 'form'"
+      [cargoId]="cargoId"
+      (saved)="onBackToList()"
+      (cancel)="onBackToList()">
+    </app-cargo-docente-form>
+  </div>
+</div>

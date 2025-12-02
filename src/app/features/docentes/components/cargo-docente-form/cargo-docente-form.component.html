@@ -1,0 +1,70 @@
+<div class="cargo-docente-form">
+  <div class="form-header">
+    <h2>{{ cargoId ? 'Editar Cargo Docente' : 'Nuevo Cargo Docente' }}</h2>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    Cargando datos del cargo...
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Formulario -->
+  <form *ngIf="!loading" [formGroup]="cargoForm" (ngSubmit)="onSubmit()">
+    <div class="form-grid">
+      <div class="form-section">
+        <div class="form-group">
+          <label for="nombre_cargo">Nombre del Cargo *</label>
+          <input type="text" id="nombre_cargo" formControlName="nombre_cargo"
+                 [class.error]="f['nombre_cargo'].invalid && f['nombre_cargo'].touched">
+          <div *ngIf="f['nombre_cargo'].invalid && f['nombre_cargo'].touched" class="error-text">
+            Nombre del cargo es requerido
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" formControlName="descripcion" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="max_asignaturas">Máximo de Asignaturas *</label>
+          <input type="number" id="max_asignaturas" formControlName="max_asignaturas"
+                 min="1"
+                 [class.error]="f['max_asignaturas'].invalid && f['max_asignaturas'].touched">
+          <div *ngIf="f['max_asignaturas'].invalid && f['max_asignaturas'].touched" class="error-text">
+            Máximo de asignaturas es requerido y debe ser mayor a 0
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="min_asignaturas">Mínimo de Asignaturas</label>
+          <input type="number" id="min_asignaturas" formControlName="min_asignaturas"
+                 min="0">
+        </div>
+
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <select id="estado" formControlName="estado">
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving">
+        {{ saving ? 'Guardando...' : (cargoId ? 'Actualizar' : 'Crear') }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="saving">
+        Cancelar
+      </button>
+    </div>
+  </form>
+</div>

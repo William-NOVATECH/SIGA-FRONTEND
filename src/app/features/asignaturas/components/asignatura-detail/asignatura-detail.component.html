@@ -1,0 +1,137 @@
+<div class="container">
+  <!-- Botón volver -->
+  <button 
+    (click)="goBack()"
+    class="back-button"
+  >
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+    </svg>
+    Volver a la lista
+  </button>
+
+  <div class="detail-card">
+    <!-- Header -->
+    <div class="detail-header">
+      <div class="header-content">
+        <div class="header-text">
+          <h1>Detalle de Asignatura</h1>
+          <p>Información completa de la asignatura académica</p>
+        </div>
+        <button 
+          (click)="editAsignatura()"
+          class="edit-button"
+          *ngIf="asignatura && !loading"
+        >
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+          Editar Asignatura
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Cargando información de la asignatura...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="errorMessage && !loading" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Información de la asignatura -->
+    <div *ngIf="asignatura && !loading" class="detail-content">
+      <!-- Información básica -->
+      <div class="info-grid">
+        <!-- Información Básica -->
+        <div class="info-section">
+          <h3 class="section-title">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Información Básica
+          </h3>
+          <div class="info-list">
+            <div class="info-item">
+              <span class="info-label">Código</span>
+              <span class="code-value">{{ asignatura.codigo_asignatura }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Nombre</span>
+              <span class="info-value">{{ asignatura.nombre_asignatura }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Tipo</span>
+              <span 
+                [class]="'type-badge type-' + asignatura.tipo"
+              >
+                <span class="status-dot"></span>
+                {{ asignatura.tipo }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Estado</span>
+              <span 
+                [class]="asignatura.estado === 'activa' ? 'status-badge status-active' : 'status-badge status-inactive'"
+              >
+                <span class="status-dot"></span>
+                {{ asignatura.estado }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalles Académicos -->
+        <div class="info-section">
+          <h3 class="section-title">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v6l9-5m-9 5l-9-5"></path>
+            </svg>
+            Detalles Académicos
+          </h3>
+          <div class="info-list">
+            <div class="info-item">
+              <span class="info-label">Carrera</span>
+              <span class="career-badge">{{ asignatura.carrera?.nombre_carrera || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Créditos</span>
+              <span class="number-badge">{{ asignatura.creditos }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Horas Semanales</span>
+              <span class="number-badge">{{ asignatura.horas_semanales }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Semestre</span>
+              <span class="info-value">{{ asignatura.semestre || 'No especificado' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prerequisitos -->
+      <div class="prerequisitos-section" *ngIf="asignatura.prerequisitos">
+        <h3 class="section-title">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+          </svg>
+          Prerequisitos
+        </h3>
+        <div class="prerequisitos-content">
+          {{ asignatura.prerequisitos }}
+        </div>
+      </div>
+
+      <div *ngIf="!asignatura.prerequisitos" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p class="empty-text">No hay prerequisitos definidos para esta asignatura</p>
+      </div>
+    </div>
+  </div>
+</div>
