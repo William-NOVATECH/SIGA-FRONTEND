@@ -9,8 +9,7 @@ import { CreateCarrera, UpdateCarrera, Carrera } from '../../models/carrera.mode
 
 @Component({
   selector: 'app-carrera-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  standalone: false,
   templateUrl: './carrera-form.component.html',
   styleUrls: ['./carrera-form.component.css']
 })

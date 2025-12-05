@@ -6,8 +6,7 @@ import { Carrera } from '../../models/carrera.model';
 
 @Component({
   selector: 'app-carrera-detail',
-  standalone: true,
-  imports: [CommonModule],
+  standalone: false,
   templateUrl: './carrera-detail.component.html',
   styleUrls: ['./carrera-detail.component.css']
 })
