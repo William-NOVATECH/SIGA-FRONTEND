@@ -6,6 +6,7 @@ export interface ExperienciaLaboral {
   fecha_inicio: string;
   fecha_fin?: string;
   descripcion_funciones?: string;
+  documento_url?: string;
   docente?: any;
 }
 
@@ -16,6 +17,7 @@ export interface CreateExperienciaLaboralDto {
   fecha_inicio: string;
   fecha_fin?: string;
   descripcion_funciones?: string;
+  documento_url?: string;
 }
 
 export interface UpdateExperienciaLaboralDto extends Partial<CreateExperienciaLaboralDto> {}

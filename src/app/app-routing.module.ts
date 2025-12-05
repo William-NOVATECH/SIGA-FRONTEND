@@ -42,6 +42,10 @@ const routes: Routes = [
         path: 'carga-docente',
         loadChildren: () => import('./features/grupo-asignatura-docente/grupo-asignatura-docente.module').then(m => m.GrupoAsignaturaDocenteModule)
       },
+      {
+        path: 'planes',
+        loadChildren: () => import('./features/planes/planes.module').then(m => m.PlanesModule)
+      },
       { 
         path: 'admin', 
         loadChildren: () => import('./features/admin/admin.module').then(m => m.AdminModule) 

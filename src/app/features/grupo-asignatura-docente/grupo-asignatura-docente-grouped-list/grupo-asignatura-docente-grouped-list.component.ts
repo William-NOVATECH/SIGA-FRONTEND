@@ -109,4 +109,55 @@ export class GrupoAsignaturaDocenteGroupedListComponent implements OnChanges {
         return 'estado-default';
     }
   }
+
+  getEstadoAprobacionClass(estado?: string): string {
+    if (!estado) return 'estado-aprobacion-default';
+    
+    switch (estado) {
+      case 'borrador':
+        return 'estado-aprobacion-borrador';
+      case 'pendiente_revision':
+        return 'estado-aprobacion-pendiente';
+      case 'revisada':
+        return 'estado-aprobacion-revisada';
+      case 'pendiente_aprobacion':
+        return 'estado-aprobacion-pendiente-final';
+      case 'aprobada':
+        return 'estado-aprobacion-aprobada';
+      case 'rechazada':
+        return 'estado-aprobacion-rechazada';
+      default:
+        return 'estado-aprobacion-default';
+    }
+  }
+
+  getEstadoAprobacionLabel(estado?: string): string {
+    if (!estado) return 'Sin estado';
+    
+    const labels: { [key: string]: string } = {
+      'borrador': 'Borrador',
+      'pendiente_revision': 'Pendiente Revisión',
+      'revisada': 'Revisada',
+      'pendiente_aprobacion': 'Pendiente Aprobación',
+      'aprobada': 'Aprobada',
+      'rechazada': 'Rechazada'
+    };
+    
+    return labels[estado] || estado;
+  }
+
+  getEstadoAprobacionIcon(estado?: string): string {
+    if (!estado) return 'fa-circle';
+    
+    const icons: { [key: string]: string } = {
+      'borrador': 'fa-file-pen',
+      'pendiente_revision': 'fa-clock',
+      'revisada': 'fa-check-circle',
+      'pendiente_aprobacion': 'fa-hourglass-half',
+      'aprobada': 'fa-check-double',
+      'rechazada': 'fa-times-circle'
+    };
+    
+    return icons[estado] || 'fa-circle';
+  }
 }

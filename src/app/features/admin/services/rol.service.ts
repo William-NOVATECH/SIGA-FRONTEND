@@ -16,12 +16,13 @@ import {
   ActualizarRol 
 } from '../interfaces/usuario-rol.interface';
 import { PaginatedResponse } from '../interfaces/pagination.interface';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RolService {
-  private apiUrl = 'http://localhost:3000'; // URL base
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

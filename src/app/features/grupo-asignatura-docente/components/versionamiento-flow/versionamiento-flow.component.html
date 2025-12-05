@@ -1,0 +1,202 @@
+<div class="versionamiento-flow-container" *ngIf="asignacion">
+  <!-- Header con explicación -->
+  <div class="flow-header">
+    <div class="flow-title">
+      <i class="fa-solid fa-diagram-project"></i>
+      <h3>Flujo de Aprobación y Versionamiento</h3>
+    </div>
+    <div class="version-info">
+      <span class="version-badge" *ngIf="getVersionActual() > 0">
+        <i class="fa-solid fa-code-branch"></i>
+        Versión {{ getVersionActual() }}
+      </span>
+      <span [class]="getEstadoClass(getEstadoAprobacion())" class="estado-badge">
+        {{ getEstadoAprobacionLabel() }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Explicación del estado actual -->
+  <div class="explicacion-rol" [class]="getEstadoClass(getEstadoAprobacion())" *ngIf="asignacion.estado_aprobacion">
+    <div class="explicacion-content">
+      <i class="fa-solid fa-info-circle"></i>
+      <div class="explicacion-text">
+        <p>{{ getExplicacionRol() }}</p>
+        <div *ngIf="getEstadoAprobacion() === 'borrador' && authService.isCoordinador() && asignacion?.id_coordinador_carrera === authService.getUserIdFromToken()" 
+             class="action-hint">
+          <i class="fa-solid fa-arrow-down"></i>
+          <strong>Acción disponible:</strong> Desplázate hacia abajo para ver el botón "Enviar a Revisión"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensaje si no hay estado de aprobación -->
+  <div class="explicacion-rol estado-sin-estado" *ngIf="!asignacion.estado_aprobacion">
+    <div class="explicacion-content">
+      <i class="fa-solid fa-info-circle"></i>
+      <div class="explicacion-text">
+        <p>Esta asignación no tiene un estado de aprobación definido. Si eres Coordinador de Carrera, puedes crear una versión inicial desde el formulario de creación.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flujo visual -->
+  <div class="flow-steps">
+    <!-- Paso 1: Creación Inicial -->
+    <div class="flow-step" 
+         [class.completed]="isPasoCompletado(1)" 
+         [class.current]="isPasoActual(1)"
+         [class.rejected]="getEstadoAprobacion() === 'rechazada' && getPasoActual() === 1">
+      <div class="step-number">
+        <i class="fa-solid" 
+           [class.fa-check]="isPasoCompletado(1)"
+           [class.fa-spinner]="isPasoActual(1) && getEstadoAprobacion() !== 'rechazada'"
+           [class.fa-times]="getEstadoAprobacion() === 'rechazada' && getPasoActual() === 1"
+           [class.fa-circle]="!isPasoCompletado(1) && !isPasoActual(1)"></i>
+      </div>
+      <div class="step-content">
+        <div class="step-header">
+          <h4>{{ getPasoInfo(1).titulo }}</h4>
+          <span class="step-rol">
+            <i [class]="'fa-solid ' + getPasoInfo(1).icono"></i>
+            {{ getPasoInfo(1).rol }}
+          </span>
+        </div>
+        <p class="step-description">{{ getPasoInfo(1).descripcion }}</p>
+        <div class="step-status" *ngIf="isPasoCompletado(1)">
+          <i class="fa-solid fa-check-circle"></i>
+          <span>Completado</span>
+        </div>
+        <div class="step-status current" *ngIf="isPasoActual(1) && getEstadoAprobacion() !== 'rechazada'">
+          <i class="fa-solid fa-clock"></i>
+          <span>En proceso</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conector -->
+    <div class="flow-connector" [class.completed]="isPasoCompletado(1)"></div>
+
+    <!-- Paso 2: Revisión -->
+    <div class="flow-step" 
+         [class.completed]="isPasoCompletado(2)" 
+         [class.current]="isPasoActual(2)"
+         [class.rejected]="getEstadoAprobacion() === 'rechazada' && getPasoActual() === 2">
+      <div class="step-number">
+        <i class="fa-solid" 
+           [class.fa-check]="isPasoCompletado(2)"
+           [class.fa-spinner]="isPasoActual(2) && getEstadoAprobacion() !== 'rechazada'"
+           [class.fa-times]="getEstadoAprobacion() === 'rechazada' && getPasoActual() === 2"
+           [class.fa-circle]="!isPasoCompletado(2) && !isPasoActual(2)"></i>
+      </div>
+      <div class="step-content">
+        <div class="step-header">
+          <h4>{{ getPasoInfo(2).titulo }}</h4>
+          <span class="step-rol">
+            <i [class]="'fa-solid ' + getPasoInfo(2).icono"></i>
+            {{ getPasoInfo(2).rol }}
+          </span>
+        </div>
+        <p class="step-description">{{ getPasoInfo(2).descripcion }}</p>
+        <div class="step-status" *ngIf="isPasoCompletado(2)">
+          <i class="fa-solid fa-check-circle"></i>
+          <span>Completado</span>
+        </div>
+        <div class="step-status current" *ngIf="isPasoActual(2) && getEstadoAprobacion() !== 'rechazada'">
+          <i class="fa-solid fa-clock"></i>
+          <span>En proceso</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conector -->
+    <div class="flow-connector" [class.completed]="isPasoCompletado(2)"></div>
+
+    <!-- Paso 3: Aprobación Final -->
+    <div class="flow-step" 
+         [class.completed]="isPasoCompletado(3)" 
+         [class.current]="isPasoActual(3)"
+         [class.rejected]="getEstadoAprobacion() === 'rechazada' && getPasoActual() === 3">
+      <div class="step-number">
+        <i class="fa-solid" 
+           [class.fa-check]="isPasoCompletado(3)"
+           [class.fa-spinner]="isPasoActual(3) && getEstadoAprobacion() !== 'rechazada'"
+           [class.fa-times]="getEstadoAprobacion() === 'rechazada' && getPasoActual() === 3"
+           [class.fa-circle]="!isPasoCompletado(3) && !isPasoActual(3)"></i>
+      </div>
+      <div class="step-content">
+        <div class="step-header">
+          <h4>{{ getPasoInfo(3).titulo }}</h4>
+          <span class="step-rol">
+            <i [class]="'fa-solid ' + getPasoInfo(3).icono"></i>
+            {{ getPasoInfo(3).rol }}
+          </span>
+        </div>
+        <p class="step-description">{{ getPasoInfo(3).descripcion }}</p>
+        <div class="step-status" *ngIf="isPasoCompletado(3)">
+          <i class="fa-solid fa-check-circle"></i>
+          <span>Completado</span>
+        </div>
+        <div class="step-status current" *ngIf="isPasoActual(3) && getEstadoAprobacion() !== 'rechazada'">
+          <i class="fa-solid fa-clock"></i>
+          <span>En proceso</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conector -->
+    <div class="flow-connector" [class.completed]="isPasoCompletado(3)"></div>
+
+    <!-- Paso 4: Aprobada -->
+    <div class="flow-step" 
+         [class.completed]="isPasoCompletado(4)" 
+         [class.current]="isPasoActual(4)">
+      <div class="step-number">
+        <i class="fa-solid" 
+           [class.fa-check-double]="isPasoCompletado(4)"
+           [class.fa-circle]="!isPasoCompletado(4)"></i>
+      </div>
+      <div class="step-content">
+        <div class="step-header">
+          <h4>{{ getPasoInfo(4).titulo }}</h4>
+          <span class="step-rol">
+            <i [class]="'fa-solid ' + getPasoInfo(4).icono"></i>
+            {{ getPasoInfo(4).rol }}
+          </span>
+        </div>
+        <p class="step-description">{{ getPasoInfo(4).descripcion }}</p>
+        <div class="step-status" *ngIf="isPasoCompletado(4)">
+          <i class="fa-solid fa-check-double"></i>
+          <span>Aprobada</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información adicional -->
+  <div class="flow-additional-info" *ngIf="asignacion?.estado_aprobacion">
+    <div class="info-item" *ngIf="asignacion?.fecha_creacion_inicial">
+      <i class="fa-solid fa-calendar-plus"></i>
+      <div>
+        <strong>Fecha de Creación:</strong>
+        <span>{{ formatDate(asignacion.fecha_creacion_inicial) }}</span>
+      </div>
+    </div>
+    <div class="info-item" *ngIf="asignacion?.fecha_revision">
+      <i class="fa-solid fa-calendar-check"></i>
+      <div>
+        <strong>Fecha de Revisión:</strong>
+        <span>{{ formatDate(asignacion.fecha_revision) }}</span>
+      </div>
+    </div>
+    <div class="info-item" *ngIf="asignacion?.fecha_aprobacion_final">
+      <i class="fa-solid fa-calendar-star"></i>
+      <div>
+        <strong>Fecha de Aprobación Final:</strong>
+        <span>{{ formatDate(asignacion.fecha_aprobacion_final) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+

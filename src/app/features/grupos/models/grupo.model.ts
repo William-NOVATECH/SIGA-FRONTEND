@@ -1,16 +1,27 @@
 export interface Grupo {
   id_grupo: number;
   id_carrera: number;
+  id_plan: number;
   codigo_grupo: string;
   nombre_grupo?: string;
   periodo_academico: string;
+  id_docente_titular?: number;
   estado: string;
   min_asignaturas?: number;
   max_asignaturas?: number;
   
   // Relaciones
   carrera?: Carrera;
+  plan?: Plan;
+  docente_titular?: Docente;
   asignaturas_docentes?: GrupoAsignaturaDocente[];
+}
+
+export interface Plan {
+  id_plan: number;
+  nombre_plan: string;
+  codigo_plan: string;
+  año?: number;
 }
 
 export interface GrupoAsignaturaDocente {
@@ -49,9 +60,11 @@ export interface Docente {
 
 export interface CreateGrupoDto {
   id_carrera: number;
+  id_plan: number;
   codigo_grupo: string;
   nombre_grupo?: string;
   periodo_academico: string;
+  id_docente_titular?: number;
   min_asignaturas?: number;
   max_asignaturas?: number;
   estado?: string;

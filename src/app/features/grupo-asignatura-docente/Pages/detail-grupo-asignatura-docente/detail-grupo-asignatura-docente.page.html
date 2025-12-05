@@ -29,9 +29,27 @@
   <div *ngIf="asignacion && !loading" class="detail-card">
     <div class="card-header">
       <h2>Información de la Asignación</h2>
-      <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
-        {{ asignacion.estado }}
-      </span>
+      <div class="header-badges">
+        <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
+          {{ asignacion.estado }}
+        </span>
+        <span *ngIf="asignacion.estado_aprobacion" 
+              [class]="getEstadoAprobacionClass(asignacion.estado_aprobacion)" 
+              class="estado-aprobacion-badge">
+          <i class="fa-solid" [ngClass]="{
+            'fa-file-pen': asignacion.estado_aprobacion === 'borrador',
+            'fa-clock': asignacion.estado_aprobacion === 'pendiente_revision' || asignacion.estado_aprobacion === 'pendiente_aprobacion',
+            'fa-check-circle': asignacion.estado_aprobacion === 'revisada',
+            'fa-check-double': asignacion.estado_aprobacion === 'aprobada',
+            'fa-times-circle': asignacion.estado_aprobacion === 'rechazada'
+          }"></i>
+          {{ asignacion.estado_aprobacion | titlecase }}
+        </span>
+        <span *ngIf="asignacion.version_actual" class="version-badge">
+          <i class="fa-solid fa-code-branch"></i>
+          Versión {{ asignacion.version_actual }}
+        </span>
+      </div>
     </div>
 
     <div class="card-body">
@@ -107,6 +125,256 @@
           </div>
         </div>
 
+        <!-- Observaciones por Rol -->
+        <div class="detail-section" *ngIf="asignacion.observaciones_coordinador || asignacion.observaciones_director || asignacion.observaciones_administrador">
+          <h3>💬 Observaciones</h3>
+          
+          <div class="detail-item" *ngIf="asignacion.observaciones_coordinador">
+            <label>Observaciones del Coordinador:</label>
+            <span class="observaciones">{{ asignacion.observaciones_coordinador }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="asignacion.observaciones_director">
+            <label>Observaciones del Director:</label>
+            <span class="observaciones">{{ asignacion.observaciones_director }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="asignacion.observaciones_administrador">
+            <label>Observaciones del Administrador:</label>
+            <span class="observaciones">{{ asignacion.observaciones_administrador }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Componente Visual del Flujo de Versionamiento -->
+    <app-versionamiento-flow [asignacion]="asignacion"></app-versionamiento-flow>
+
+    <!-- Botones de Acción del Flujo de Aprobación -->
+    <div class="card-footer" *ngIf="asignacion">
+      <!-- Mensaje informativo para coordinador en borrador -->
+      <div *ngIf="isCoordinador() && asignacion.estado_aprobacion === 'borrador' && !canEnviarRevision()" 
+           class="info-message">
+        <i class="fa-solid fa-info-circle"></i>
+        <div>
+          <strong>No puedes enviar esta asignación a revisión</strong>
+          <p>Solo el Coordinador que creó esta asignación puede enviarla a revisión. Si necesitas enviarla, contacta al coordinador que la creó o verifica que estés logueado con la cuenta correcta.</p>
+        </div>
+      </div>
+
+      <div class="flow-actions">
+        <!-- Botón: Enviar a Revisión (Coordinador) -->
+        <button *ngIf="canEnviarRevision()" 
+                (click)="onEnviarRevision()" 
+                class="btn btn-flow btn-send-review"
+                [disabled]="loading">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Enviar a Revisión</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <!-- Botones: Revisar (Director) -->
+        <div *ngIf="canRevisar()" class="review-actions">
+          <button (click)="onRevisar(true)" 
+                  class="btn btn-flow btn-approve-review"
+                  [disabled]="loading">
+            <i class="fa-solid fa-check-circle"></i>
+            Aprobar Revisión
+          </button>
+          <button (click)="onRevisar(false)" 
+                  class="btn btn-flow btn-reject-review"
+                  [disabled]="loading">
+            <i class="fa-solid fa-times-circle"></i>
+            Rechazar
+          </button>
+        </div>
+
+        <!-- Botón: Aprobar Final (Administrador) -->
+        <button *ngIf="canAprobarFinal()" 
+                (click)="onAprobarFinal()" 
+                class="btn btn-flow btn-approve-final"
+                [disabled]="loading">
+          <i class="fa-solid fa-check-double"></i>
+          Aprobar Final
+        </button>
+      </div>
+
+      <!-- Botones de Versionamiento -->
+      <div class="version-actions">
+        <button (click)="loadVersiones()" 
+                class="btn btn-secondary btn-sm"
+                [disabled]="loadingVersiones">
+          <i class="fa-solid fa-history"></i>
+          Ver Historial de Versiones
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Historial de Versiones -->
+  <div *ngIf="showHistorialModal" class="modal-overlay" (click)="showHistorialModal = false">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-history"></i>
+          Historial de Versiones
+        </h3>
+        <button class="btn-close" (click)="showHistorialModal = false">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="loadingVersiones" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando versiones...</p>
+        </div>
+        <div *ngIf="!loadingVersiones && versiones.length === 0" class="empty-state">
+          <p>No hay versiones registradas</p>
+        </div>
+        <div *ngIf="!loadingVersiones && versiones.length > 0" class="versiones-list">
+          <div *ngFor="let version of versiones" class="version-item" [class.active]="version.activa">
+            <div class="version-header">
+              <div class="version-info">
+                <span class="version-number">Versión {{ version.version }}</span>
+                <span class="version-status" [ngClass]="'status-' + version.estado_version">
+                  {{ version.estado_version | titlecase }}
+                </span>
+                <span *ngIf="version.activa" class="version-active-badge">
+                  <i class="fa-solid fa-check"></i>
+                  Activa
+                </span>
+              </div>
+              <div class="version-actions">
+                <button *ngIf="!version.activa && (isCoordinador() || isAdministrador())"
+                        (click)="onRestaurarVersion(version.id_version)"
+                        class="btn btn-sm btn-restore"
+                        title="Restaurar esta versión">
+                  <i class="fa-solid fa-rotate-left"></i>
+                  Restaurar
+                </button>
+              </div>
+            </div>
+            <div class="version-details">
+              <div class="version-meta">
+                <div class="meta-item">
+                  <i class="fa-solid fa-user"></i>
+                  <span><strong>Creador:</strong> {{ version.usuario_creador?.username || 'N/A' }}</span>
+                </div>
+                <div class="meta-item" *ngIf="version.usuario_revisor">
+                  <i class="fa-solid fa-user-check"></i>
+                  <span><strong>Revisor:</strong> {{ version.usuario_revisor.username }}</span>
+                </div>
+                <div class="meta-item" *ngIf="version.usuario_aprobador">
+                  <i class="fa-solid fa-user-shield"></i>
+                  <span><strong>Aprobador:</strong> {{ version.usuario_aprobador.username }}</span>
+                </div>
+                <div class="meta-item">
+                  <i class="fa-solid fa-calendar"></i>
+                  <span><strong>Fecha:</strong> {{ formatDate(version.fecha_creacion) }}</span>
+                </div>
+              </div>
+              <div *ngIf="version.observaciones" class="version-observations">
+                <strong>Observaciones:</strong>
+                <p>{{ version.observaciones }}</p>
+              </div>
+              <div *ngIf="version.cambios && version.cambios.length > 0" class="version-changes">
+                <strong>Cambios:</strong>
+                <ul>
+                  <li *ngFor="let cambio of version.cambios">
+                    <strong>{{ cambio.campo }}:</strong> 
+                    {{ cambio.valor_anterior }} → {{ cambio.valor_nuevo }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showHistorialModal = false">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Comparar Versiones -->
+  <div *ngIf="showCompararModal" class="modal-overlay" (click)="showCompararModal = false">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-code-compare"></i>
+          Comparar Versiones
+        </h3>
+        <button class="btn-close" (click)="showCompararModal = false">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="!comparacionResult" class="comparison-selector">
+          <div class="selector-group">
+            <label>Versión 1:</label>
+            <select [(ngModel)]="version1Selected" class="form-select">
+              <option [value]="undefined">Seleccionar versión</option>
+              <option *ngFor="let v of versiones" [value]="v.version">
+                Versión {{ v.version }} - {{ v.estado_version }}
+              </option>
+            </select>
+          </div>
+          <div class="selector-group">
+            <label>Versión 2:</label>
+            <select [(ngModel)]="version2Selected" class="form-select">
+              <option [value]="undefined">Seleccionar versión</option>
+              <option *ngFor="let v of versiones" [value]="v.version">
+                Versión {{ v.version }} - {{ v.estado_version }}
+              </option>
+            </select>
+          </div>
+          <button (click)="onCompararVersiones()" 
+                  class="btn btn-primary"
+                  [disabled]="!version1Selected || !version2Selected || loading">
+            <i class="fa-solid fa-code-compare"></i>
+            Comparar
+          </button>
+        </div>
+        <div *ngIf="comparacionResult" class="comparison-result">
+          <div class="comparison-versions">
+            <div class="version-column">
+              <h4>Versión {{ comparacionResult.version1.version }}</h4>
+              <div class="version-data">
+                <p><strong>Estado:</strong> {{ comparacionResult.version1.estado_version }}</p>
+                <p><strong>Fecha:</strong> {{ formatDate(comparacionResult.version1.fecha_creacion) }}</p>
+                <p><strong>Docente ID:</strong> {{ comparacionResult.version1.datos_version.id_docente }}</p>
+                <p><strong>Asignatura ID:</strong> {{ comparacionResult.version1.datos_version.id_asignatura }}</p>
+              </div>
+            </div>
+            <div class="version-column">
+              <h4>Versión {{ comparacionResult.version2.version }}</h4>
+              <div class="version-data">
+                <p><strong>Estado:</strong> {{ comparacionResult.version2.estado_version }}</p>
+                <p><strong>Fecha:</strong> {{ formatDate(comparacionResult.version2.fecha_creacion) }}</p>
+                <p><strong>Docente ID:</strong> {{ comparacionResult.version2.datos_version.id_docente }}</p>
+                <p><strong>Asignatura ID:</strong> {{ comparacionResult.version2.datos_version.id_asignatura }}</p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="comparacionResult.diferencias && comparacionResult.diferencias.length > 0" class="diferencias">
+            <h4>Diferencias:</h4>
+            <ul>
+              <li *ngFor="let diff of comparacionResult.diferencias">
+                <strong>{{ diff.campo }}:</strong>
+                <span class="old-value">{{ diff.valor_v1 }}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span class="new-value">{{ diff.valor_v2 }}</span>
+              </li>
+            </ul>
+          </div>
+          <div *ngIf="!comparacionResult.diferencias || comparacionResult.diferencias.length === 0" class="no-diferencias">
+            <p>No hay diferencias entre las versiones seleccionadas.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showCompararModal = false; comparacionResult = null">Cerrar</button>
       </div>
     </div>
   </div>

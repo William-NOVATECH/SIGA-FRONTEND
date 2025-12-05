@@ -1,0 +1,175 @@
+<div class="user-management-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title">
+        <h1>
+          <i class="fa-solid fa-users-cog"></i>
+          Administración de Usuarios
+        </h1>
+        <p>Gestiona los usuarios del sistema, asigna roles y controla el acceso</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Usuarios -->
+  <div class="table-container">
+    <app-data-table
+      [data]="usuarios"
+      [columns]="columns"
+      [actions]="actions"
+      [loading]="loading"
+      [itemsPerPage]="5"
+      emptyMessage="No hay usuarios registrados en el sistema"
+      emptyIcon="fa-users"
+      title="Lista de Usuarios">
+    </app-data-table>
+  </div>
+
+  <!-- Modal: Editar Usuario -->
+  <div *ngIf="showEditModal" class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-pencil"></i>
+          Editar Usuario
+        </h3>
+        <button class="btn-close" (click)="closeEditModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="usuarioSeleccionado" class="form-container">
+          <div class="form-group">
+            <label>
+              <i class="fa-solid fa-user form-icon"></i>
+              Username
+            </label>
+            <input 
+              type="text" 
+              [(ngModel)]="editForm.username"
+              class="form-input"
+              placeholder="Nombre de usuario">
+          </div>
+          <div class="form-group">
+            <label>
+              <i class="fa-solid fa-envelope form-icon"></i>
+              Email
+            </label>
+            <input 
+              type="email" 
+              [(ngModel)]="editForm.email"
+              class="form-input"
+              placeholder="correo@ejemplo.com">
+          </div>
+          <div class="form-group">
+            <label>
+              <i class="fa-solid fa-toggle-on form-icon"></i>
+              Estado
+            </label>
+            <select [(ngModel)]="editForm.estado" class="form-select">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()" [disabled]="loading">
+          <i class="fa-solid fa-times"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" (click)="saveEdit()" [disabled]="loading">
+          <i *ngIf="!loading" class="fa-solid fa-save"></i>
+          <i *ngIf="loading" class="fa-solid fa-spinner fa-spin"></i>
+          {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Asignar Rol -->
+  <div *ngIf="showAssignRoleModal" class="modal-overlay" (click)="closeAssignRoleModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid" [ngClass]="usuarioSeleccionado && hasRoles(usuarioSeleccionado) ? 'fa-arrows-rotate' : 'fa-user-plus'"></i>
+          {{ usuarioSeleccionado && hasRoles(usuarioSeleccionado) ? 'Cambiar Rol' : 'Asignar Rol' }}
+        </h3>
+        <button class="btn-close" (click)="closeAssignRoleModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="usuarioSeleccionado" class="form-container">
+          <div class="info-card">
+            <div class="info-item">
+              <i class="fa-solid fa-user"></i>
+              <div>
+                <strong>Usuario:</strong> {{ usuarioSeleccionado.username }}
+              </div>
+            </div>
+            <div class="info-item">
+              <i class="fa-solid fa-envelope"></i>
+              <div>
+                <strong>Email:</strong> {{ usuarioSeleccionado.email }}
+              </div>
+            </div>
+            <div class="info-item" *ngIf="usuarioSeleccionado && hasRoles(usuarioSeleccionado)">
+              <i class="fa-solid fa-shield-halved"></i>
+              <div>
+                <strong>Rol actual:</strong> {{ getRolesString(usuarioSeleccionado) }}
+                <span class="info-note">(Se reemplazará con el nuevo rol seleccionado)</span>
+              </div>
+            </div>
+            <div class="info-item" *ngIf="usuarioSeleccionado && !hasRoles(usuarioSeleccionado)">
+              <i class="fa-solid fa-exclamation-triangle"></i>
+              <div class="warning-text">
+                <strong>Sin roles:</strong> Este usuario no tiene roles asignados y no puede acceder al sistema.
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <i class="fa-solid fa-shield-halved form-icon"></i>
+              Seleccionar Rol *
+            </label>
+            <select [(ngModel)]="assignRoleForm.id_rol" class="form-select" *ngIf="usuarioSeleccionado">
+              <option value="">Seleccionar rol...</option>
+              <option *ngFor="let rol of roles" [value]="rol.id_rol">
+                {{ rol.nombre_rol }} (Nivel: {{ rol.nivel_acceso }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <i class="fa-solid fa-toggle-on form-icon"></i>
+              Estado del Rol
+            </label>
+            <select [(ngModel)]="assignRoleForm.estado" class="form-select" *ngIf="usuarioSeleccionado">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+            <small class="form-help">
+              Un rol inactivo no otorga permisos al usuario
+            </small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAssignRoleModal()" [disabled]="loading">
+          <i class="fa-solid fa-times"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" (click)="assignRole()" [disabled]="loading || !assignRoleForm.id_rol">
+          <i *ngIf="!loading" class="fa-solid" [ngClass]="usuarioSeleccionado && hasRoles(usuarioSeleccionado) ? 'fa-arrows-rotate' : 'fa-check'"></i>
+          <i *ngIf="loading" class="fa-solid fa-spinner fa-spin"></i>
+          {{ loading ? (usuarioSeleccionado && hasRoles(usuarioSeleccionado) ? 'Cambiando...' : 'Asignando...') : (usuarioSeleccionado && hasRoles(usuarioSeleccionado) ? 'Cambiar Rol' : 'Asignar Rol') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

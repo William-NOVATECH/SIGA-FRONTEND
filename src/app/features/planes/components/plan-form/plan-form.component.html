@@ -1,0 +1,139 @@
+<div class="plan-form-container">
+  <div class="form-header">
+    <h3>{{ isEditMode ? 'Editar Plan' : 'Nuevo Plan' }}</h3>
+  </div>
+
+  <form [formGroup]="planForm" (ngSubmit)="onSubmit()">
+    <!-- Error -->
+    <div *ngIf="error" class="error-message">
+      <i class="fa-solid fa-exclamation-circle"></i>
+      {{ error }}
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="codigo_plan">
+          <i class="fa-solid fa-hashtag form-icon"></i>
+          Código del Plan *
+        </label>
+        <input
+          type="text"
+          id="codigo_plan"
+          formControlName="codigo_plan"
+          placeholder="Ej: PLAN-2016, PLAN-2021"
+          maxlength="20"
+          [class.error]="f['codigo_plan'].invalid && f['codigo_plan'].touched"
+        />
+        <div *ngIf="f['codigo_plan'].invalid && f['codigo_plan'].touched" class="error-text">
+          <span *ngIf="f['codigo_plan'].errors?.['required']">El código del plan es requerido</span>
+          <span *ngIf="f['codigo_plan'].errors?.['maxlength']">El código no puede exceder 20 caracteres</span>
+        </div>
+        <small class="form-help">Máximo 20 caracteres. Ej: PLAN-2016</small>
+      </div>
+
+      <div class="form-group">
+        <label for="nombre_plan">
+          <i class="fa-solid fa-file-lines form-icon"></i>
+          Nombre del Plan *
+        </label>
+        <input
+          type="text"
+          id="nombre_plan"
+          formControlName="nombre_plan"
+          placeholder="Ej: Plan 2016, Plan 2021, Plan 2025"
+          [class.error]="f['nombre_plan'].invalid && f['nombre_plan'].touched"
+        />
+        <div *ngIf="f['nombre_plan'].invalid && f['nombre_plan'].touched" class="error-text">
+          El nombre del plan es requerido
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="año">
+          <i class="fa-solid fa-calendar form-icon"></i>
+          Año
+        </label>
+        <input
+          type="number"
+          id="año"
+          formControlName="año"
+          placeholder="Ej: 2016, 2021, 2025"
+          [class.error]="f['año'].invalid && f['año'].touched"
+        />
+        <div *ngIf="f['año'].invalid && f['año'].touched" class="error-text">
+          Año inválido
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_inicio">
+          <i class="fa-solid fa-calendar-day form-icon"></i>
+          Fecha de Inicio
+        </label>
+        <input
+          type="date"
+          id="fecha_inicio"
+          formControlName="fecha_inicio"
+          [class.error]="f['fecha_inicio'].invalid && f['fecha_inicio'].touched"
+        />
+        <div *ngIf="f['fecha_inicio'].invalid && f['fecha_inicio'].touched" class="error-text">
+          Fecha de inicio inválida
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_fin">
+          <i class="fa-solid fa-calendar-check form-icon"></i>
+          Fecha de Fin
+        </label>
+        <input
+          type="date"
+          id="fecha_fin"
+          formControlName="fecha_fin"
+          [class.error]="f['fecha_fin'].invalid && f['fecha_fin'].touched"
+        />
+        <div *ngIf="f['fecha_fin'].invalid && f['fecha_fin'].touched" class="error-text">
+          Fecha de fin inválida
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="descripcion">
+          <i class="fa-solid fa-align-left form-icon"></i>
+          Descripción
+        </label>
+        <textarea
+          id="descripcion"
+          formControlName="descripcion"
+          rows="4"
+          placeholder="Descripción del plan académico..."
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="estado">
+          <i class="fa-solid fa-toggle-on form-icon"></i>
+          Estado
+        </label>
+        <select id="estado" formControlName="estado">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <i class="fa-solid fa-spinner fa-spin" *ngIf="loading"></i>
+        <i class="fa-solid fa-check" *ngIf="!loading"></i>
+        {{ loading ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading">
+        <i class="fa-solid fa-times"></i>
+        Cancelar
+      </button>
+    </div>
+  </form>
+</div>
+

@@ -22,8 +22,43 @@
         </div>
 
         <div class="form-grid">
+          <!-- Plan -->
+          <div class="form-group half-width">
+            <label class="form-label" for="id_plan">
+              <i class="fa-solid fa-calendar-days form-label-icon"></i>
+              Plan <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <select
+                id="id_plan"
+                formControlName="id_plan"
+                class="form-select"
+                [class.ng-invalid]="grupoForm.get('id_plan')?.invalid && grupoForm.get('id_plan')?.touched">
+                <option value="">Seleccione un plan</option>
+                <option *ngFor="let plan of planes" [value]="plan.id_plan">
+                  {{ plan.codigo_plan }} - {{ plan.nombre_plan }}
+                  <span *ngIf="plan['año']"> ({{ plan['año'] }})</span>
+                </option>
+              </select>
+              <div class="input-icon">
+                <i class="fa-solid fa-calendar-days"></i>
+              </div>
+              <div class="select-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+            <div *ngIf="!hasPlanes" class="warning-text">
+              <i class="fa-solid fa-triangle-exclamation error-text-icon"></i>
+              No hay planes disponibles
+            </div>
+            <div *ngIf="grupoForm.get('id_plan')?.invalid && grupoForm.get('id_plan')?.touched" class="error-text">
+              <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
+              El plan es requerido
+            </div>
+          </div>
+
           <!-- Carrera -->
-          <div class="form-group full-width">
+          <div class="form-group half-width">
             <label class="form-label" for="id_carrera">
               <i class="fa-solid fa-graduation-cap form-label-icon"></i>
               Carrera <span class="required-star">*</span>
@@ -134,6 +169,36 @@
               <div *ngIf="grupoForm.get('periodo_academico')?.errors?.['maxlength']">
                 El periodo no puede tener más de 20 caracteres
               </div>
+            </div>
+          </div>
+
+          <!-- Docente Titular -->
+          <div class="form-group half-width">
+            <label class="form-label" for="id_docente_titular">
+              <i class="fa-solid fa-user-tie form-label-icon"></i>
+              Docente Titular
+            </label>
+            <div class="input-group">
+              <select
+                id="id_docente_titular"
+                formControlName="id_docente_titular"
+                class="form-select">
+                <option value="">Seleccione un docente (opcional)</option>
+                <option *ngFor="let docente of docentes" [value]="docente.id_docente">
+                  {{ docente.nombres }} {{ docente.apellidos }}
+                  <span *ngIf="docente.codigo_docente"> ({{ docente.codigo_docente }})</span>
+                </option>
+              </select>
+              <div class="input-icon">
+                <i class="fa-solid fa-user-tie"></i>
+              </div>
+              <div class="select-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+            <div *ngIf="!hasDocentes" class="warning-text">
+              <i class="fa-solid fa-triangle-exclamation error-text-icon"></i>
+              No hay docentes disponibles
             </div>
           </div>
 

@@ -110,26 +110,56 @@
         <p class="institution">{{ formacion.institucion }}</p>
         <div class="item-details">
           <span class="level">{{ formacion.nivel_formacion }}</span>
-          <span *ngIf="formacion.anio_graduacion" class="year">
-            Año: {{ formacion.anio_graduacion }}
+          <span *ngIf="getAnioGraduacion(formacion)" class="year">
+            Año: {{ getAnioGraduacion(formacion) }}
           </span>
           <span *ngIf="formacion.pais" class="country">
             {{ formacion.pais }}
           </span>
         </div>
-        <!-- <p *ngIf="formacion.documento_titulo" class="document-link">
-          <a [href]="formacion.documento_titulo" target="_blank">Ver documento</a>
-        </p> -->
+        
+        <!-- Documento Adjunto -->
+        <div *ngIf="hasValidDocument(formacion.documento_titulo)" class="document-section">
+          <div class="document-card">
+            <div class="document-icon-wrapper">
+              <i class="fa-solid" [ngClass]="getDocumentIcon(formacion.documento_titulo || '')"></i>
+            </div>
+            <div class="document-info">
+              <span class="document-label">Documento del Título</span>
+              <span class="document-name">{{ getDocumentName(formacion.documento_titulo || '') }}</span>
+            </div>
+            <div class="document-actions">
+              <a [href]="formacion.documento_titulo" 
+                 target="_blank" 
+                 class="btn-document-view"
+                 title="Ver documento">
+                <i class="fa-solid fa-eye"></i>
+                <span>Ver</span>
+              </a>
+              <a [href]="formacion.documento_titulo" 
+                 [download]="getDocumentName(formacion.documento_titulo || '')"
+                 class="btn-document-download"
+                 title="Descargar documento">
+                <i class="fa-solid fa-download"></i>
+                <span>Descargar</span>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="item-actions">
         <!-- Botón de editar -->
-        <button class="btn btn-sm btn-warning" 
-                (click)="onEditFormacion(formacion.id_formacion)">
-          Editar
+        <button class="btn btn-action btn-edit-action" 
+                (click)="onEditFormacion(formacion.id_formacion)"
+                title="Editar formación académica">
+          <i class="fa-solid fa-pencil"></i>
+          <span>Editar</span>
         </button>
-        <button class="btn btn-sm btn-danger" 
-                (click)="onDeleteFormacion(formacion.id_formacion)">
-          Eliminar
+        <button class="btn btn-action btn-delete-action" 
+                (click)="onDeleteFormacion(formacion.id_formacion)"
+                title="Eliminar formación académica">
+          <i class="fa-solid fa-trash"></i>
+          <span>Eliminar</span>
         </button>
       </div>
     </div>
@@ -164,16 +194,57 @@
         <p *ngIf="experiencia.descripcion_funciones" class="description">
           {{ experiencia.descripcion_funciones }}
         </p>
+        
+        <!-- Documento Adjunto -->
+        <div *ngIf="hasValidDocumentExperiencia(experiencia)" class="document-section">
+          <div class="document-card">
+            <!-- Miniatura de imagen o icono -->
+            <div class="document-icon-wrapper">
+              <img *ngIf="isImageDocumentExperiencia(experiencia)" 
+                   [src]="experiencia.documento_url" 
+                   [alt]="getDocumentNameExperiencia(experiencia)"
+                   class="document-thumbnail"
+                   (error)="handleImageError($event)">
+              <i *ngIf="!isImageDocumentExperiencia(experiencia)" 
+                 class="fa-solid" 
+                 [ngClass]="getDocumentIconExperiencia(experiencia)"></i>
+            </div>
+            <div class="document-info">
+              <span class="document-label">Documento de Experiencia</span>
+              <span class="document-name">{{ getDocumentNameExperiencia(experiencia) }}</span>
+            </div>
+            <div class="document-actions">
+              <a [href]="experiencia.documento_url" 
+                 target="_blank" 
+                 class="btn-document-view"
+                 title="Ver documento">
+                <i class="fa-solid fa-eye"></i>
+                <span>Ver</span>
+              </a>
+              <a [href]="experiencia.documento_url" 
+                 [download]="getDocumentNameExperiencia(experiencia)"
+                 class="btn-document-download"
+                 title="Descargar documento">
+                <i class="fa-solid fa-download"></i>
+                <span>Descargar</span>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="item-actions">
         <!-- Botón de editar -->
-        <button class="btn btn-sm btn-warning"
-                (click)="onEditExperiencia(experiencia.id_experiencia)">
-          Editar
+        <button class="btn btn-action btn-edit-action"
+                (click)="onEditExperiencia(experiencia.id_experiencia)"
+                title="Editar experiencia laboral">
+          <i class="fa-solid fa-pencil"></i>
+          <span>Editar</span>
         </button>
-        <button class="btn btn-sm btn-danger"
-                (click)="onDeleteExperiencia(experiencia.id_experiencia)">
-          Eliminar
+        <button class="btn btn-action btn-delete-action"
+                (click)="onDeleteExperiencia(experiencia.id_experiencia)"
+                title="Eliminar experiencia laboral">
+          <i class="fa-solid fa-trash"></i>
+          <span>Eliminar</span>
         </button>
       </div>
     </div>

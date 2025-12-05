@@ -3,7 +3,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GrupoService } from '../../services/grupo.service';
 import { CarreraService } from '../../services/carrera.service';
-import { Carrera, CreateGrupoDto, UpdateGrupoDto } from '../../models/grupo.model';
+import { DocenteService } from '../../services/docente.service';
+import { PlanService } from '../../../planes/services/plan.service';
+import { Carrera, CreateGrupoDto, UpdateGrupoDto, Docente, Plan } from '../../models/grupo.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -18,7 +20,8 @@ export class GrupoFormComponent implements OnInit {
   isLoading = false;
   
   carreras: Carrera[] = [];
-  // ❌ ELIMINADO: docentes: Docente[] = [];
+  planes: Plan[] = [];
+  docentes: Docente[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -26,23 +29,33 @@ export class GrupoFormComponent implements OnInit {
     private router: Router,
     private grupoService: GrupoService,
     private carreraService: CarreraService,
+    private docenteService: DocenteService,
+    private planService: PlanService,
     private toastService: ToastService
   ) {
     this.grupoForm = this.createForm();
   }
 
   async ngOnInit(): Promise<void> {
-    // Cargar carreras primero
-    await this.loadCarreras();
+    // Cargar datos necesarios
+    await Promise.all([
+      this.loadCarreras(),
+      this.loadPlanes(),
+      this.loadDocentes()
+    ]);
 
     // Luego cargar el grupo si estamos en modo edición
     this.route.params.subscribe(async params => {
       if (params['id']) {
         this.isEditMode = true;
         this.grupoId = +params['id'];
-        // Asegurar que las carreras estén cargadas antes de cargar el grupo
-        if (this.carreras.length === 0) {
-          await this.loadCarreras();
+        // Asegurar que los datos estén cargados antes de cargar el grupo
+        if (this.carreras.length === 0 || this.planes.length === 0) {
+          await Promise.all([
+            this.loadCarreras(),
+            this.loadPlanes(),
+            this.loadDocentes()
+          ]);
         }
         this.loadGrupo(this.grupoId);
       }
@@ -52,10 +65,11 @@ export class GrupoFormComponent implements OnInit {
   createForm(): FormGroup {
     return this.fb.group({
       id_carrera: ['', Validators.required],
+      id_plan: ['', Validators.required],
       codigo_grupo: ['', [Validators.required, Validators.maxLength(20)]],
       nombre_grupo: ['', Validators.maxLength(100)],
       periodo_academico: ['', [Validators.required, Validators.maxLength(20)]],
-      // ❌ ELIMINADO: id_docente_titular: [''],
+      id_docente_titular: [''],
       min_asignaturas: [''],
       max_asignaturas: [''],
       estado: ['activo']
@@ -88,13 +102,31 @@ export class GrupoFormComponent implements OnInit {
           idCarrera = Number(grupo.carrera.id_carrera);
         }
 
-        console.log('ID Carrera encontrado:', idCarrera); // Para debugging
+        // Obtener id_plan: puede venir directamente o dentro de plan
+        let idPlan: number | null = null;
+        if (grupo.id_plan) {
+          idPlan = Number(grupo.id_plan);
+        } else if (grupo.plan?.id_plan) {
+          idPlan = Number(grupo.plan.id_plan);
+        }
+
+        // Obtener id_docente_titular: puede venir directamente o dentro de docente_titular
+        let idDocenteTitular: number | null = null;
+        if (grupo.id_docente_titular) {
+          idDocenteTitular = Number(grupo.id_docente_titular);
+        } else if (grupo.docente_titular?.id_docente) {
+          idDocenteTitular = Number(grupo.docente_titular.id_docente);
+        }
+
+        console.log('IDs encontrados:', { idCarrera, idPlan, idDocenteTitular }); // Para debugging
         
         this.grupoForm.patchValue({
           id_carrera: idCarrera || '',
+          id_plan: idPlan || '',
           codigo_grupo: grupo.codigo_grupo || '',
           nombre_grupo: grupo.nombre_grupo || '',
           periodo_academico: grupo.periodo_academico || '',
+          id_docente_titular: idDocenteTitular || '',
           min_asignaturas: grupo.min_asignaturas || '',
           max_asignaturas: grupo.max_asignaturas || '',
           estado: grupo.estado || 'activo'
@@ -140,17 +172,68 @@ export class GrupoFormComponent implements OnInit {
     });
   }
 
-  // ❌ ELIMINADO: loadDocentes()
+  async loadPlanes(): Promise<void> {
+    return new Promise((resolve) => {
+      this.planService.findAll().subscribe({
+        next: (response: any) => {
+          if (Array.isArray(response)) {
+            this.planes = response;
+          } else if (response && typeof response === 'object' && 'data' in response) {
+            this.planes = Array.isArray(response.data) ? response.data : [response.data];
+          } else {
+            this.planes = [];
+          }
+          resolve();
+        },
+        error: (error) => {
+          console.error('Error cargando planes:', error);
+          this.planes = [];
+          this.toastService.showError(
+            'Error al cargar planes',
+            'No se pudieron cargar los planes. Por favor, intente nuevamente.'
+          );
+          resolve();
+        }
+      });
+    });
+  }
+
+  async loadDocentes(): Promise<void> {
+    return new Promise((resolve) => {
+      this.docenteService.findAll().subscribe({
+        next: (response: any) => {
+          if (Array.isArray(response)) {
+            this.docentes = response;
+          } else if (response && typeof response === 'object' && 'data' in response) {
+            this.docentes = Array.isArray(response.data) ? response.data : [response.data];
+          } else {
+            this.docentes = [];
+          }
+          resolve();
+        },
+        error: (error) => {
+          console.error('Error cargando docentes:', error);
+          this.docentes = [];
+          this.toastService.showError(
+            'Error al cargar docentes',
+            'No se pudieron cargar los docentes. Por favor, intente nuevamente.'
+          );
+          resolve();
+        }
+      });
+    });
+  }
 
   onSubmit(): void {
     if (this.grupoForm.valid) {
       this.isLoading = true;
       const formValue = this.grupoForm.value;
 
-      // Convertir min/max asignaturas a número o null
+      // Convertir valores a número o null
       const processedValue = {
         ...formValue,
-        // ❌ ELIMINADO: id_docente_titular: formValue.id_docente_titular || null,
+        id_plan: Number(formValue.id_plan),
+        id_docente_titular: formValue.id_docente_titular ? Number(formValue.id_docente_titular) : null,
         min_asignaturas: formValue.min_asignaturas ? +formValue.min_asignaturas : null,
         max_asignaturas: formValue.max_asignaturas ? +formValue.max_asignaturas : null
       };
@@ -218,5 +301,11 @@ export class GrupoFormComponent implements OnInit {
     return this.carreras.length > 0;
   }
 
-  // ❌ ELIMINADO: get hasDocentes()
+  get hasPlanes(): boolean {
+    return this.planes.length > 0;
+  }
+
+  get hasDocentes(): boolean {
+    return this.docentes.length > 0;
+  }
 }

@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CreateGrupoAsignaturaDocente } from '../models/create-grupo-asignatura-docente.model';
 import { GrupoAsignaturaDocente } from '../models/grupo-asignatura-docente.model';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-grupo-asignatura-docente-form',
@@ -28,8 +29,16 @@ export class GrupoAsignaturaDocenteFormComponent implements OnInit {
     { value: 'cancelada', label: 'Cancelada' }
   ];
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService
+  ) {
     this.form = this.createForm();
+  }
+
+  // Verificar si el usuario es coordinador
+  isCoordinador(): boolean {
+    return this.authService.isCoordinador();
   }
 
   ngOnInit(): void {

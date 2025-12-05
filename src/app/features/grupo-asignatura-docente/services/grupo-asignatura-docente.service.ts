@@ -10,7 +10,13 @@ import {
   PaginatedResponse,
   BulkCreateResponse,
   GrupoConAsignaciones,
-  Carrera
+  Carrera,
+  CargaDocenteVersion,
+  ComparacionVersiones,
+  CreateVersionInicialDto,
+  EnviarRevisionDto,
+  RevisarCargaDto,
+  AprobarFinalDto
 } from '../models/grupo-asignatura-docente.model';
 
 @Injectable({
@@ -151,5 +157,60 @@ private ensureCarrera(carrera: any): Carrera {
   return carrera;
 }
 
+  // ========== ENDPOINTS DE VERSIONAMIENTO Y APROBACIÓN ==========
+
+  /**
+   * Crear versión inicial de carga docente
+   * Rol: COORDINADOR
+   */
+  createVersionInicial(dto: CreateVersionInicialDto): Observable<GrupoAsignaturaDocente> {
+    return this.http.post<GrupoAsignaturaDocente>(`${this.nestJsUrl}/version-inicial`, dto);
+  }
+
+  /**
+   * Enviar carga docente a revisión
+   * Rol: COORDINADOR (solo el que creó la versión)
+   */
+  enviarRevision(id: number, dto: EnviarRevisionDto): Observable<GrupoAsignaturaDocente> {
+    return this.http.put<GrupoAsignaturaDocente>(`${this.nestJsUrl}/${id}/enviar-revision`, dto);
+  }
+
+  /**
+   * Revisar carga docente (Director)
+   * Rol: DIRECTORES
+   */
+  revisarCarga(id: number, dto: RevisarCargaDto): Observable<GrupoAsignaturaDocente> {
+    return this.http.put<GrupoAsignaturaDocente>(`${this.nestJsUrl}/${id}/revisar`, dto);
+  }
+
+  /**
+   * Aprobar carga docente final (Administrador)
+   * Rol: ADMINISTRADOR
+   */
+  aprobarFinal(id: number, dto: AprobarFinalDto): Observable<GrupoAsignaturaDocente> {
+    return this.http.put<GrupoAsignaturaDocente>(`${this.nestJsUrl}/${id}/aprobar-final`, dto);
+  }
+
+  /**
+   * Obtener historial de versiones de una carga docente
+   */
+  getVersiones(id: number): Observable<CargaDocenteVersion[]> {
+    return this.http.get<CargaDocenteVersion[]>(`${this.nestJsUrl}/${id}/versiones`);
+  }
+
+  /**
+   * Comparar dos versiones
+   */
+  compareVersiones(id: number, v1: number, v2: number): Observable<ComparacionVersiones> {
+    return this.http.get<ComparacionVersiones>(`${this.nestJsUrl}/${id}/versiones/${v1}/compare/${v2}`);
+  }
+
+  /**
+   * Restaurar a una versión anterior
+   * Rol: COORDINADOR o ADMINISTRADOR
+   */
+  restaurarVersion(id: number, versionId: number): Observable<GrupoAsignaturaDocente> {
+    return this.http.post<GrupoAsignaturaDocente>(`${this.nestJsUrl}/${id}/restaurar-version/${versionId}`, {});
+  }
 
 }

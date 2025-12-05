@@ -6,8 +6,17 @@
 }
 
 .form-container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.form-container h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #02116F;
+  margin-bottom: 2rem;
+  text-align: center;
 }
 
 /* Tarjeta del Formulario */
@@ -179,12 +188,25 @@
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.form-select {
+  cursor: pointer;
+  background-image: none;
 }
 
 .form-textarea {
   resize: vertical;
   min-height: 100px;
   padding: 1.25rem 1.25rem 1.25rem 3.5rem;
+}
+
+.form-textarea + .input-icon {
+  top: 1.25rem;
+  transform: translateY(0);
 }
 
 .form-input::placeholder, .form-textarea::placeholder {
@@ -273,18 +295,21 @@
 
 /* Asignaturas Section */
 .asignaturas-section {
-  background: #f8fafc;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   padding: 2rem;
   border-radius: 16px;
   margin: 2rem 0;
-  border: 2px dashed #e5e7eb;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .section-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .section-header h3 {
@@ -292,6 +317,13 @@
   font-weight: 700;
   color: #02116F;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-header h3 i {
+  color: #0072BB;
 }
 
 .btn-add {
@@ -303,11 +335,19 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(247, 205, 2, 0.2);
 }
 
 .btn-add:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(247, 205, 2, 0.3);
+  box-shadow: 0 4px 12px rgba(247, 205, 2, 0.4);
+}
+
+.btn-add i {
+  font-size: 0.9rem;
 }
 
 /* Asignatura Item */
@@ -316,22 +356,30 @@
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 2px solid #e5e7eb;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .asignatura-item:hover {
   border-color: #0072BB;
-  box-shadow: 0 4px 12px rgba(0, 114, 187, 0.1);
+  box-shadow: 0 6px 20px rgba(0, 114, 187, 0.15);
+  transform: translateY(-2px);
+}
+
+.asignatura-item:last-child {
+  margin-bottom: 0;
 }
 
 .item-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .item-header h4 {
@@ -339,6 +387,13 @@
   font-weight: 600;
   color: #02116F;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.item-header h4 i {
+  color: #0072BB;
 }
 
 .btn-remove {
@@ -351,11 +406,19 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
 }
 
 .btn-remove:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-remove i {
+  font-size: 0.8rem;
 }
 
 .item-fields {

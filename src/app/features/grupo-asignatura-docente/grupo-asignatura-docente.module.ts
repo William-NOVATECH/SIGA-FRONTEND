@@ -7,6 +7,7 @@ import { HttpClientModule } from '@angular/common/http';
 // Components
 import { GrupoAsignaturaDocenteListComponent } from './grupo-asignatura-docente-list/grupo-asignatura-docente-list.component';
 import { GrupoAsignaturaDocenteGroupedListComponent } from './grupo-asignatura-docente-grouped-list/grupo-asignatura-docente-grouped-list.component';
+import { VersionamientoFlowComponent } from './components/versionamiento-flow/versionamiento-flow.component';
 import { GrupoAsignaturaDocenteFormComponent } from './grupo-asignatura-docente-form/grupo-asignatura-docente-form.component';
 import { GrupoAsignaturaDocenteBulkFormComponent } from './grupo-asignatura-docente-bulk-form/grupo-asignatura-docente-bulk-form.component';
 
@@ -25,6 +26,7 @@ import { GRUPO_ASIGNATURA_DOCENTE_ROUTES } from './grupo-asignatura-docente.rout
     GrupoAsignaturaDocenteGroupedListComponent,
     GrupoAsignaturaDocenteFormComponent,
     GrupoAsignaturaDocenteBulkFormComponent,
+    VersionamientoFlowComponent,
     // Pages
     ListGrupoAsignaturaDocentePage,
     ManageGrupoAsignaturaDocentePage,

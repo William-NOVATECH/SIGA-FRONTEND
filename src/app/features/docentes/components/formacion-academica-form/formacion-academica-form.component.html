@@ -56,9 +56,65 @@
           <input type="text" id="pais" formControlName="pais">
         </div>
 
-        <div class="form-group">
-          <label for="documento_titulo">Documento del Título (URL)</label>
-          <input type="text" id="documento_titulo" formControlName="documento_titulo">
+        <div class="form-group full-width">
+          <label for="documento_file">
+            <i class="fa-solid fa-file-upload form-label-icon"></i>
+            Documento del Título
+          </label>
+          
+          <!-- Input de archivo -->
+          <div class="file-upload-container">
+            <input 
+              type="file" 
+              id="documento_file" 
+              class="file-input"
+              accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx"
+              (change)="onFileSelected($event)"
+              [disabled]="uploading || saving">
+            
+            <label for="documento_file" class="file-upload-label" [class.uploading]="uploading" [class.has-file]="fileName">
+              <div class="file-upload-content">
+                <i *ngIf="!uploading && !fileName" class="fa-solid fa-cloud-arrow-up file-upload-icon"></i>
+                <i *ngIf="uploading" class="fa-solid fa-spinner fa-spin file-upload-icon"></i>
+                <i *ngIf="!uploading && fileName" class="fa-solid fa-file-check file-upload-icon"></i>
+                <span class="file-upload-text">
+                  <span *ngIf="!uploading && !fileName">Seleccionar archivo (PDF, imagen o Word - máx 10MB)</span>
+                  <span *ngIf="uploading">Subiendo archivo...</span>
+                  <span *ngIf="!uploading && fileName">{{ fileName }}</span>
+                </span>
+              </div>
+            </label>
+
+            <!-- Preview de imagen -->
+            <div *ngIf="filePreview && selectedFile && selectedFile.type.startsWith('image/')" class="file-preview">
+              <img [src]="filePreview" alt="Preview" class="preview-image">
+              <button type="button" class="btn-remove-preview" (click)="removeFile()" title="Eliminar archivo">
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </div>
+
+            <!-- Botón para eliminar archivo si ya está subido -->
+            <div *ngIf="fileName && !selectedFile && formacionForm.get('documento_titulo')?.value" class="file-info">
+              <div class="file-info-content">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>{{ fileName }}</span>
+                <a [href]="formacionForm.get('documento_titulo')?.value" target="_blank" class="btn-view-file" title="Ver documento">
+                  <i class="fa-solid fa-external-link"></i>
+                </a>
+                <button type="button" class="btn-remove-file" (click)="removeFile()" title="Eliminar archivo">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo oculto para la URL (solo para el formulario) -->
+          <input type="hidden" formControlName="documento_titulo" id="documento_titulo_hidden">
+          
+          <div class="file-help-text">
+            <i class="fa-solid fa-info-circle"></i>
+            Formatos permitidos: PDF, JPG, PNG, GIF, DOC, DOCX. Tamaño máximo: 10MB
+          </div>
         </div>
       </div>
 

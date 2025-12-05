@@ -1,0 +1,14 @@
+<div class="page-container">
+  <div class="page-header">
+    <button (click)="onCancel()" class="btn btn-back">
+      <i class="fa-solid fa-arrow-left"></i>
+      Volver
+    </button>
+  </div>
+  <app-plan-form
+    [planId]="planId"
+    (saved)="onSaved($event)"
+    (cancel)="onCancel()">
+  </app-plan-form>
+</div>
+

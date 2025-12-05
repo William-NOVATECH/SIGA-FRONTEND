@@ -1,0 +1,230 @@
+<div class="plan-detail-container">
+  <!-- Header -->
+  <div class="detail-header">
+    <button (click)="onBack()" class="btn btn-back">
+      <i class="fa-solid fa-arrow-left"></i>
+      Volver a la lista
+    </button>
+    <div class="header-info">
+      <h1>{{ plan?.nombre_plan || 'Cargando...' }}</h1>
+      <div class="plan-meta">
+        <span *ngIf="getAnio()" class="plan-year">
+          <i class="fa-solid fa-calendar"></i>
+          {{ getAnio() }}
+        </span>
+        <span *ngIf="plan && plan.estado" class="plan-status" [class.active]="plan.estado === 'activo'">
+          {{ plan.estado }}
+        </span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button (click)="onEdit()" class="btn btn-edit" [disabled]="!plan">
+        <i class="fa-solid fa-pencil"></i>
+        Editar Plan
+      </button>
+      <button (click)="onAddCarrera()" class="btn btn-primary" [disabled]="!plan || loading">
+        <i class="fa-solid fa-plus"></i>
+        Agregar Carreras
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando detalles del plan...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-state">
+    <i class="fa-solid fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Plan Info -->
+  <div *ngIf="plan && !loading" class="plan-info-card">
+    <div class="info-section">
+      <h3>
+        <i class="fa-solid fa-info-circle"></i>
+        Información del Plan
+      </h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Código:</label>
+          <span class="plan-code-badge">{{ plan.codigo_plan }}</span>
+        </div>
+        <div class="info-item">
+          <label>Nombre:</label>
+          <span>{{ plan.nombre_plan }}</span>
+        </div>
+        <div class="info-item" *ngIf="getAnio()">
+          <label>Año:</label>
+          <span>{{ getAnio() }}</span>
+        </div>
+        <div class="info-item" *ngIf="getFechaInicio()">
+          <label>Fecha de Inicio:</label>
+          <span>
+            <i class="fa-solid fa-calendar-day"></i>
+            {{ formatDate(getFechaInicio()) }}
+          </span>
+        </div>
+        <div class="info-item" *ngIf="getFechaFin()">
+          <label>Fecha de Fin:</label>
+          <span>
+            <i class="fa-solid fa-calendar-check"></i>
+            {{ formatDate(getFechaFin()) }}
+          </span>
+        </div>
+        <div class="info-item" *ngIf="plan.estado">
+          <label>Estado:</label>
+          <span class="status-badge" [class.active]="plan.estado === 'activo'">
+            {{ plan.estado }}
+          </span>
+        </div>
+        <div class="info-item full-width" *ngIf="plan.descripcion">
+          <label>Descripción:</label>
+          <span>{{ plan.descripcion }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carreras Section -->
+  <div *ngIf="plan && !loading" class="carreras-section">
+    <div class="section-header">
+      <h2>
+        <i class="fa-solid fa-graduation-cap"></i>
+        Carreras del Plan ({{ planCarreras.length }})
+      </h2>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="planCarreras.length === 0" class="empty-state">
+      <i class="fa-solid fa-inbox"></i>
+      <p>No hay carreras agregadas a este plan</p>
+      <button class="btn btn-primary" (click)="onAddCarrera()">
+        <i class="fa-solid fa-plus"></i>
+        Agregar Primera Carrera
+      </button>
+    </div>
+
+    <!-- Carreras List -->
+    <div *ngIf="planCarreras.length > 0" class="carreras-list">
+      <div *ngFor="let planCarrera of planCarreras" class="carrera-card">
+        <div class="carrera-header" (click)="toggleCarrera(planCarrera.id_plan_carrera)">
+          <div class="carrera-info">
+            <i class="fa-solid" [ngClass]="isCarreraExpanded(planCarrera.id_plan_carrera) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+            <h4>{{ planCarrera.carrera?.nombre_carrera || 'Carrera sin nombre' }}</h4>
+            <span *ngIf="planCarrera.carrera && planCarrera.carrera.codigo_carrera" class="carrera-code">
+              {{ planCarrera.carrera.codigo_carrera }}
+            </span>
+          </div>
+          <div class="carrera-actions">
+            <span class="asignaturas-count">
+              {{ getAsignaturasForCarrera(planCarrera).length }} asignaturas
+            </span>
+            <button class="btn btn-sm btn-add" (click)="onAddAsignatura(planCarrera); $event.stopPropagation()" title="Agregar asignaturas">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <button class="btn btn-sm btn-delete" (click)="onDeleteCarrera(planCarrera); $event.stopPropagation()" title="Eliminar carrera">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Asignaturas (expandible) -->
+        <div *ngIf="isCarreraExpanded(planCarrera.id_plan_carrera)" class="asignaturas-container">
+          <div *ngIf="getAsignaturasForCarrera(planCarrera).length === 0" class="empty-asignaturas">
+            <p>No hay asignaturas agregadas a esta carrera</p>
+            <button class="btn btn-sm btn-primary" (click)="onAddAsignatura(planCarrera)">
+              <i class="fa-solid fa-plus"></i>
+              Agregar Asignaturas
+            </button>
+          </div>
+
+          <div *ngIf="getAsignaturasForCarrera(planCarrera).length > 0" class="asignaturas-list">
+            <div *ngFor="let planCarreraAsignatura of getAsignaturasForCarrera(planCarrera)" class="asignatura-item">
+              <div class="asignatura-info">
+                <i class="fa-solid fa-book"></i>
+                <span class="asignatura-name">{{ planCarreraAsignatura.asignatura?.nombre_asignatura || 'Sin nombre' }}</span>
+                <span *ngIf="planCarreraAsignatura.asignatura && planCarreraAsignatura.asignatura.codigo_asignatura" class="asignatura-code">
+                  {{ planCarreraAsignatura.asignatura.codigo_asignatura }}
+                </span>
+              </div>
+              <button class="btn btn-sm btn-delete" (click)="onDeleteAsignatura(planCarrera, planCarreraAsignatura)" title="Eliminar asignatura">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Agregar Carreras -->
+  <div *ngIf="showAddCarreraModal" class="modal-overlay" (click)="showAddCarreraModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Agregar Carreras al Plan</h3>
+        <button class="btn-close" (click)="showAddCarreraModal = false">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="loadingCarreras" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando carreras...</p>
+        </div>
+        <div *ngIf="!loadingCarreras && availableCarreras.length === 0" class="empty-state">
+          <p>No hay carreras disponibles para agregar</p>
+        </div>
+        <div *ngIf="!loadingCarreras && availableCarreras.length > 0" class="checklist">
+          <label *ngFor="let carrera of availableCarreras" class="checkbox-item">
+            <input type="checkbox" [checked]="selectedCarreras.includes(carrera.id_carrera)" (change)="toggleCarreraSelection(carrera.id_carrera, $event)">
+            <span>{{ carrera.nombre_carrera }} <small *ngIf="carrera.codigo_carrera">({{ carrera.codigo_carrera }})</small></span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showAddCarreraModal = false">Cancelar</button>
+        <button class="btn btn-primary" (click)="onSaveCarreras()" [disabled]="selectedCarreras.length === 0 || loading">
+          Agregar ({{ selectedCarreras.length }})
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Agregar Asignaturas -->
+  <div *ngIf="showAddAsignaturaModal" class="modal-overlay" (click)="showAddAsignaturaModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Agregar Asignaturas a {{ selectedPlanCarrera && selectedPlanCarrera.carrera ? selectedPlanCarrera.carrera.nombre_carrera : 'Carrera' }}</h3>
+        <button class="btn-close" (click)="showAddAsignaturaModal = false">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="loadingAsignaturas" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando asignaturas...</p>
+        </div>
+        <div *ngIf="!loadingAsignaturas && availableAsignaturas.length === 0" class="empty-state">
+          <p>No hay asignaturas disponibles para agregar</p>
+        </div>
+        <div *ngIf="!loadingAsignaturas && availableAsignaturas.length > 0" class="checklist">
+          <label *ngFor="let asignatura of availableAsignaturas" class="checkbox-item">
+            <input type="checkbox" [checked]="selectedAsignaturas.includes(asignatura.id_asignatura)" (change)="toggleAsignaturaSelection(asignatura.id_asignatura, $event)">
+            <span>{{ asignatura.nombre_asignatura }} <small *ngIf="asignatura.codigo_asignatura">({{ asignatura.codigo_asignatura }})</small></span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showAddAsignaturaModal = false">Cancelar</button>
+        <button class="btn btn-primary" (click)="onSaveAsignaturas()" [disabled]="selectedAsignaturas.length === 0 || loading">
+          Agregar ({{ selectedAsignaturas.length }})
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

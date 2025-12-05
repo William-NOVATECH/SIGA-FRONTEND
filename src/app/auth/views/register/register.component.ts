@@ -79,7 +79,8 @@ export class RegisterComponent implements OnInit {
     const registerData = {
       username: this.f['username'].value,
       email: this.f['email'].value,
-      password: this.f['password'].value
+      password: this.f['password'].value,
+      id_rol: 6 // Rol de invitado asignado automáticamente
     };
 
     this.authService.registerUser(registerData)

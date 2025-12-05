@@ -6,7 +6,9 @@ import { AsignaturaService } from '../../services/asignatura.service';
 import { DocenteService } from '../../services/docente.service';
 import { CreateGrupoAsignaturaDocente } from '../../models/create-grupo-asignatura-docente.model';
 import { CreateBulkGrupoAsignaturaDocente } from '../../models/create-bulk-grupo-asignatura-docente.model';
-import { BulkCreateResponse, GrupoAsignaturaDocente } from '../../models/grupo-asignatura-docente.model';
+import { BulkCreateResponse, GrupoAsignaturaDocente, CreateVersionInicialDto } from '../../models/grupo-asignatura-docente.model';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-manage-grupo-asignatura-docente',
@@ -30,7 +32,9 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
     private grupoAsignaturaDocenteService: GrupoAsignaturaDocenteService,
     private grupoService: GrupoService,
     private asignaturaService: AsignaturaService,
-    private docenteService: DocenteService
+    private docenteService: DocenteService,
+    private authService: AuthService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -143,16 +147,43 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
     this.loading = true;
 
     if (this.mode === 'create') {
-      this.grupoAsignaturaDocenteService.create(dto).subscribe({
-        next: () => {
-          this.router.navigate(['/grupo-asignatura-docente']);
-        },
-        error: (error) => {
-          console.error('Error creating asignacion:', error);
-          alert('Error al crear la asignación: ' + (error.error?.message || error.message));
-          this.loading = false;
-        }
-      });
+      // Si es coordinador, usar createVersionInicial
+      if (this.authService.isCoordinador()) {
+        const versionInicialDto: CreateVersionInicialDto = {
+          id_grupo: dto.id_grupo,
+          id_asignatura: dto.id_asignatura,
+          id_docente: dto.id_docente,
+          estado: dto.estado || 'activa',
+          observaciones: dto.observaciones
+        };
+        
+        this.grupoAsignaturaDocenteService.createVersionInicial(versionInicialDto).subscribe({
+          next: (asignacion) => {
+            this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
+            this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacion.id_grupo_asignatura_docente]);
+          },
+          error: (error) => {
+            console.error('Error creating version inicial:', error);
+            const errorMessage = error.error?.message || error.message || 'No se pudo crear la versión inicial.';
+            this.toastService.showError('Error al crear', errorMessage);
+            this.loading = false;
+          }
+        });
+      } else {
+        // Si no es coordinador, usar el método normal
+        this.grupoAsignaturaDocenteService.create(dto).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Asignación creada', 'La asignación se ha creado correctamente.');
+            this.router.navigate(['/grupo-asignatura-docente']);
+          },
+          error: (error) => {
+            console.error('Error creating asignacion:', error);
+            const errorMessage = error.error?.message || error.message || 'No se pudo crear la asignación.';
+            this.toastService.showError('Error al crear', errorMessage);
+            this.loading = false;
+          }
+        });
+      }
     } else if (this.mode === 'edit' && this.asignacion) {
       this.grupoAsignaturaDocenteService.update(this.asignacion.id_grupo_asignatura_docente, dto).subscribe({
         next: () => {
@@ -170,24 +201,41 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
 onSubmitBulkForm(dto: CreateBulkGrupoAsignaturaDocente): void {
   this.loading = true;
 
-  this.grupoAsignaturaDocenteService.createBulk(dto).subscribe({
+  // Asegurar que id_plan sea un número válido
+  if (!dto.id_plan || dto.id_plan < 1) {
+    this.toastService.showError('Error de validación', 'El plan es requerido y debe ser válido.');
+    this.loading = false;
+    return;
+  }
+
+  // Convertir id_plan a número si viene como string
+  const bulkDto: CreateBulkGrupoAsignaturaDocente = {
+    ...dto,
+    id_plan: Number(dto.id_plan),
+    id_grupo: Number(dto.id_grupo),
+    asignaturas_docentes: dto.asignaturas_docentes.map(item => ({
+      id_asignatura: Number(item.id_asignatura),
+      id_docente: Number(item.id_docente)
+    }))
+  };
+
+  this.grupoAsignaturaDocenteService.createBulk(bulkDto).subscribe({
     next: (response: BulkCreateResponse) => {
+      this.loading = false;
       if (response.fallidas === 0) {
-        alert(`¡Éxito! Se crearon ${response.exitosas} asignaciones correctamente.`);
+        this.toastService.showSuccess('Asignaciones creadas', `Se crearon ${response.exitosas} asignaciones correctamente.`);
         this.router.navigate(['/grupo-asignatura-docente']);
       } else {
-        const mensaje = `Se crearon ${response.exitosas} asignaciones exitosamente, pero ${response.fallidas} fallaron:\n\n` +
-          response.errores.map((error: any) => 
-            `• Asignatura ${error.asignatura}, Docente ${error.docente}: ${error.error}`
-          ).join('\n');
-        
-        alert(mensaje);
+        const mensaje = `Se crearon ${response.exitosas} asignaciones exitosamente, pero ${response.fallidas} fallaron.`;
+        this.toastService.showWarn('Creación parcial', mensaje);
+        console.warn('Errores:', response.errores);
         this.router.navigate(['/grupo-asignatura-docente']);
       }
     },
     error: (error) => {
       console.error('Error creating bulk asignaciones:', error);
-      alert('Error al crear las asignaciones: ' + (error.error?.message || error.message));
+      const errorMessage = error.error?.message || error.message || 'No se pudieron crear las asignaciones.';
+      this.toastService.showError('Error al crear', errorMessage);
       this.loading = false;
     }
   });

@@ -8,21 +8,133 @@
 .page-container {
   max-width: 1200px;
   margin: 0 auto;
+  animation: fadeIn 0.5s ease-in;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading State */
 .loading-full {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
-  font-size: 1.2rem;
-  color: #0072BB;
-  font-weight: 500;
+  min-height: 60vh;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  margin: 2rem 0;
 }
 
-/* Responsive */
+.loading-full::before {
+  content: '';
+  width: 60px;
+  height: 60px;
+  border: 4px solid #e5e7eb;
+  border-left: 4px solid #0072BB;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-full::after {
+  content: 'Cargando formulario...';
+  font-size: 1.2rem;
+  color: #0072BB;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+/* Form Container Wrapper */
+.page-container > app-grupo-asignatura-docente-form,
+.page-container > app-grupo-asignatura-docente-bulk-form {
+  display: block;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .page-container {
+    max-width: 100%;
+    padding: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
+  :host {
+    padding: 1rem 0.5rem;
+  }
+
   .page-container {
     padding: 0.5rem;
+  }
+
+  .loading-full {
+    min-height: 50vh;
+    padding: 2rem 1.5rem;
+    margin: 1rem 0;
+    border-radius: 16px;
+  }
+
+  .loading-full::before {
+    width: 50px;
+    height: 50px;
+    border-width: 3px;
+  }
+
+  .loading-full::after {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :host {
+    padding: 0.5rem;
+  }
+
+  .page-container {
+    padding: 0.25rem;
+  }
+
+  .loading-full {
+    min-height: 40vh;
+    padding: 1.5rem 1rem;
+    border-radius: 12px;
+  }
+
+  .loading-full::before {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+  }
+
+  .loading-full::after {
+    font-size: 0.9rem;
   }
 }

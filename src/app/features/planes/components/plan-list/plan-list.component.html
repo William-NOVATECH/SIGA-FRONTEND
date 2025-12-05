@@ -1,0 +1,85 @@
+<div class="plan-list-container">
+  <!-- Header -->
+  <div class="list-header">
+    <h2>Planes Académicos</h2>
+    <button class="btn btn-primary" (click)="onCreate()">
+      <i class="fa-solid fa-plus"></i>
+      Nuevo Plan
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando planes...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-state">
+    <i class="fa-solid fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadPlanes()">Reintentar</button>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && planes.length === 0" class="empty-state">
+    <i class="fa-solid fa-clipboard-list"></i>
+    <p>No hay planes registrados</p>
+    <button class="btn btn-primary" (click)="onCreate()">
+      <i class="fa-solid fa-plus"></i>
+      Crear primer plan
+    </button>
+  </div>
+
+  <!-- Plans Grid -->
+  <div *ngIf="!loading && !error && planes.length > 0" class="plans-grid">
+    <div *ngFor="let plan of planes" class="plan-card">
+      <div class="plan-card-header">
+        <div class="plan-title-section">
+          <h3>{{ plan.nombre_plan }}</h3>
+          <span *ngIf="plan.codigo_plan" class="plan-code">{{ plan.codigo_plan }}</span>
+        </div>
+        <span *ngIf="getAnio(plan)" class="plan-year">{{ getAnio(plan) }}</span>
+      </div>
+      
+      <div class="plan-card-body">
+        <p *ngIf="plan.descripcion" class="plan-description">{{ plan.descripcion }}</p>
+        <div class="plan-dates" *ngIf="getFechaInicio(plan) || getFechaFin(plan)">
+          <span *ngIf="getFechaInicio(plan)" class="date-item">
+            <i class="fa-solid fa-calendar-day"></i>
+            <strong>Inicio:</strong> {{ formatDate(getFechaInicio(plan)) }}
+          </span>
+          <span *ngIf="getFechaFin(plan)" class="date-item">
+            <i class="fa-solid fa-calendar-check"></i>
+            <strong>Fin:</strong> {{ formatDate(getFechaFin(plan)) }}
+          </span>
+        </div>
+        <div class="plan-meta">
+          <span *ngIf="plan.estado" class="plan-status" [class.active]="plan.estado === 'activo'">
+            {{ plan.estado }}
+          </span>
+          <span class="plan-date">
+            <i class="fa-solid fa-calendar"></i>
+            {{ formatDate(plan.fecha_creacion) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="plan-card-actions">
+        <button class="btn btn-view" (click)="onView(plan.id_plan)" title="Ver detalles">
+          <i class="fa-solid fa-eye"></i>
+          <span>Ver</span>
+        </button>
+        <button class="btn btn-edit" (click)="onEdit(plan.id_plan)" title="Editar plan">
+          <i class="fa-solid fa-pencil"></i>
+          <span>Editar</span>
+        </button>
+        <button class="btn btn-delete" (click)="onDelete(plan.id_plan)" title="Eliminar plan">
+          <i class="fa-solid fa-trash"></i>
+          <span>Eliminar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -185,6 +185,16 @@ router-outlet + * {
   text-overflow: ellipsis;
 }
 
+.user-role {
+  font-size: 12px;
+  color: #F7CD02;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+}
+
 .logout-btn {
   display: flex;
   align-items: center;

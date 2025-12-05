@@ -16,7 +16,8 @@
           </div>
           <div class="user-details">
             <span class="user-name">{{ currentUser.username }}</span>
-            <span class="user-email">{{ currentUser.email }}</span>
+            <span class="user-role" *ngIf="primaryRole">{{ primaryRole }}</span>
+            <span class="user-email" *ngIf="!primaryRole">{{ currentUser.email }}</span>
           </div>
         </div>
         <button class="logout-btn" (click)="logOut()">
@@ -42,6 +43,14 @@
             routerLinkActive="active">
           <span class="menu-icon">💼</span>
           <span class="menu-text">Administración</span>
+        </li>
+
+        <!-- Roles -->
+        <li class="menu-item" 
+            routerLink="/admin/roles"
+            routerLinkActive="active">
+          <span class="menu-icon">🛡️</span>
+          <span class="menu-text">Roles</span>
         </li>
 
         <!-- Inicio -->
@@ -96,8 +105,15 @@
         <li class="menu-item" 
             routerLink="/carga-docente"
             routerLinkActive="active">
-          <span class="menu-icon">📝</span>
+          <span class="menu-icon">👨‍🏫</span>
           <span class="menu-text">Carga Docente</span>
+        </li>
+
+        <li class="menu-item" 
+            routerLink="/planes"
+            routerLinkActive="active">
+          <span class="menu-icon">�</span>
+          <span class="menu-text">Planes</span>
         </li>
       </ul>
     </nav>

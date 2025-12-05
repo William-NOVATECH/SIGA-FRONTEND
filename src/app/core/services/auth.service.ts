@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, tap, map } from 'rxjs/operators';
 import { Observable, throwError, of } from 'rxjs';
 import { loginRequest } from '../../auth/models/login-request';
 import { registerRequest } from '../../auth/models/register-request';
@@ -199,5 +199,228 @@ export class AuthService {
       console.error('Error decoding token:', error);
       return null;
     }
+  }
+
+  // Método para obtener los roles del usuario desde el token
+  public getUserRoles(): string[] {
+    const token = this.getToken();
+    if (!token) return [];
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.roles || [];
+    } catch (error) {
+      console.error('Error decoding roles from token:', error);
+      return [];
+    }
+  }
+
+  // Método para obtener el usuario actual con sus roles desde el backend
+  public fetchCurrentUserWithRoles(): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return of(null);
+    }
+
+    // Obtener todos los usuarios con roles y filtrar el usuario actual
+    return this.http.get<Usuario[]>(`${this.nestJsUrl}/usuario/with-roles`).pipe(
+      map((usuarios: Usuario[]) => {
+        // Obtener el ID del usuario actual desde el token
+        const userId = this.getUserIdFromToken();
+        if (!userId) {
+          console.warn('No se pudo obtener el ID del usuario desde el token');
+          return null;
+        }
+
+        // Buscar el usuario actual en la lista
+        const currentUser = usuarios.find((u: Usuario) => u.id_usuario === userId);
+        if (currentUser) {
+          // Guardar el usuario con roles
+          this.setCurrentUser(currentUser);
+          return currentUser;
+        }
+        return null;
+      }),
+      catchError((error) => {
+        console.error('Error fetching current user with roles:', error);
+        return of(null);
+      })
+    );
+  }
+
+  // Método para obtener el rol principal del usuario actual desde el backend
+  public getCurrentUserRole(): Observable<string | null> {
+    return this.fetchCurrentUserWithRoles().pipe(
+      map((user: Usuario | null) => {
+        if (!user || !user.roles || user.roles.length === 0) {
+          console.log('getCurrentUserRole: Usuario sin roles');
+          return null;
+        }
+
+        // SOLO obtener roles activos
+        const activeRoles = user.roles.filter((r: any) => r.estado === 'activo');
+        if (activeRoles.length === 0) {
+          console.warn('getCurrentUserRole: Usuario no tiene roles activos. Roles disponibles:', user.roles.map((r: any) => ({ nombre: r.rol?.nombre_rol, estado: r.estado })));
+          return null;
+        }
+
+        // Obtener el primer rol activo
+        const activeRole = activeRoles[0];
+        if (activeRole && activeRole.rol) {
+          console.log('getCurrentUserRole: Rol activo encontrado:', activeRole.rol.nombre_rol);
+          return activeRole.rol.nombre_rol;
+        }
+
+        return null;
+      })
+    );
+  }
+
+  // Método para obtener todos los roles activos del usuario
+  public getActiveRoles(): Observable<string[]> {
+    return this.fetchCurrentUserWithRoles().pipe(
+      map((user: Usuario | null) => {
+        if (!user || !user.roles || user.roles.length === 0) {
+          return [];
+        }
+
+        // SOLO obtener roles activos
+        const activeRoles = user.roles
+          .filter((r: any) => r.estado === 'activo')
+          .map((r: any) => r.rol?.nombre_rol)
+          .filter((nombre: string | undefined) => nombre !== undefined) as string[];
+
+        console.log('getActiveRoles: Roles activos encontrados:', activeRoles);
+        return activeRoles;
+      }),
+      catchError((error) => {
+        console.error('Error obteniendo roles activos:', error);
+        return of([]);
+      })
+    );
+  }
+
+  // Cache para el rol del usuario desde el backend
+  private cachedUserRole: string | null = null;
+  private roleCacheTimestamp: number = 0;
+  private readonly ROLE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+  // Método para obtener el rol del usuario desde el backend (con cache)
+  private getUserRoleFromBackend(): Observable<string | null> {
+    const now = Date.now();
+    // Si hay cache válido, retornarlo
+    if (this.cachedUserRole && (now - this.roleCacheTimestamp) < this.ROLE_CACHE_DURATION) {
+      return of(this.cachedUserRole);
+    }
+
+    // Obtener desde el backend
+    return this.getCurrentUserRole().pipe(
+      tap((role) => {
+        if (role) {
+          this.cachedUserRole = role;
+          this.roleCacheTimestamp = now;
+        }
+      })
+    );
+  }
+
+  // Método para verificar si el usuario tiene un rol específico
+  public hasRole(role: string): boolean {
+    const roles = this.getUserRoles();
+    return roles.includes(role.toUpperCase()) || roles.includes(role.toLowerCase());
+  }
+
+  // Método para verificar si el usuario tiene un rol específico (incluyendo backend)
+  public hasRoleFromBackend(roleName: string): Observable<boolean> {
+    // Primero intentar desde el token
+    if (this.hasRole(roleName)) {
+      return of(true);
+    }
+
+    // Si no está en el token, intentar desde el backend
+    return this.getUserRoleFromBackend().pipe(
+      map((role) => {
+        if (!role) return false;
+        const normalizedRole = role.toLowerCase();
+        const normalizedSearch = roleName.toLowerCase();
+        return normalizedRole.includes(normalizedSearch) || normalizedSearch.includes(normalizedRole);
+      }),
+      catchError(() => of(false))
+    );
+  }
+
+  // Método para verificar si el usuario es coordinador (síncrono - desde token)
+  public isCoordinador(): boolean {
+    return this.hasRole('COORDINADOR') || this.hasRole('coordinador');
+  }
+
+  // Método para verificar si el usuario es coordinador (incluyendo backend, solo roles activos)
+  public isCoordinadorAsync(): Observable<boolean> {
+    // Verificar desde el backend (solo roles activos)
+    return this.getActiveRoles().pipe(
+      map((roles) => {
+        const isCoord = roles.some(role => {
+          const normalized = role.toLowerCase();
+          return normalized === 'coordinador' || normalized.includes('coordinador');
+        });
+        console.log('isCoordinadorAsync: Verificación desde backend (solo activos):', isCoord, 'Roles activos:', roles);
+        return isCoord;
+      }),
+      catchError((error) => {
+        console.error('Error verificando si es coordinador:', error);
+        // Fallback: verificar desde token si falla el backend
+        return of(this.isCoordinador());
+      })
+    );
+  }
+
+  // Método para verificar si el usuario es director (síncrono - desde token)
+  public isDirector(): boolean {
+    return this.hasRole('DIRECTORES') || this.hasRole('directores') || this.hasRole('DIRECTOR') || this.hasRole('director');
+  }
+
+  // Método para verificar si el usuario es director (incluyendo backend, solo roles activos)
+  public isDirectorAsync(): Observable<boolean> {
+    // Verificar desde el backend (solo roles activos)
+    return this.getActiveRoles().pipe(
+      map((roles) => {
+        const isDir = roles.some(role => {
+          const normalized = role.toLowerCase();
+          return normalized === 'director' || normalized === 'directores' || normalized.includes('director');
+        });
+        console.log('isDirectorAsync: Verificación desde backend (solo activos):', isDir, 'Roles activos:', roles);
+        return isDir;
+      }),
+      catchError((error) => {
+        console.error('Error verificando si es director:', error);
+        // Fallback: verificar desde token si falla el backend
+        return of(this.isDirector());
+      })
+    );
+  }
+
+  // Método para verificar si el usuario es administrador (síncrono - desde token)
+  public isAdministrador(): boolean {
+    return this.hasRole('ADMINISTRADOR') || this.hasRole('administrador') || this.hasRole('ADMIN') || this.hasRole('admin');
+  }
+
+  // Método para verificar si el usuario es administrador (incluyendo backend, solo roles activos)
+  public isAdministradorAsync(): Observable<boolean> {
+    // Verificar desde el backend (solo roles activos)
+    return this.getActiveRoles().pipe(
+      map((roles) => {
+        const isAdmin = roles.some(role => {
+          const normalized = role.toLowerCase();
+          return normalized === 'administrador' || normalized === 'admin' || normalized.includes('administrador');
+        });
+        console.log('isAdministradorAsync: Verificación desde backend (solo activos):', isAdmin, 'Roles activos:', roles);
+        return isAdmin;
+      }),
+      catchError((error) => {
+        console.error('Error verificando si es administrador:', error);
+        // Fallback: verificar desde token si falla el backend
+        return of(this.isAdministrador());
+      })
+    );
   }
 }

@@ -55,6 +55,10 @@
           <span class="fecha-actualizacion">
             Actualizado: {{ getFechaActualizacion(grupo) | date:'dd/MM/yyyy' }}
           </span>
+          <span *ngIf="grupo.periodo_academico" class="periodo-academico">
+            <i class="fa-solid fa-calendar-alt"></i>
+            {{ grupo.periodo_academico }}
+          </span>
         </div>
       </div>
 
@@ -77,6 +81,7 @@
               <th>Código Docente</th>
               <th>Fecha Asignación</th>
               <th>Estado</th>
+              <th>Versión/Aprobación</th>
               <th>Observaciones</th>
               <th>Acciones</th>
             </tr>
@@ -84,29 +89,54 @@
           <tbody>
             <tr *ngFor="let asignacion of grupo.asignaciones">
               <td>
-                <strong>{{ asignacion.asignatura.codigo_asignatura }}</strong>
+                <strong>{{ asignacion.asignatura.codigo_asignatura || 'N/A' }}</strong>
               </td>
-              <td>{{ asignacion.asignatura.nombre_asignatura }}</td>
+              <td>{{ asignacion.asignatura.nombre_asignatura || 'Sin nombre' }}</td>
               <td>
-                {{ asignacion.docente.nombres }} {{ asignacion.docente.apellidos }}
+                <span *ngIf="asignacion.docente">
+                  {{ asignacion.docente.nombres }} {{ asignacion.docente.apellidos }}
+                </span>
+                <span *ngIf="!asignacion.docente" class="no-data">N/A</span>
               </td>
               <td>
-                <span *ngIf="asignacion.docente.codigo_docente" class="docente-codigo">
+                <span *ngIf="asignacion.docente?.codigo_docente" class="docente-codigo">
                   {{ asignacion.docente.codigo_docente }}
                 </span>
-                <span *ngIf="!asignacion.docente.codigo_docente" class="no-codigo">
+                <span *ngIf="!asignacion.docente?.codigo_docente" class="no-codigo">
                   N/A
                 </span>
               </td>
-              <td>{{ asignacion.fecha_asignacion | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span *ngIf="asignacion.fecha_asignacion">
+                  {{ asignacion.fecha_asignacion | date:'dd/MM/yyyy' }}
+                </span>
+                <span *ngIf="!asignacion.fecha_asignacion" class="no-data">N/A</span>
+              </td>
               <td>
                 <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
-                  {{ asignacion.estado }}
+                  {{ asignacion.estado || 'N/A' }}
                 </span>
               </td>
               <td>
-                <span *ngIf="asignacion.observaciones" class="observaciones-text">
-                  {{ asignacion.observaciones }}
+                <div class="versionamiento-info">
+                  <span *ngIf="asignacion.estado_aprobacion" 
+                        [class]="getEstadoAprobacionClass(asignacion.estado_aprobacion)" 
+                        class="estado-aprobacion-badge">
+                    <i class="fa-solid" [ngClass]="getEstadoAprobacionIcon(asignacion.estado_aprobacion)"></i>
+                    {{ getEstadoAprobacionLabel(asignacion.estado_aprobacion) }}
+                  </span>
+                  <span *ngIf="asignacion.version_actual" class="version-badge">
+                    <i class="fa-solid fa-code-branch"></i>
+                    v{{ asignacion.version_actual }}
+                  </span>
+                  <span *ngIf="!asignacion.estado_aprobacion && !asignacion.version_actual" class="no-versionamiento">
+                    Sin versionamiento
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span *ngIf="asignacion.observaciones" class="observaciones-text" [title]="asignacion.observaciones">
+                  {{ asignacion.observaciones.length > 50 ? (asignacion.observaciones.substring(0, 50) + '...') : asignacion.observaciones }}
                 </span>
                 <span *ngIf="!asignacion.observaciones" class="no-observaciones">
                   -
@@ -116,20 +146,23 @@
                 <button 
                   (click)="onView(asignacion.id_grupo_asignatura_docente)" 
                   class="btn btn-sm btn-view"
+                  title="Ver detalles"
                 >
-                  Ver
+                  <i class="fa-solid fa-eye"></i>
                 </button>
                 <button 
                   (click)="onEdit(asignacion.id_grupo_asignatura_docente)" 
                   class="btn btn-sm btn-edit"
+                  title="Editar asignación"
                 >
-                  Editar
+                  <i class="fa-solid fa-pencil"></i>
                 </button>
                 <button 
                   (click)="onDelete(asignacion.id_grupo_asignatura_docente)" 
                   class="btn btn-sm btn-delete"
+                  title="Eliminar asignación"
                 >
-                  Eliminar
+                  <i class="fa-solid fa-trash"></i>
                 </button>
               </td>
             </tr>

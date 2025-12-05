@@ -1,109 +1,188 @@
 <div class="form-container">
-  <h2>{{ isEdit ? 'Editar' : 'Crear' }} Asignación</h2>
-
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    
-    <!-- Grupo -->
-    <div class="form-group">
-      <label for="id_grupo">Grupo *</label>
-      <select 
-        id="id_grupo" 
-        formControlName="id_grupo"
-        [class.error]="form.get('id_grupo')?.invalid && form.get('id_grupo')?.touched"
-      >
-        <option value="">Seleccionar grupo</option>
-        <option *ngFor="let grupo of grupos" [value]="grupo.id_grupo">
-          {{ grupo.codigo_grupo }} - {{ grupo.nombre_grupo }}
-        </option>
-      </select>
-      <div *ngIf="form.get('id_grupo')?.invalid && form.get('id_grupo')?.touched" class="error-message">
-        Grupo es requerido
+  <div class="form-card">
+    <!-- Header -->
+    <div class="form-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fa-solid" [ngClass]="isEdit ? 'fa-pencil' : 'fa-plus-circle'"></i>
+        </div>
+        <div class="header-text">
+          <h1>{{ isEdit ? 'Editar' : 'Crear' }} Asignación</h1>
+          <p *ngIf="isEdit">Modifica los datos de la asignación existente</p>
+          <p *ngIf="!isEdit && isCoordinador()">
+            Crea una versión inicial de la carga docente. Una vez creada, podrás enviarla a revisión al director de departamento.
+          </p>
+          <p *ngIf="!isEdit && !isCoordinador()">
+            Asigna una asignatura y docente a un grupo
+          </p>
+        </div>
       </div>
     </div>
 
-    <!-- Asignatura -->
-    <div class="form-group">
-      <label for="id_asignatura">Asignatura *</label>
-      <select 
-        id="id_asignatura" 
-        formControlName="id_asignatura"
-        [class.error]="form.get('id_asignatura')?.invalid && form.get('id_asignatura')?.touched"
-      >
-        <option value="">Seleccionar asignatura</option>
-        <option *ngFor="let asignatura of asignaturas" [value]="asignatura.id_asignatura">
-          {{ asignatura.codigo_asignatura }} - {{ asignatura.nombre_asignatura }}
-        </option>
-      </select>
-      <div *ngIf="form.get('id_asignatura')?.invalid && form.get('id_asignatura')?.touched" class="error-message">
-        Asignatura es requerida
+    <!-- Form Content -->
+    <div class="form-content">
+      <!-- Mensaje informativo para coordinadores -->
+      <div *ngIf="!isEdit && isCoordinador()" class="info-banner">
+        <div class="info-banner-content">
+          <i class="fa-solid fa-info-circle"></i>
+          <div class="info-text">
+            <strong>Versión Inicial</strong>
+            <p>Como coordinador de carrera, estás creando una versión inicial de la carga docente. Esta quedará en estado "borrador" hasta que la envíes a revisión.</p>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Docente -->
-<!-- Docente -->
-<div class="form-group">
-  <label for="id_docente">Docente *</label>
-  <select 
-    id="id_docente" 
-    formControlName="id_docente"
-    [class.error]="form.get('id_docente')?.invalid && form.get('id_docente')?.touched"
-  >
-    <option value="">Seleccionar docente</option>
-    <option *ngFor="let docente of docentes" [value]="docente.id_docente">
-      {{ docente.nombres }} {{ docente.apellidos }} 
-      <span *ngIf="docente.codigo_docente">({{ docente.codigo_docente }})</span>
-    </option>
-  </select>
-  <div *ngIf="form.get('id_docente')?.invalid && form.get('id_docente')?.touched" class="error-message">
-    Docente es requerido
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="form-grid">
+          <!-- Grupo -->
+          <div class="form-group">
+            <label for="id_grupo" class="form-label">
+              <i class="fa-solid fa-users form-label-icon"></i>
+              Grupo <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <select 
+                id="id_grupo" 
+                formControlName="id_grupo"
+                class="form-select"
+                [class.error]="form.get('id_grupo')?.invalid && form.get('id_grupo')?.touched"
+              >
+                <option value="">Seleccionar grupo</option>
+                <option *ngFor="let grupo of grupos" [value]="grupo.id_grupo">
+                  {{ grupo.codigo_grupo }} - {{ grupo.nombre_grupo }}
+                </option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+              <i class="fa-solid fa-users input-icon"></i>
+            </div>
+            <div *ngIf="form.get('id_grupo')?.invalid && form.get('id_grupo')?.touched" class="error-text">
+              <i class="fa-solid fa-exclamation-circle error-text-icon"></i>
+              Grupo es requerido
+            </div>
+          </div>
+
+          <!-- Asignatura -->
+          <div class="form-group">
+            <label for="id_asignatura" class="form-label">
+              <i class="fa-solid fa-book form-label-icon"></i>
+              Asignatura <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <select 
+                id="id_asignatura" 
+                formControlName="id_asignatura"
+                class="form-select"
+                [class.error]="form.get('id_asignatura')?.invalid && form.get('id_asignatura')?.touched"
+              >
+                <option value="">Seleccionar asignatura</option>
+                <option *ngFor="let asignatura of asignaturas" [value]="asignatura.id_asignatura">
+                  {{ asignatura.codigo_asignatura }} - {{ asignatura.nombre_asignatura }}
+                </option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+              <i class="fa-solid fa-book input-icon"></i>
+            </div>
+            <div *ngIf="form.get('id_asignatura')?.invalid && form.get('id_asignatura')?.touched" class="error-text">
+              <i class="fa-solid fa-exclamation-circle error-text-icon"></i>
+              Asignatura es requerida
+            </div>
+          </div>
+
+          <!-- Docente -->
+          <div class="form-group">
+            <label for="id_docente" class="form-label">
+              <i class="fa-solid fa-user-tie form-label-icon"></i>
+              Docente <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <select 
+                id="id_docente" 
+                formControlName="id_docente"
+                class="form-select"
+                [class.error]="form.get('id_docente')?.invalid && form.get('id_docente')?.touched"
+              >
+                <option value="">Seleccionar docente</option>
+                <option *ngFor="let docente of docentes" [value]="docente.id_docente">
+                  {{ docente.nombres }} {{ docente.apellidos }}
+                  <span *ngIf="docente.codigo_docente"> ({{ docente.codigo_docente }})</span>
+                </option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+              <i class="fa-solid fa-user-tie input-icon"></i>
+            </div>
+            <div *ngIf="form.get('id_docente')?.invalid && form.get('id_docente')?.touched" class="error-text">
+              <i class="fa-solid fa-exclamation-circle error-text-icon"></i>
+              Docente es requerido
+            </div>
+          </div>
+
+          <!-- Estado -->
+          <div class="form-group">
+            <label for="estado" class="form-label">
+              <i class="fa-solid fa-toggle-on form-label-icon"></i>
+              Estado <span class="required-star">*</span>
+            </label>
+            <div class="input-group">
+              <select 
+                id="estado" 
+                formControlName="estado"
+                class="form-select"
+                [class.error]="form.get('estado')?.invalid && form.get('estado')?.touched"
+              >
+                <option *ngFor="let estado of estados" [value]="estado.value">
+                  {{ estado.label }}
+                </option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+              <i class="fa-solid fa-toggle-on input-icon"></i>
+            </div>
+            <div *ngIf="form.get('estado')?.invalid && form.get('estado')?.touched" class="error-text">
+              <i class="fa-solid fa-exclamation-circle error-text-icon"></i>
+              Estado es requerido
+            </div>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="form-group full-width">
+            <label for="observaciones" class="form-label">
+              <i class="fa-solid fa-comment form-label-icon"></i>
+              Observaciones
+            </label>
+            <div class="input-group">
+              <textarea 
+                id="observaciones" 
+                formControlName="observaciones"
+                class="form-textarea"
+                rows="3"
+                placeholder="Observaciones opcionales sobre la asignación..."
+              ></textarea>
+              <i class="fa-solid fa-align-left input-icon"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button 
+            type="button" 
+            (click)="onCancel()" 
+            class="btn btn-secondary"
+            [disabled]="loading"
+          >
+            <i class="fa-solid fa-times btn-secondary-icon"></i>
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="loading || form.invalid"
+          >
+            <i *ngIf="!loading" class="fa-solid btn-primary-icon" [ngClass]="isEdit ? 'fa-save' : 'fa-check'"></i>
+            <div *ngIf="loading" class="loading-spinner"></div>
+            {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
-
-    <!-- Estado -->
-    <div class="form-group">
-      <label for="estado">Estado *</label>
-      <select 
-        id="estado" 
-        formControlName="estado"
-        [class.error]="form.get('estado')?.invalid && form.get('estado')?.touched"
-      >
-        <option *ngFor="let estado of estados" [value]="estado.value">
-          {{ estado.label }}
-        </option>
-      </select>
-      <div *ngIf="form.get('estado')?.invalid && form.get('estado')?.touched" class="error-message">
-        Estado es requerido
-      </div>
-    </div>
-
-    <!-- Observaciones -->
-    <div class="form-group">
-      <label for="observaciones">Observaciones</label>
-      <textarea 
-        id="observaciones" 
-        formControlName="observaciones"
-        rows="3"
-        placeholder="Observaciones opcionales..."
-      ></textarea>
-    </div>
-
-    <!-- Form Actions -->
-    <div class="form-actions">
-      <button 
-        type="button" 
-        (click)="onCancel()" 
-        class="btn btn-secondary"
-        [disabled]="loading"
-      >
-        Cancelar
-      </button>
-      <button 
-        type="submit" 
-        class="btn btn-primary"
-        [disabled]="loading || form.invalid"
-      >
-        {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }}
-      </button>
-    </div>
-  </form>
 </div>

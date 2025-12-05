@@ -160,21 +160,34 @@ export class GrupoListComponent implements OnInit {
 
   private adaptarGrupo(grupoRaw: any): Grupo {
     let idCarrera = grupoRaw.id_carrera;
-
     if (!idCarrera && grupoRaw.carrera) {
       idCarrera = grupoRaw.carrera.id_carrera;
+    }
+
+    let idPlan = grupoRaw.id_plan;
+    if (!idPlan && grupoRaw.plan) {
+      idPlan = grupoRaw.plan.id_plan;
+    }
+
+    let idDocenteTitular = grupoRaw.id_docente_titular;
+    if (!idDocenteTitular && grupoRaw.docente_titular) {
+      idDocenteTitular = grupoRaw.docente_titular.id_docente;
     }
 
     return {
       id_grupo: grupoRaw.id_grupo,
       id_carrera: idCarrera,
+      id_plan: idPlan || 0, // Valor por defecto si no existe
       codigo_grupo: grupoRaw.codigo_grupo,
       nombre_grupo: grupoRaw.nombre_grupo,
       periodo_academico: grupoRaw.periodo_academico,
+      id_docente_titular: idDocenteTitular,
       estado: grupoRaw.estado,
       min_asignaturas: grupoRaw.min_asignaturas,
       max_asignaturas: grupoRaw.max_asignaturas,
       carrera: grupoRaw.carrera,
+      plan: grupoRaw.plan,
+      docente_titular: grupoRaw.docente_titular,
       asignaturas_docentes: grupoRaw.asignaturas_docentes
     };
   }
