@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AsignaturaService } from '../../services/asignatura.service';
 import { CarreraService, Carrera } from '../../services/carrera.service';
 import { CreateAsignatura, UpdateAsignatura, Asignatura } from '../../models/asignatura.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-asignatura-form',
@@ -40,7 +41,8 @@ export class AsignaturaFormComponent implements OnInit {
     private asignaturaService: AsignaturaService,
     private carreraService: CarreraService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.asignaturaForm = this.fb.group({
       id_carrera: ['', Validators.required],
@@ -78,6 +80,10 @@ export class AsignaturaFormComponent implements OnInit {
       error: (error) => {
         console.error('Error loading carreras:', error);
         this.errorMessage = 'Error al cargar las carreras';
+        this.toastService.showError(
+          'Error al cargar carreras',
+          'No se pudieron cargar las carreras. Por favor, intente nuevamente.'
+        );
         this.loadingCarreras = false;
       }
     });
@@ -104,6 +110,8 @@ export class AsignaturaFormComponent implements OnInit {
         error: (error) => {
           console.error('Error loading asignatura:', error);
           this.errorMessage = 'Error al cargar la asignatura';
+          const errorMessage = error?.error?.message || 'No se pudo cargar la asignatura. Por favor, intente nuevamente.';
+          this.toastService.showError('Error al cargar asignatura', errorMessage);
           this.loading = false;
         }
       });
@@ -132,11 +140,17 @@ export class AsignaturaFormComponent implements OnInit {
         this.asignaturaService.update(this.asignaturaId, updateData).subscribe({
           next: () => {
             this.loading = false;
+            this.toastService.showSuccess(
+              'Asignatura actualizada',
+              'La asignatura se ha actualizado correctamente.'
+            );
             this.router.navigate(['/asignaturas']);
           },
           error: (error) => {
             console.error('Error updating asignatura:', error);
-            this.errorMessage = error.error?.message || 'Error al actualizar la asignatura';
+            const errorMessage = error?.error?.message || 'No se pudo actualizar la asignatura. Por favor, intente nuevamente.';
+            this.errorMessage = errorMessage;
+            this.toastService.showError('Error al actualizar', errorMessage);
             this.loading = false;
           }
         });
@@ -145,11 +159,17 @@ export class AsignaturaFormComponent implements OnInit {
         this.asignaturaService.create(createData).subscribe({
           next: () => {
             this.loading = false;
+            this.toastService.showSuccess(
+              'Asignatura creada',
+              'La asignatura se ha creado correctamente.'
+            );
             this.router.navigate(['/asignaturas']);
           },
           error: (error) => {
             console.error('Error creating asignatura:', error);
-            this.errorMessage = error.error?.message || 'Error al crear la asignatura';
+            const errorMessage = error?.error?.message || 'No se pudo crear la asignatura. Por favor, intente nuevamente.';
+            this.errorMessage = errorMessage;
+            this.toastService.showError('Error al crear', errorMessage);
             this.loading = false;
           }
         });
