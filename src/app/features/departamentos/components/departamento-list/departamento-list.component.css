@@ -96,6 +96,7 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   background: #f8fafc;
+  color: #1f2937;
 }
 
 .form-input:focus, .form-select:focus {
