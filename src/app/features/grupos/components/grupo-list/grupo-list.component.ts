@@ -1,7 +1,11 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { GrupoService } from '../../services/grupo.service';
 import { Grupo, QueryGrupoDto, PaginatedResponse, Carrera } from '../../models/grupo.model';
 import { CarreraService } from '../../services/carrera.service';
+import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
+import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-grupo-list',
@@ -14,53 +18,129 @@ export class GrupoListComponent implements OnInit {
   
   searchTerm: string = '';
   estadoFilter: string = '';
-  isLoading = false;
+  loading = false;
   
-  currentPage = 1;
-  itemsPerPage = 10;
-  totalItems = 0;
+  columns: TableColumn[] = [];
+  actions: TableAction[] = [];
 
   constructor(
     private grupoService: GrupoService,
-    private carreraService: CarreraService
+    private carreraService: CarreraService,
+    private router: Router,
+    private toastService: ToastService,
+    private confirmService: ConfirmService
   ) {}
 
   ngOnInit(): void {
+    this.setupTable();
     this.loadInitialData();
   }
 
+  setupTable(): void {
+    this.columns = [
+      { 
+        field: 'codigo_grupo', 
+        header: 'Código', 
+        sortable: true, 
+        width: '12%',
+        template: 'badge',
+        badgeClass: () => 'code-badge'
+      },
+      { 
+        field: 'nombre_grupo', 
+        header: 'Nombre', 
+        sortable: true, 
+        width: '20%',
+        format: (value) => value || 'Sin nombre'
+      },
+      {
+        field: 'carrera.nombre_carrera',
+        header: 'Carrera',
+        sortable: true,
+        width: '20%',
+        template: 'badge',
+        badgeClass: () => 'career-badge',
+        format: (value, row) => {
+          if (row?.carrera?.nombre_carrera) {
+            return row.carrera.nombre_carrera;
+          }
+          return 'Sin carrera';
+        }
+      },
+      { 
+        field: 'periodo_academico', 
+        header: 'Periodo', 
+        sortable: true, 
+        width: '12%' 
+      },
+      {
+        field: 'estado',
+        header: 'Estado',
+        sortable: true,
+        width: '10%',
+        template: 'status',
+        badgeClass: (value) => (value === 'activo' ? 'status-active' : 'status-inactive'),
+        format: (value) => (value === 'activo' ? 'Activo' : 'Inactivo')
+      }
+    ];
+
+    this.actions = [
+      {
+        label: 'Ver',
+        icon: 'fa-eye',
+        class: 'btn-view',
+        handler: (row: Grupo) => this.viewGrupo(row.id_grupo)
+      },
+      {
+        label: 'Editar',
+        icon: 'fa-pencil',
+        class: 'btn-edit',
+        handler: (row: Grupo) => this.editGrupo(row.id_grupo)
+      },
+      {
+        label: 'Eliminar',
+        icon: 'fa-trash',
+        class: 'btn-delete',
+        handler: (row: Grupo) => this.deleteGrupo(row.id_grupo)
+      }
+    ];
+  }
+
   async loadInitialData(): Promise<void> {
-    this.isLoading = true;
+    this.loading = true;
     
     try {
       await this.loadCarreras();
       await this.loadGrupos();
     } catch (error) {
       console.error('Error cargando datos:', error);
+      this.toastService.showError('Error al cargar', 'No se pudieron cargar los datos. Por favor, intente nuevamente.');
     } finally {
-      this.isLoading = false;
+      this.loading = false;
     }
   }
 
   async loadGrupos(): Promise<void> {
     return new Promise((resolve) => {
+      // Cargar todos los grupos sin paginación del backend, la paginación será local
       const query: QueryGrupoDto = {
-        page: this.currentPage,
-        limit: this.itemsPerPage,
         search: this.searchTerm || undefined,
         estado: this.estadoFilter || undefined
       };
 
       this.grupoService.findAll(query).subscribe({
-        next: (response) => {
-          let gruposRaw: any[];
+        next: (response: any) => {
+          let gruposRaw: any[] = [];
           
           if (this.isPaginatedResponse(response)) {
             gruposRaw = response.data;
-            this.totalItems = response.total;
+          } else if (Array.isArray(response)) {
+            gruposRaw = response;
+          } else if (response && typeof response === 'object' && 'data' in response) {
+            const responseData = (response as any).data;
+            gruposRaw = Array.isArray(responseData) ? responseData : [responseData];
           } else {
-            gruposRaw = response as any[];
-            this.totalItems = gruposRaw.length;
+            gruposRaw = [];
           }
 
           this.grupos = gruposRaw.map(grupoRaw => this.adaptarGrupo(grupoRaw));
@@ -69,6 +149,9 @@ export class GrupoListComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error loading grupos:', error);
+          const errorMessage = error?.error?.message || 'No se pudieron cargar los grupos. Por favor, intente nuevamente.';
+          this.toastService.showError('Error al cargar', errorMessage);
+          this.grupos = [];
           resolve();
         }
       });
@@ -163,47 +246,49 @@ export class GrupoListComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.currentPage = 1;
     this.loadGrupos();
   }
 
   onEstadoFilterChange(): void {
-    this.currentPage = 1;
     this.loadGrupos();
   }
 
   clearFilters(): void {
     this.searchTerm = '';
     this.estadoFilter = '';
-    this.currentPage = 1;
     this.loadGrupos();
   }
 
-  onPageChange(page: number): void {
-    this.currentPage = page;
-    this.loadGrupos();
+  createGrupo(): void {
+    this.router.navigate(['/grupos/new']);
+  }
+
+  viewGrupo(id: number): void {
+    this.router.navigate(['/grupos', id]);
+  }
+
+  editGrupo(id: number): void {
+    this.router.navigate(['/grupos', id, 'edit']);
   }
 
   deleteGrupo(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar este grupo?')) {
-      this.grupoService.remove(id).subscribe({
-        next: () => {
-          this.loadGrupos();
-        },
-        error: (error) => {
-          console.error('Error deleting grupo:', error);
-          alert('Error al eliminar el grupo: ' + error.message);
-        }
-      });
-    }
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.totalItems / this.itemsPerPage);
-  }
-
-  get pages(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    this.confirmService.confirmDelete(
+      () => {
+        this.grupoService.remove(id).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Grupo eliminado', 'El grupo se ha eliminado correctamente.');
+            this.loadGrupos();
+          },
+          error: (error) => {
+            console.error('Error deleting grupo:', error);
+            const errorMessage = error?.error?.message || 'No se pudo eliminar el grupo. Por favor, intente nuevamente.';
+            this.toastService.showError('Error al eliminar', errorMessage);
+          }
+        });
+      },
+      '¿Estás seguro de que quieres eliminar este grupo? Esta acción no se puede deshacer.',
+      'Confirmar eliminación'
+    );
   }
 
   getNombreCarrera(grupo: Grupo): string {
