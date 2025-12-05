@@ -44,15 +44,48 @@
   100% { transform: translateX(100%) rotate(45deg); }
 }
 
-.form-header h2 {
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.header-icon {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-icon i {
+  font-size: 2rem;
+  color: white;
+}
+
+.header-text h2 {
   font-size: 2.25rem;
   font-weight: 700;
   color: white;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   background: linear-gradient(135deg, #FFFFFF 0%, #F7CD02 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.header-text p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  font-weight: 300;
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* Estados */
@@ -127,10 +160,17 @@ form {
   margin-bottom: 0.75rem;
 }
 
+/* Input Group */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .form-group input,
-.form-group select {
+.form-group textarea {
   width: 100%;
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.5rem 1rem 3rem;
   border: 2px solid #e5e7eb;
   border-radius: 14px;
   font-size: 1rem;
@@ -139,10 +179,105 @@ form {
   background: white;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  font-family: inherit;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.form-group textarea::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 1rem 3rem 1rem 3rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+/* Input Icon */
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #02116F;
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-icon i {
+  font-size: 1rem;
+}
+
+/* Textarea icon positioning - ajustar para que esté en la parte superior */
+.input-group:has(textarea) .input-icon {
+  top: 1.25rem;
+  transform: none;
+  align-items: flex-start;
+}
+
+/* Fallback para navegadores que no soportan :has() */
+.input-group textarea ~ .input-icon {
+  top: 1.25rem;
+  transform: none;
+  align-items: flex-start;
+}
+
+/* Select Arrow */
+.select-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-arrow i {
+  font-size: 0.875rem;
+}
+
+/* Form Label Icon */
+.form-label-icon {
+  color: #02116F;
+  font-size: 1rem;
+  margin-right: 0.25rem;
+}
+
+/* Required Star */
+.required-star {
+  color: #ef4444;
+  font-weight: 700;
+  margin-left: 0.25rem;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: #0072BB;
   box-shadow: 0 0 0 4px rgba(0, 114, 187, 0.1);
@@ -150,7 +285,8 @@ form {
 }
 
 .form-group input:hover,
-.form-group select:hover {
+.form-group select:hover,
+.form-group textarea:hover {
   border-color: #cbd5e0;
 }
 
@@ -169,6 +305,19 @@ form {
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.error-text-icon {
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
 }
 
 /* Botones de Acción */
@@ -195,6 +344,37 @@ form {
   transition: all 0.3s ease;
   text-decoration: none;
   justify-content: center;
+}
+
+.btn-primary-icon,
+.btn-secondary-icon {
+  font-size: 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .btn-primary {

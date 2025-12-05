@@ -5,17 +5,20 @@
       <button *ngIf="currentView === 'list'" 
               class="btn btn-primary"
               (click)="onNewCargo()">
+        <i class="fa-solid fa-plus"></i>
         Nuevo Cargo
       </button>
       
       <button *ngIf="currentView !== 'list'" 
               class="btn btn-secondary"
               (click)="onBackToList()">
-        ← Volver al listado
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver al listado
       </button>
 
       <button class="btn btn-outline" (click)="onBackToDocentes()">
-        ← Volver a Docentes
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver a Docentes
       </button>
     </div>
   </div>

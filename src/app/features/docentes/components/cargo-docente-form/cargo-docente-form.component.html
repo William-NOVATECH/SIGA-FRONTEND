@@ -1,15 +1,25 @@
-<div class="cargo-docente-form">
+<div class="docente-form">
   <div class="form-header">
-    <h2>{{ cargoId ? 'Editar Cargo Docente' : 'Nuevo Cargo Docente' }}</h2>
+    <div class="header-content">
+      <div class="header-icon">
+        <i class="fa-solid fa-briefcase"></i>
+      </div>
+      <div class="header-text">
+        <h2>{{ cargoId ? 'Editar Cargo Docente' : 'Nuevo Cargo Docente' }}</h2>
+        <p>{{ cargoId ? 'Actualiza la información del cargo docente' : 'Completa el formulario para registrar un nuevo cargo docente' }}</p>
+      </div>
+    </div>
   </div>
 
   <!-- Loading -->
   <div *ngIf="loading" class="loading">
-    Cargando datos del cargo...
+    <div class="loading-spinner"></div>
+    <p>Cargando datos del cargo...</p>
   </div>
 
   <!-- Error -->
   <div *ngIf="error" class="error-message">
+    <i class="fa-solid fa-circle-exclamation error-icon"></i>
     {{ error }}
   </div>
 
@@ -18,52 +28,109 @@
     <div class="form-grid">
       <div class="form-section">
         <div class="form-group">
-          <label for="nombre_cargo">Nombre del Cargo *</label>
-          <input type="text" id="nombre_cargo" formControlName="nombre_cargo"
-                 [class.error]="f['nombre_cargo'].invalid && f['nombre_cargo'].touched">
+          <label for="nombre_cargo">
+            <i class="fa-solid fa-briefcase form-label-icon"></i>
+            Nombre del Cargo <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <input type="text" id="nombre_cargo" formControlName="nombre_cargo"
+                   [class.error]="f['nombre_cargo'].invalid && f['nombre_cargo'].touched"
+                   placeholder="Ej: Profesor Titular">
+            <div class="input-icon">
+              <i class="fa-solid fa-briefcase"></i>
+            </div>
+          </div>
           <div *ngIf="f['nombre_cargo'].invalid && f['nombre_cargo'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
             Nombre del cargo es requerido
           </div>
         </div>
 
         <div class="form-group">
-          <label for="descripcion">Descripción</label>
-          <textarea id="descripcion" formControlName="descripcion" rows="3"></textarea>
+          <label for="descripcion">
+            <i class="fa-solid fa-file-text form-label-icon"></i>
+            Descripción
+          </label>
+          <div class="input-group">
+            <textarea id="descripcion" formControlName="descripcion" rows="3"
+                      placeholder="Ingrese una descripción del cargo"></textarea>
+            <div class="input-icon">
+              <i class="fa-solid fa-file-text"></i>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="max_asignaturas">Máximo de Asignaturas *</label>
-          <input type="number" id="max_asignaturas" formControlName="max_asignaturas"
-                 min="1"
-                 [class.error]="f['max_asignaturas'].invalid && f['max_asignaturas'].touched">
+          <label for="max_asignaturas">
+            <i class="fa-solid fa-arrow-up form-label-icon"></i>
+            Máximo de Asignaturas <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <input type="number" id="max_asignaturas" formControlName="max_asignaturas"
+                   min="1"
+                   [class.error]="f['max_asignaturas'].invalid && f['max_asignaturas'].touched"
+                   placeholder="Ej: 5">
+            <div class="input-icon">
+              <i class="fa-solid fa-arrow-up"></i>
+            </div>
+          </div>
           <div *ngIf="f['max_asignaturas'].invalid && f['max_asignaturas'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
             Máximo de asignaturas es requerido y debe ser mayor a 0
           </div>
         </div>
 
         <div class="form-group">
-          <label for="min_asignaturas">Mínimo de Asignaturas</label>
-          <input type="number" id="min_asignaturas" formControlName="min_asignaturas"
-                 min="0">
+          <label for="min_asignaturas">
+            <i class="fa-solid fa-arrow-down form-label-icon"></i>
+            Mínimo de Asignaturas
+          </label>
+          <div class="input-group">
+            <input type="number" id="min_asignaturas" formControlName="min_asignaturas"
+                   min="0"
+                   placeholder="Ej: 1">
+            <div class="input-icon">
+              <i class="fa-solid fa-arrow-down"></i>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="estado">Estado</label>
-          <select id="estado" formControlName="estado">
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
+          <label for="estado">
+            <i class="fa-solid fa-circle-check form-label-icon"></i>
+            Estado
+          </label>
+          <div class="input-group">
+            <select id="estado" formControlName="estado">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+            <div class="input-icon">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="select-arrow">
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Botones de acción -->
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="saving">
-        {{ saving ? 'Guardando...' : (cargoId ? 'Actualizar' : 'Crear') }}
-      </button>
       <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="saving">
+        <i class="fa-solid fa-times btn-secondary-icon"></i>
         Cancelar
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving || cargoForm.invalid">
+        <span *ngIf="saving" class="flex items-center gap-2">
+          <div class="loading-spinner"></div>
+          Guardando...
+        </span>
+        <span *ngIf="!saving" class="flex items-center gap-2">
+          <i class="fa-solid fa-check btn-primary-icon"></i>
+          {{ cargoId ? 'Actualizar' : 'Crear' }}
+        </span>
       </button>
     </div>
   </form>

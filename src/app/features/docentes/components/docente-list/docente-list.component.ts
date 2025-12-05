@@ -1,7 +1,11 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Router } from '@angular/router';
 import { DocenteService } from '../../services/docente.service';
 import { Docente } from '../../models/docente.model';
 import { QueryDocenteDto } from '../../models/query-docente.model';
+import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
+import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-docente-list',
@@ -16,69 +20,131 @@ export class DocenteListComponent implements OnInit {
   loading = false;
   error = '';
 
-  // Filtros
-  filters: QueryDocenteDto = {
-    search: '',
-    estado: '',
-    page: 1,
-    limit: 10
-  };
+  columns: TableColumn[] = [];
+  actions: TableAction[] = [];
 
-  // Paginación
-  totalItems = 0;
-  currentPage = 1;
-  itemsPerPage = 10;
-  Math = Math;
-
-  constructor(private docenteService: DocenteService) {}
+  constructor(
+    private docenteService: DocenteService,
+    private router: Router,
+    private toastService: ToastService,
+    private confirmService: ConfirmService
+  ) {}
 
   ngOnInit(): void {
+    this.setupTable();
     this.loadDocentes();
+  }
+
+  setupTable(): void {
+    this.columns = [
+      { 
+        field: 'codigo_docente', 
+        header: 'Código', 
+        sortable: true, 
+        width: '10%',
+        template: 'badge',
+        badgeClass: () => 'code-badge'
+      },
+      { 
+        field: 'nombres', 
+        header: 'Nombres', 
+        sortable: true, 
+        width: '15%' 
+      },
+      { 
+        field: 'apellidos', 
+        header: 'Apellidos', 
+        sortable: true, 
+        width: '15%' 
+      },
+      { 
+        field: 'identificacion', 
+        header: 'Identificación', 
+        sortable: true, 
+        width: '12%' 
+      },
+      {
+        field: 'departamento.nombre_departamento',
+        header: 'Departamento',
+        sortable: true,
+        width: '15%',
+        template: 'badge',
+        badgeClass: () => 'department-badge',
+        format: (value, row) => row?.departamento?.nombre_departamento || 'N/A'
+      },
+      {
+        field: 'cargo.nombre_cargo',
+        header: 'Cargo',
+        sortable: true,
+        width: '12%',
+        format: (value, row) => row?.cargo?.nombre_cargo || 'N/A'
+      },
+      {
+        field: 'estado',
+        header: 'Estado',
+        sortable: true,
+        width: '10%',
+        template: 'status',
+        badgeClass: (value) => (value === 'activo' ? 'status-active' : 'status-inactive'),
+        format: (value) => (value === 'activo' ? 'Activo' : 'Inactivo')
+      }
+    ];
+
+    this.actions = [
+      {
+        label: 'Ver',
+        icon: 'fa-eye',
+        class: 'btn-view',
+        handler: (row: Docente) => this.onViewDetail(row.id_docente)
+      },
+      {
+        label: 'Editar',
+        icon: 'fa-pencil',
+        class: 'btn-edit',
+        handler: (row: Docente) => this.onEdit(row.id_docente)
+      },
+      {
+        label: 'Eliminar',
+        icon: 'fa-trash',
+        class: 'btn-delete',
+        handler: (row: Docente) => this.onDelete(row.id_docente)
+      }
+    ];
   }
 
   loadDocentes(): void {
     this.loading = true;
     this.error = '';
 
-    this.docenteService.findAll(this.filters).subscribe({
-      next: (response) => {
+    // Cargar todos los docentes sin paginación del backend, la paginación será local
+    const filters: QueryDocenteDto = {
+      search: '',
+      estado: ''
+    };
+
+    this.docenteService.findAll(filters).subscribe({
+      next: (response: any) => {
+        let docentesRaw: any[] = [];
+        
         if (Array.isArray(response)) {
-          this.docentes = response;
-          this.totalItems = response.length;
+          docentesRaw = response;
+        } else if (response && typeof response === 'object' && 'data' in response) {
+          docentesRaw = Array.isArray(response.data) ? response.data : [response.data];
         } else {
-          this.docentes = response.data;
-          this.totalItems = response.total;
-          this.currentPage = response.page;
-          this.itemsPerPage = response.limit;
+          docentesRaw = [];
         }
+
+        this.docentes = docentesRaw;
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Error al cargar los docentes';
-        this.loading = false;
         console.error('Error loading docentes:', err);
+        const errorMessage = err?.error?.message || 'No se pudieron cargar los docentes. Por favor, intente nuevamente.';
+        this.toastService.showError('Error al cargar', errorMessage);
+        this.docentes = [];
+        this.loading = false;
       }
     });
-  }
-
-  onSearch(): void {
-    this.filters.page = 1;
-    this.loadDocentes();
-  }
-
-  onClearFilters(): void {
-    this.filters = {
-      search: '',
-      estado: '',
-      page: 1,
-      limit: 10
-    };
-    this.loadDocentes();
-  }
-
-  onPageChange(page: number): void {
-    this.filters.page = page;
-    this.loadDocentes();
   }
 
   onEdit(id: number): void {
@@ -90,16 +156,22 @@ export class DocenteListComponent implements OnInit {
   }
 
   onDelete(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar este docente?')) {
-      this.docenteService.remove(id).subscribe({
-        next: () => {
-          this.loadDocentes();
-        },
-        error: (err) => {
-          this.error = 'Error al eliminar el docente';
-          console.error('Error deleting docente:', err);
-        }
-      });
-    }
+    this.confirmService.confirmDelete(
+      () => {
+        this.docenteService.remove(id).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Docente eliminado', 'El docente se ha eliminado correctamente.');
+            this.loadDocentes();
+          },
+          error: (err) => {
+            console.error('Error deleting docente:', err);
+            const errorMessage = err?.error?.message || 'No se pudo eliminar el docente. Por favor, intente nuevamente.';
+            this.toastService.showError('Error al eliminar', errorMessage);
+          }
+        });
+      },
+      '¿Estás seguro de que quieres eliminar este docente? Esta acción no se puede deshacer.',
+      'Confirmar eliminación'
+    );
   }
 }

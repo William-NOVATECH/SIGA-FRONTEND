@@ -1,55 +1,16 @@
-<div class="cargo-docente-list">
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading">
-    Cargando cargos docentes...
-  </div>
-
-  <!-- Error -->
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
-
-  <!-- Tabla de cargos -->
-  <div *ngIf="!loading && cargos.length > 0" class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Nombre del Cargo</th>
-          <th>Descripción</th>
-          <th>Máx. Asignaturas</th>
-          <th>Mín. Asignaturas</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let cargo of cargos">
-          <td>{{ cargo.nombre_cargo }}</td>
-          <td>{{ cargo.descripcion || 'Sin descripción' }}</td>
-          <td>{{ cargo.max_asignaturas }}</td>
-          <td>{{ cargo.min_asignaturas || 0 }}</td>
-          <td>
-            <span [class]="'status-badge ' + cargo.estado">
-              {{ cargo.estado }}
-            </span>
-          </td>
-          <td class="actions">
-            <button class="btn btn-sm btn-warning" 
-                    (click)="onEdit(cargo.id_cargo)">
-              Editar
-            </button>
-            <button class="btn btn-sm btn-danger" 
-                    (click)="onDelete(cargo.id_cargo)">
-              Eliminar
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Empty state -->
-  <div *ngIf="!loading && cargos.length === 0" class="empty-state">
-    No se encontraron cargos docentes
-  </div>
+<div class="container">
+  <!-- Data Table Component -->
+  <app-data-table
+    [data]="cargos"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading"
+    [itemsPerPage]="10"
+    [showSearch]="true"
+    [showPagination]="true"
+    title="Lista de Cargos Docentes"
+    emptyMessage="No se encontraron cargos docentes"
+    emptyIcon="fa-briefcase"
+    (refresh)="loadCargos()"
+  ></app-data-table>
 </div>

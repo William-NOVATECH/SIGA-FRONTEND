@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { DocentesRoutingModule } from './docentes-routing.module';
+import { SharedComponentsModule } from '../../core/components/shared-components.module';
 
 // Components
 import { DocenteFormComponent } from './components/docente-form/docente-form.component';
@@ -35,10 +36,11 @@ import { CargosDocentePageComponent } from './pages/cargos-docente-page/cargos-d
   ],
   imports: [
     CommonModule,
-    ReactiveFormsModule,  // Para formGroup
-    FormsModule,          // Para ngModel
+    ReactiveFormsModule,
+    FormsModule,
     RouterModule,
-    DocentesRoutingModule
+    DocentesRoutingModule,
+    SharedComponentsModule
   ],
   exports: [
     DocentesPageComponent,

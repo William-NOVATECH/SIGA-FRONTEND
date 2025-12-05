@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CargoDocenteService } from '../../services/cargo-docente.service';
 import { CargoDocente, CreateCargoDocenteDto, UpdateCargoDocenteDto } from '../../models/cargo-docente.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-cargo-docente-form',
@@ -20,7 +21,8 @@ export class CargoDocenteFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private cargoDocenteService: CargoDocenteService
+    private cargoDocenteService: CargoDocenteService,
+    private toastService: ToastService
   ) {
     this.cargoForm = this.createForm();
   }
@@ -46,21 +48,34 @@ export class CargoDocenteFormComponent implements OnInit {
 
     this.loading = true;
     this.cargoDocenteService.findOne(this.cargoId).subscribe({
-      next: (cargo) => {
+      next: (response: any) => {
+        // Manejar diferentes formatos de respuesta
+        let cargo: any;
+        if (response && typeof response === 'object') {
+          if (response.data) {
+            cargo = response.data;
+          } else {
+            cargo = response;
+          }
+        } else {
+          cargo = response;
+        }
+
         console.log('Cargo cargado:', cargo);
         this.cargoForm.patchValue({
-          nombre_cargo: cargo.nombre_cargo,
-          descripcion: cargo.descripcion,
-          max_asignaturas: cargo.max_asignaturas,
-          min_asignaturas: cargo.min_asignaturas,
-          estado: cargo.estado
+          nombre_cargo: cargo.nombre_cargo || '',
+          descripcion: cargo.descripcion || '',
+          max_asignaturas: cargo.max_asignaturas || '',
+          min_asignaturas: cargo.min_asignaturas || '',
+          estado: cargo.estado || 'activo'
         });
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Error al cargar el cargo docente';
-        this.loading = false;
         console.error('Error loading cargo:', err);
+        const errorMessage = err?.error?.message || 'No se pudo cargar el cargo docente. Por favor, intente nuevamente.';
+        this.toastService.showError('Error al cargar cargo', errorMessage);
+        this.loading = false;
       }
     });
   }
@@ -68,6 +83,10 @@ export class CargoDocenteFormComponent implements OnInit {
   onSubmit(): void {
     if (this.cargoForm.invalid) {
       this.markFormGroupTouched();
+      this.toastService.showWarn(
+        'Formulario inválido',
+        'Por favor, complete todos los campos requeridos.'
+      );
       return;
     }
 
@@ -89,6 +108,10 @@ export class CargoDocenteFormComponent implements OnInit {
       this.cargoDocenteService.update(this.cargoId, updateDto).subscribe({
         next: () => {
           this.saving = false;
+          this.toastService.showSuccess(
+            'Cargo actualizado',
+            'El cargo docente se ha actualizado correctamente.'
+          );
           this.saved.emit();
         },
         error: (err) => {
@@ -101,6 +124,10 @@ export class CargoDocenteFormComponent implements OnInit {
       this.cargoDocenteService.create(createDto).subscribe({
         next: () => {
           this.saving = false;
+          this.toastService.showSuccess(
+            'Cargo creado',
+            'El cargo docente se ha creado correctamente.'
+          );
           this.saved.emit();
         },
         error: (err) => {
@@ -113,16 +140,19 @@ export class CargoDocenteFormComponent implements OnInit {
   private handleError(err: any, action: string): void {
     this.saving = false;
     
+    let errorMessage = `No se pudo ${action} el cargo docente. Por favor, intente nuevamente.`;
+    
     if (err.status === 400) {
       if (err.error?.message?.includes('nombre')) {
-        this.error = 'El nombre del cargo ya está registrado';
+        errorMessage = 'El nombre del cargo ya está registrado';
       } else {
-        this.error = `Error de validación al ${action} el cargo: ${err.error?.message || 'Datos inválidos'}`;
+        errorMessage = err.error?.message || `Error de validación al ${action} el cargo`;
       }
-    } else {
-      this.error = `Error al ${action} el cargo docente: ${err.error?.message || err.message}`;
+    } else if (err.error?.message) {
+      errorMessage = err.error.message;
     }
     
+    this.toastService.showError(`Error al ${action}`, errorMessage);
     console.error(`Error ${action} cargo:`, err);
   }
 

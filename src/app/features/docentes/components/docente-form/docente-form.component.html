@@ -1,15 +1,23 @@
 <div class="docente-form">
   <div class="form-header">
-    <h2>{{ docenteId ? 'Editar Docente' : 'Nuevo Docente' }}</h2>
+    <div class="header-icon">
+      <i class="fa-solid fa-user-tie"></i>
+    </div>
+    <div class="header-text">
+      <h2>{{ docenteId ? 'Editar Docente' : 'Nuevo Docente' }}</h2>
+      <p>{{ docenteId ? 'Actualiza la información del docente' : 'Completa el formulario para registrar un nuevo docente' }}</p>
+    </div>
   </div>
 
   <!-- Loading -->
   <div *ngIf="loading" class="loading">
-    Cargando datos del docente...
+    <div class="loading-spinner"></div>
+    <p>Cargando datos del docente...</p>
   </div>
 
   <!-- Error -->
   <div *ngIf="error" class="error-message">
+    <i class="fa-solid fa-circle-exclamation error-icon"></i>
     {{ error }}
   </div>
 
@@ -21,37 +29,77 @@
         <h3>Información Básica</h3>
         
         <div class="form-group">
-          <label for="codigo_docente">Código Docente *</label>
-          <input type="text" id="codigo_docente" formControlName="codigo_docente"
-                 [class.error]="f['codigo_docente'].invalid && f['codigo_docente'].touched">
+          <label for="codigo_docente">
+            <i class="fa-solid fa-code form-label-icon"></i>
+            Código Docente <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <input type="text" id="codigo_docente" formControlName="codigo_docente"
+                   [class.error]="f['codigo_docente'].invalid && f['codigo_docente'].touched"
+                   placeholder="Ej: DOC-001">
+            <div class="input-icon">
+              <i class="fa-solid fa-code"></i>
+            </div>
+          </div>
           <div *ngIf="f['codigo_docente'].invalid && f['codigo_docente'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
             Código docente es requerido
           </div>
         </div>
 
         <div class="form-group">
-          <label for="nombres">Nombres *</label>
-          <input type="text" id="nombres" formControlName="nombres"
-                 [class.error]="f['nombres'].invalid && f['nombres'].touched">
+          <label for="nombres">
+            <i class="fa-solid fa-user form-label-icon"></i>
+            Nombres <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <input type="text" id="nombres" formControlName="nombres"
+                   [class.error]="f['nombres'].invalid && f['nombres'].touched"
+                   placeholder="Ingrese los nombres">
+            <div class="input-icon">
+              <i class="fa-solid fa-user"></i>
+            </div>
+          </div>
           <div *ngIf="f['nombres'].invalid && f['nombres'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
             Nombres son requeridos
           </div>
         </div>
 
         <div class="form-group">
-          <label for="apellidos">Apellidos *</label>
-          <input type="text" id="apellidos" formControlName="apellidos"
-                 [class.error]="f['apellidos'].invalid && f['apellidos'].touched">
+          <label for="apellidos">
+            <i class="fa-solid fa-user form-label-icon"></i>
+            Apellidos <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <input type="text" id="apellidos" formControlName="apellidos"
+                   [class.error]="f['apellidos'].invalid && f['apellidos'].touched"
+                   placeholder="Ingrese los apellidos">
+            <div class="input-icon">
+              <i class="fa-solid fa-user"></i>
+            </div>
+          </div>
           <div *ngIf="f['apellidos'].invalid && f['apellidos'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
             Apellidos son requeridos
           </div>
         </div>
 
         <div class="form-group">
-          <label for="identificacion">Identificación *</label>
-          <input type="text" id="identificacion" formControlName="identificacion"
-                 [class.error]="f['identificacion'].invalid && f['identificacion'].touched">
+          <label for="identificacion">
+            <i class="fa-solid fa-id-card form-label-icon"></i>
+            Identificación <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <input type="text" id="identificacion" formControlName="identificacion"
+                   [class.error]="f['identificacion'].invalid && f['identificacion'].touched"
+                   placeholder="Ej: 001-12345678-9">
+            <div class="input-icon">
+              <i class="fa-solid fa-id-card"></i>
+            </div>
+          </div>
           <div *ngIf="f['identificacion'].invalid && f['identificacion'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
             Identificación es requerida
           </div>
         </div>
@@ -62,44 +110,87 @@
         <h3>Información Institucional</h3>
 
         <div class="form-group">
-  <label for="id_departamento">Departamento *</label>
-  <select id="id_departamento" formControlName="id_departamento"
-          [class.error]="f['id_departamento'].invalid && f['id_departamento'].touched">
-    <option value="">Seleccione un departamento</option>
-    <option *ngFor="let depto of departamentos" [value]="depto.id_departamento">
-      {{ depto.nombre_departamento }} <!-- Cambiado de 'nombre' a 'nombre_departamento' -->
-    </option>
-  </select>
-  <div *ngIf="f['id_departamento'].invalid && f['id_departamento'].touched" class="error-text">
-    Departamento es requerido
-  </div>
-</div>
-
-        <div class="form-group">
-          <label for="id_cargo">Cargo *</label>
-          <select id="id_cargo" formControlName="id_cargo"
-          [class.error]="f['id_cargo'].invalid && f['id_cargo'].touched">
-            <option value="">Seleccione un cargo</option>
-            <option *ngFor="let cargo of cargos" [value]="cargo.id_cargo">
-      {{ cargo.nombre_cargo }}
-            </option>
-           </select>
-         <div *ngIf="f['id_cargo'].invalid && f['id_cargo'].touched" class="error-text">
-    Cargo es requerido
-           </div>
+          <label for="id_departamento">
+            <i class="fa-solid fa-building form-label-icon"></i>
+            Departamento <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <select id="id_departamento" formControlName="id_departamento"
+                    [class.error]="f['id_departamento'].invalid && f['id_departamento'].touched">
+              <option value="">Seleccione un departamento</option>
+              <option *ngFor="let depto of departamentos" [value]="depto.id_departamento">
+                {{ depto.nombre_departamento }}
+              </option>
+            </select>
+            <div class="input-icon">
+              <i class="fa-solid fa-building"></i>
+            </div>
+            <div class="select-arrow">
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+          <div *ngIf="f['id_departamento'].invalid && f['id_departamento'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
+            Departamento es requerido
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="estado">Estado</label>
-          <select id="estado" formControlName="estado">
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
+          <label for="id_cargo">
+            <i class="fa-solid fa-briefcase form-label-icon"></i>
+            Cargo <span class="required-star">*</span>
+          </label>
+          <div class="input-group">
+            <select id="id_cargo" formControlName="id_cargo"
+                    [class.error]="f['id_cargo'].invalid && f['id_cargo'].touched">
+              <option value="">Seleccione un cargo</option>
+              <option *ngFor="let cargo of cargos" [value]="cargo.id_cargo">
+                {{ cargo.nombre_cargo }}
+              </option>
+            </select>
+            <div class="input-icon">
+              <i class="fa-solid fa-briefcase"></i>
+            </div>
+            <div class="select-arrow">
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+          <div *ngIf="f['id_cargo'].invalid && f['id_cargo'].touched" class="error-text">
+            <i class="fa-solid fa-circle-exclamation error-text-icon"></i>
+            Cargo es requerido
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="fecha_ingreso">Fecha de Ingreso</label>
-          <input type="date" id="fecha_ingreso" formControlName="fecha_ingreso">
+          <label for="estado">
+            <i class="fa-solid fa-circle-check form-label-icon"></i>
+            Estado
+          </label>
+          <div class="input-group">
+            <select id="estado" formControlName="estado">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+            <div class="input-icon">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="select-arrow">
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fecha_ingreso">
+            <i class="fa-solid fa-calendar-alt form-label-icon"></i>
+            Fecha de Ingreso
+          </label>
+          <div class="input-group">
+            <input type="date" id="fecha_ingreso" formControlName="fecha_ingreso">
+            <div class="input-icon">
+              <i class="fa-solid fa-calendar-alt"></i>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -108,29 +199,56 @@
         <h3>Información Personal</h3>
 
         <div class="form-group">
-          <label for="fecha_nacimiento">Fecha de Nacimiento</label>
-          <input type="date" id="fecha_nacimiento" formControlName="fecha_nacimiento">
+          <label for="fecha_nacimiento">
+            <i class="fa-solid fa-birthday-cake form-label-icon"></i>
+            Fecha de Nacimiento
+          </label>
+          <div class="input-group">
+            <input type="date" id="fecha_nacimiento" formControlName="fecha_nacimiento">
+            <div class="input-icon">
+              <i class="fa-solid fa-birthday-cake"></i>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="genero">Género</label>
-          <select id="genero" formControlName="genero">
-            <option value="">Seleccione...</option>
-            <option value="M">Masculino</option>
-            <option value="F">Femenino</option>
-            <option value="O">Otro</option>
-          </select>
+          <label for="genero">
+            <i class="fa-solid fa-venus-mars form-label-icon"></i>
+            Género
+          </label>
+          <div class="input-group">
+            <select id="genero" formControlName="genero">
+              <option value="">Seleccione...</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="O">Otro</option>
+            </select>
+            <div class="input-icon">
+              <i class="fa-solid fa-venus-mars"></i>
+            </div>
+            <div class="select-arrow">
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Botones de acción -->
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="saving">
-        {{ saving ? 'Guardando...' : (docenteId ? 'Actualizar' : 'Crear') }}
-      </button>
       <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="saving">
+        <i class="fa-solid fa-times btn-secondary-icon"></i>
         Cancelar
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving || docenteForm.invalid">
+        <span *ngIf="saving" class="flex items-center gap-2">
+          <div class="loading-spinner"></div>
+          Guardando...
+        </span>
+        <span *ngIf="!saving" class="flex items-center gap-2">
+          <i class="fa-solid fa-check btn-primary-icon"></i>
+          {{ docenteId ? 'Actualizar' : 'Crear' }}
+        </span>
       </button>
     </div>
   </form>

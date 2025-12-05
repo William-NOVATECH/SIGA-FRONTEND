@@ -1,111 +1,16 @@
-<div class="docente-list">
-  <!-- Filtros -->
-  <div class="filters-card">
-    <h3>Filtros de Búsqueda</h3>
-    <div class="filters-form">
-      <div class="form-group">
-        <label for="search">Buscar:</label>
-        <input type="text" id="search" 
-               [(ngModel)]="filters.search"
-               placeholder="Nombre, apellido, código o identificación">
-      </div>
-
-      <div class="form-group">
-        <label for="estado">Estado:</label>
-        <select id="estado" [(ngModel)]="filters.estado">
-          <option value="">Todos</option>
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-        </select>
-      </div>
-
-      <div class="form-actions">
-        <button type="button" class="btn btn-primary" (click)="onSearch()">
-          Buscar
-        </button>
-        <button type="button" class="btn btn-secondary" (click)="onClearFilters()">
-          Limpiar
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading">
-    Cargando docentes...
-  </div>
-
-  <!-- Error -->
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
-
-  <!-- Tabla de docentes -->
-  <div *ngIf="!loading && docentes.length > 0" class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Código</th>
-          <th>Nombres</th>
-          <th>Apellidos</th>
-          <th>Identificación</th>
-          <th>Departamento</th>
-          <th>Cargo</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let docente of docentes">
-          <td>{{ docente.codigo_docente }}</td>
-          <td>{{ docente.nombres }}</td> 
-          <td>{{ docente.apellidos }}</td>
-          <td>{{ docente.identificacion }}</td>
-          <td>{{ docente.departamento?.nombre_departamento || 'N/A' }}</td>
-          <td>{{ docente.cargo?.nombre_cargo || 'N/A' }}</td>
-          <td>
-            <span [class]="'status-badge ' + docente.estado">
-              {{ docente.estado }}
-            </span>
-          </td>
-          <td class="actions">
-            <button class="btn btn-sm btn-info" 
-                    (click)="onViewDetail(docente.id_docente)">
-              Ver
-            </button>
-            <button class="btn btn-sm btn-warning" 
-                    (click)="onEdit(docente.id_docente)">
-              Editar
-            </button>
-            <button class="btn btn-sm btn-danger" 
-                    (click)="onDelete(docente.id_docente)">
-              Eliminar
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Empty state -->
-  <div *ngIf="!loading && docentes.length === 0" class="empty-state">
-    No se encontraron docentes
-  </div>
-
-  <!-- Paginación -->
-  <div *ngIf="totalItems > itemsPerPage" class="pagination">
-    <button class="btn btn-sm" 
-            [disabled]="currentPage === 1"
-            (click)="onPageChange(currentPage - 1)">
-      Anterior
-    </button>
-    
-    <span>Página {{ currentPage }} de {{ Math.ceil(totalItems / itemsPerPage) }}</span>
-    
-    <button class="btn btn-sm"
-            [disabled]="currentPage >= totalItems / itemsPerPage"
-            (click)="onPageChange(currentPage + 1)">
-      Siguiente
-    </button>
-  </div>
+<div class="container">
+  <!-- Data Table Component -->
+  <app-data-table
+    [data]="docentes"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading"
+    [itemsPerPage]="10"
+    [showSearch]="true"
+    [showPagination]="true"
+    title="Lista de Docentes"
+    emptyMessage="No se encontraron docentes"
+    emptyIcon="fa-user-tie"
+    (refresh)="loadDocentes()"
+  ></app-data-table>
 </div>
