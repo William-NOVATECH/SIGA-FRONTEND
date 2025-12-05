@@ -5,21 +5,18 @@
       <div class="card mb-4">
         <div class="card-header">
           <h3 class="card-title">
-            <i class="fas fa-user-plus me-2"></i>
+            <i class="fa-solid fa-user-plus me-2"></i>
             Asignar Nuevo Rol
           </h3>
           <p class="card-subtitle">Asigna un rol adicional a un usuario del sistema</p>
         </div>
-        
+
         <div class="card-body">
           <form [formGroup]="asignacionForm" (ngSubmit)="asignarRol()">
-            <div class="row g-3">
+            <div class="slect-contaioners">
               <div class="col-md-5">
                 <label for="id_usuario" class="form-label">Usuario</label>
-                <select 
-                  id="id_usuario" 
-                  class="form-select" 
-                  formControlName="id_usuario"
+                <select id="id_usuario" class="form-select" formControlName="id_usuario"
                   [class.is-invalid]="asignacionForm.get('id_usuario')?.invalid && asignacionForm.get('id_usuario')?.touched">
                   <option value="">Seleccionar usuario...</option>
                   <option *ngFor="let usuario of usuarios" [value]="usuario.id_usuario">
@@ -33,10 +30,7 @@
 
               <div class="col-md-5">
                 <label for="id_rol" class="form-label">Rol</label>
-                <select 
-                  id="id_rol" 
-                  class="form-select" 
-                  formControlName="id_rol"
+                <select id="id_rol" class="form-select" formControlName="id_rol"
                   [class.is-invalid]="asignacionForm.get('id_rol')?.invalid && asignacionForm.get('id_rol')?.touched">
                   <option value="">Seleccionar rol...</option>
                   <option *ngFor="let rol of roles" [value]="rol.id_rol">
@@ -55,145 +49,168 @@
                   <option value="inactivo">Inactivo</option>
                 </select>
               </div>
+              <div class="mt-3">
+                <button type="submit" class="btn btn-primary" [disabled]="!asignacionForm.valid">
+                  <i class="fa-solid fa-plus me-1"></i>
+                  Asignar Nuevo Rol
+                </button>
+              </div>
             </div>
 
-            <div class="mt-3">
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                [disabled]="!asignacionForm.valid">
-                <i class="fas fa-plus me-1"></i>
-                Asignar Nuevo Rol
-              </button>
-            </div>
           </form>
         </div>
       </div>
 
       <!-- Modal de Edición de Rol -->
-     <!-- Modal de Edición de Rol -->
-<div *ngIf="editandoRol && usuarioEditando && usuarioRolEditando" 
-     class="modal fade show d-block" 
-     style="background: rgba(0,0,0,0.5); z-index: 1050;">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-warning">
-        <h5 class="modal-title">
-          <i class="fas fa-edit me-2"></i>
-          Editar Rol Asignado
-        </h5>
-        <button type="button" class="btn-close" (click)="cancelarEdicionRol()"></button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle me-2"></i>
-          <strong>Usuario:</strong> {{ usuarioEditando.username }} ({{ usuarioEditando.email }})<br>
-          <strong>Rol actual:</strong> {{ usuarioRolEditando.rol.nombre_rol }}
+      <div *ngIf="editandoRol && usuarioEditando && usuarioRolEditando" class="modal-overlay" (click)="cancelarEdicionRol()">
+        <div class="modal-container" (click)="$event.stopPropagation()">
+          <div class="modal-header-custom">
+            <div class="modal-header-content">
+              <div class="modal-icon-wrapper">
+                <i class="fa-solid fa-pencil"></i>
+              </div>
+              <div class="modal-title-wrapper">
+                <h5 class="modal-title">Editar Rol Asignado</h5>
+                <p class="modal-subtitle">Modifica el rol o estado del usuario</p>
+              </div>
+            </div>
+            <button type="button" class="btn-close-modal" (click)="cancelarEdicionRol()" title="Cerrar">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body-custom">
+            <div class="info-card">
+              <div class="info-item">
+                <i class="fa-solid fa-user info-icon"></i>
+                <div class="info-content">
+                  <span class="info-label">Usuario:</span>
+                  <span class="info-value">{{ usuarioEditando.username }}</span>
+                  <span class="info-email">({{ usuarioEditando.email }})</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <i class="fa-solid fa-shield-halved info-icon"></i>
+                <div class="info-content">
+                  <span class="info-label">Rol actual:</span>
+                  <span class="info-value">{{ usuarioRolEditando.rol.nombre_rol }}</span>
+                </div>
+              </div>
+            </div>
+
+            <form [formGroup]="edicionRolForm" (ngSubmit)="guardarCambiosRol()">
+              <div class="form-grid-modal">
+                <!-- Cambiar Rol -->
+                <div class="form-group-modal">
+                  <label for="nuevo_rol" class="form-label-modal">
+                    <i class="fa-solid fa-shield-halved form-label-icon"></i>
+                    Cambiar a otro rol
+                  </label>
+                  <div class="select-wrapper">
+                    <select id="nuevo_rol" class="form-select-modal" formControlName="nuevo_rol"
+                      [class.is-invalid]="edicionRolForm.get('nuevo_rol')?.invalid && edicionRolForm.get('nuevo_rol')?.touched">
+                      <option [value]="usuarioRolEditando.rol.id_rol">
+                        {{ usuarioRolEditando.rol.nombre_rol }} (Actual)
+                      </option>
+                      <option *ngFor="let rol of rolesDisponibles" [value]="rol.id_rol">
+                        {{ rol.nombre_rol }} (Nivel: {{ rol.nivel_acceso }})
+                      </option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down select-arrow-icon"></i>
+                  </div>
+                  <div class="form-help-text">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Selecciona un rol diferente si deseas cambiarlo
+                  </div>
+                </div>
+
+                <!-- Cambiar Estado -->
+                <div class="form-group-modal">
+                  <label for="nuevo_estado" class="form-label-modal">
+                    <i class="fa-solid fa-circle-check form-label-icon"></i>
+                    Estado del rol
+                  </label>
+                  <div class="select-wrapper">
+                    <select id="nuevo_estado" class="form-select-modal" formControlName="nuevo_estado">
+                      <option value="activo">Activo</option>
+                      <option value="inactivo">Inactivo</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down select-arrow-icon"></i>
+                  </div>
+                  <div class="form-help-text">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Un rol inactivo no otorga permisos al usuario
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-actions">
+                <button type="button" class="btn btn-cancel-modal" (click)="cancelarEdicionRol()">
+                  <i class="fa-solid fa-times"></i>
+                  <span>Cancelar</span>
+                </button>
+
+                <button type="submit" class="btn btn-save-modal" [disabled]="!edicionRolForm.valid">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span>Guardar Cambios</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        
-        <form [formGroup]="edicionRolForm" (ngSubmit)="guardarCambiosRol()">
-          <div class="row g-3">
-            <!-- Cambiar Rol -->
-            <div class="col-md-6">
-              <label for="nuevo_rol" class="form-label">Cambiar a otro rol</label>
-              <select 
-                id="nuevo_rol" 
-                class="form-select" 
-                formControlName="nuevo_rol"
-                [class.is-invalid]="edicionRolForm.get('nuevo_rol')?.invalid && edicionRolForm.get('nuevo_rol')?.touched">
-                <option [value]="usuarioRolEditando.rol.id_rol">
-                  {{ usuarioRolEditando.rol.nombre_rol }} (Actual)
-                </option>
-                <option *ngFor="let rol of rolesDisponibles" [value]="rol.id_rol">
-                  {{ rol.nombre_rol }} (Nivel: {{ rol.nivel_acceso }})
-                </option>
-              </select>
-              <div class="form-text">
-                Selecciona un rol diferente si deseas cambiarlo
-              </div>
-            </div>
-
-            <!-- Cambiar Estado -->
-            <div class="col-md-6">
-              <label for="nuevo_estado" class="form-label">Estado del rol</label>
-              <select 
-                id="nuevo_estado" 
-                class="form-select" 
-                formControlName="nuevo_estado">
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-              </select>
-              <div class="form-text">
-                Un rol inactivo no otorga permisos al usuario
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-top">
-            <div class="d-flex justify-content-between">
-              <button 
-                type="button" 
-                class="btn btn-outline-secondary"
-                (click)="cancelarEdicionRol()">
-                <i class="fas fa-times me-1"></i>
-                Cancelar
-              </button>
-              
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                [disabled]="!edicionRolForm.valid">
-                <i class="fas fa-save me-1"></i>
-                Guardar Cambios
-              </button>
-            </div>
-          </div>
-        </form>
       </div>
-    </div>
-  </div>
-</div>
 
       <!-- Card de Lista de Usuarios y Roles -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">
-            <i class="fas fa-users-cog me-2"></i>
+            <i class="fa-solid fa-users-gear me-2"></i>
             Usuarios y Roles Asignados
           </h3>
           <p class="card-subtitle">Gestiona los roles asignados a cada usuario</p>
         </div>
-        
+
         <div class="card-body">
           <!-- Buscador -->
           <div class="row mb-4">
-            <div class="col-md-6">
-              <div class="input-group">
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Buscar usuarios por username o email..."
-                  [(ngModel)]="terminoBusqueda"
-                  (keyup.enter)="buscarUsuarios()">
-                <button 
-                  class="btn btn-outline-secondary" 
-                  type="button" 
-                  (click)="buscarUsuarios()"
-                  [disabled]="buscando">
-                  <i *ngIf="!buscando" class="fas fa-search"></i>
-                  <div *ngIf="buscando" class="spinner-border spinner-border-sm" role="status">
-                    <span class="visually-hidden">Buscando...</span>
-                  </div>
-                  Buscar
-                </button>
-                <button 
-                  class="btn btn-outline-danger" 
-                  type="button" 
-                  (click)="limpiarBusqueda()"
-                  [disabled]="!terminoBusqueda">
-                  <i class="fas fa-times"></i>
-                </button>
+            <div class="col-12 col-md-8 col-lg-6">
+              <div class="search-container">
+                <div class="search-input-wrapper">
+                  <i class="fa-solid fa-search search-icon"></i>
+                  <input 
+                    type="text" 
+                    class="form-control search-input" 
+                    placeholder="Buscar usuarios por username o email..."
+                    [(ngModel)]="terminoBusqueda" 
+                    (keyup.enter)="buscarUsuarios()">
+                  <button 
+                    *ngIf="terminoBusqueda" 
+                    class="btn-clear-search" 
+                    type="button" 
+                    (click)="limpiarBusqueda()"
+                    title="Limpiar búsqueda">
+                    <i class="fa-solid fa-times"></i>
+                  </button>
+                </div>
+                <div class="search-actions">
+                  <button 
+                    class="btn btn-primary search-btn" 
+                    type="button" 
+                    (click)="buscarUsuarios()"
+                    [disabled]="buscando || !terminoBusqueda.trim()">
+                    <i *ngIf="!buscando" class="fa-solid fa-search"></i>
+                    <i *ngIf="buscando" class="fa-solid fa-spinner fa-spin"></i>
+                    <span class="search-btn-text">Buscar</span>
+                  </button>
+                  <button 
+                    class="btn btn-outline-secondary clear-btn" 
+                    type="button" 
+                    (click)="limpiarBusqueda()"
+                    [disabled]="!terminoBusqueda">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="clear-btn-text">Limpiar</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -208,9 +225,10 @@
 
           <!-- Error State -->
           <div *ngIf="error && !loading" class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle me-2"></i>
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
             {{ error }}
             <button class="btn btn-sm btn-outline-danger ms-2" (click)="cargarDatosIniciales()">
+              <i class="fa-solid fa-rotate-right me-1"></i>
               Reintentar
             </button>
           </div>
@@ -218,95 +236,139 @@
           <!-- Lista de Usuarios -->
           <div *ngIf="!loading && !error" class="row">
             <div class="col-12">
-              <div *ngFor="let usuario of usuariosFiltrados" class="card mb-3">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 class="mb-0">
-                      <i class="fas fa-user me-2"></i>
+              <div *ngFor="let usuario of usuariosFiltrados" class="card mb-3 usuario-card">
+                <div class="card-header bg-light usuario-header">
+                  <div class="usuario-header-content">
+                    <div class="usuario-info">
+                    <h5 class="mb-0 usuario-name">
+                      <i class="fa-solid fa-user me-2"></i>
                       {{ usuario.username }}
-                      <small class="text-muted">({{ usuario.email }})</small>
                     </h5>
-                  </div>
-                  <div>
-                    <span class="badge" [ngClass]="usuario.estado === 'activo' ? 'bg-success' : 'bg-secondary'">
-                      {{ usuario.estado }}
-                    </span>
-                    <small class="text-muted ms-2">ID: {{ usuario.id_usuario }}</small>
+                      <small class="text-muted usuario-email">{{ usuario.email }}</small>
+                    </div>
+                    <div class="usuario-meta">
+                      <span class="badge" [ngClass]="usuario.estado === 'activo' ? 'bg-success' : 'bg-secondary'">
+                        {{ usuario.estado }}
+                      </span>
+                      <small class="text-muted usuario-id">ID: {{ usuario.id_usuario }}</small>
+                    </div>
                   </div>
                 </div>
                 <div class="card-body">
                   <!-- Sin roles -->
                   <div *ngIf="getRolesUsuario(usuario).length === 0" class="text-center py-3">
-                    <i class="fas fa-user-slash fa-2x text-muted mb-3"></i>
+                    <i class="fa-solid fa-user-slash fa-2x text-muted mb-3"></i>
                     <p class="text-muted mb-0">Este usuario no tiene roles asignados</p>
                   </div>
 
-                  <!-- Con roles -->
-                  <div *ngIf="getRolesUsuario(usuario).length > 0" class="table-responsive">
-                    <table class="table table-sm table-hover">
-                      <thead class="table-light">
-                        <tr>
-                          <th>Rol Asignado</th>
-                          <th>Descripción</th>
-                          <th>Nivel Acceso</th>
-                          <th>Estado</th>
-                          <th class="text-center">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let usuarioRol of getRolesUsuario(usuario)">
-                          <td>
-                            <strong>{{ usuarioRol.rol.nombre_rol }}</strong>
-                          </td>
-                          <td>
-                            {{ usuarioRol.rol.descripcion || 'Sin descripción' }}
-                          </td>
-                          <td>
-                            <span class="badge bg-info">Nivel {{ usuarioRol.rol.nivel_acceso }}</span>
-                          </td>
-                          <td>
-                            <span [class]="'badge ' + getBadgeClass(usuarioRol.estado)">
-                              {{ usuarioRol.estado }}
-                            </span>
-                          </td>
-                          <td class="text-center">
-                            <div class="btn-group btn-group-sm">
+                  <!-- Con roles - Vista Desktop (Tabla) -->
+                  <div *ngIf="getRolesUsuario(usuario).length > 0" class="roles-container">
+                    <div class="table-responsive roles-table-desktop">
+                      <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Rol Asignado</th>
+                            <th>Descripción</th>
+                            <th>Nivel Acceso</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let usuarioRol of getRolesUsuario(usuario)">
+                            <td>
+                              <strong>{{ usuarioRol.rol.nombre_rol }}</strong>
+                            </td>
+                            <td>
+                              <span class="rol-descripcion">{{ usuarioRol.rol.descripcion || 'Sin descripción' }}</span>
+                            </td>
+                            <td>
+                              <span class="badge bg-info">Nivel {{ usuarioRol.rol.nivel_acceso }}</span>
+                            </td>
+                            <td>
+                              <span [class]="'badge ' + getBadgeClass(usuarioRol.estado)">
+                                {{ usuarioRol.estado }}
+                              </span>
+                            </td>
+                            <td class="text-center">
+                            <div class="btn-group btn-group-sm roles-actions">
                               <!-- Editar Rol -->
-                              <button 
-                                class="btn btn-outline-warning"
-                                (click)="iniciarEdicionRol(usuario, usuarioRol)"
+                              <button class="btn btn-action btn-edit-action" (click)="iniciarEdicionRol(usuario, usuarioRol)"
                                 title="Editar rol asignado">
-                                <i class="fas fa-edit"></i>
+                                <i class="fa-solid fa-pencil"></i>
+                                <span class="action-text">Editar</span>
                               </button>
-                              
+
                               <!-- Cambiar Estado -->
-                              <button 
-                                *ngIf="usuarioRol.estado === 'activo'"
-                                class="btn btn-outline-secondary"
-                                (click)="cambiarEstadoRol(usuario, usuarioRol, 'inactivo')"
-                                title="Desactivar rol">
-                                <i class="fas fa-pause"></i>
+                              <button *ngIf="usuarioRol.estado === 'activo'" class="btn btn-action btn-pause-action"
+                                (click)="cambiarEstadoRol(usuario, usuarioRol, 'inactivo')" title="Desactivar rol">
+                                <i class="fa-solid fa-pause"></i>
+                                <span class="action-text">Desactivar</span>
                               </button>
-                              <button 
-                                *ngIf="usuarioRol.estado === 'inactivo'"
-                                class="btn btn-outline-success"
-                                (click)="cambiarEstadoRol(usuario, usuarioRol, 'activo')"
-                                title="Activar rol">
-                                <i class="fas fa-play"></i>
+                              <button *ngIf="usuarioRol.estado === 'inactivo'" class="btn btn-action btn-play-action"
+                                (click)="cambiarEstadoRol(usuario, usuarioRol, 'activo')" title="Activar rol">
+                                <i class="fa-solid fa-play"></i>
+                                <span class="action-text">Activar</span>
                               </button>
-                              
+
                               <!-- Remover Rol -->
-                              <button 
-                                class="btn btn-outline-danger"
-                                (click)="removerRol(usuario, usuarioRol)"
+                              <button class="btn btn-action btn-delete-action" (click)="removerRol(usuario, usuarioRol)"
                                 title="Remover rol">
-                                <i class="fas fa-trash"></i>
+                                <i class="fa-solid fa-trash"></i>
+                                <span class="action-text">Eliminar</span>
                               </button>
                             </div>
                           </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <!-- Vista Mobile (Cards) -->
+                    <div class="roles-cards-mobile">
+                      <div *ngFor="let usuarioRol of getRolesUsuario(usuario)" class="rol-card-mobile">
+                        <div class="rol-card-header">
+                          <h6 class="mb-0">
+                            <strong>{{ usuarioRol.rol.nombre_rol }}</strong>
+                          </h6>
+                          <span [class]="'badge ' + getBadgeClass(usuarioRol.estado)">
+                            {{ usuarioRol.estado }}
+                          </span>
+                        </div>
+                        <div class="rol-card-body">
+                          <div class="rol-info-item">
+                            <span class="rol-label">Descripción:</span>
+                            <span class="rol-value">{{ usuarioRol.rol.descripcion || 'Sin descripción' }}</span>
+                          </div>
+                          <div class="rol-info-item">
+                            <span class="rol-label">Nivel Acceso:</span>
+                            <span class="badge bg-info">Nivel {{ usuarioRol.rol.nivel_acceso }}</span>
+                          </div>
+                        </div>
+                        <div class="rol-card-actions">
+                          <button class="btn btn-sm btn-action btn-edit-action" (click)="iniciarEdicionRol(usuario, usuarioRol)"
+                            title="Editar rol asignado">
+                            <i class="fa-solid fa-pencil"></i>
+                            <span>Editar</span>
+                          </button>
+                          <button *ngIf="usuarioRol.estado === 'activo'" class="btn btn-sm btn-action btn-pause-action"
+                            (click)="cambiarEstadoRol(usuario, usuarioRol, 'inactivo')" title="Desactivar rol">
+                            <i class="fa-solid fa-pause"></i>
+                            <span>Desactivar</span>
+                          </button>
+                          <button *ngIf="usuarioRol.estado === 'inactivo'" class="btn btn-sm btn-action btn-play-action"
+                            (click)="cambiarEstadoRol(usuario, usuarioRol, 'activo')" title="Activar rol">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Activar</span>
+                          </button>
+                          <button class="btn btn-sm btn-action btn-delete-action" (click)="removerRol(usuario, usuarioRol)"
+                            title="Remover rol">
+                            <i class="fa-solid fa-trash"></i>
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -316,20 +378,24 @@
           <!-- Empty State -->
           <div *ngIf="usuariosFiltrados.length === 0 && !loading && !error" class="text-center py-5">
             <div class="empty-state">
-              <i class="fas fa-users fa-3x text-muted mb-3"></i>
+              <i class="fa-solid fa-users fa-3x text-muted mb-3"></i>
               <h4>No se encontraron usuarios</h4>
               <p class="text-muted">No hay usuarios que coincidan con tu búsqueda.</p>
             </div>
           </div>
         </div>
 
-        <div class="card-footer d-flex justify-content-between align-items-center">
-          <small class="text-muted">
-            Mostrando {{ usuariosFiltrados.length }} de {{ usuarios.length }} usuarios
-          </small>
-          <small class="text-muted">
-            Total de roles asignados: {{ getTotalRolesAsignados() }}
-          </small>
+        <div class="card-footer card-footer-responsive">
+          <div class="footer-info">
+            <small class="text-muted">
+              Mostrando {{ usuariosFiltrados.length }} de {{ usuarios.length }} usuarios
+            </small>
+          </div>
+          <div class="footer-info">
+            <small class="text-muted">
+              Total de roles asignados: {{ getTotalRolesAsignados() }}
+            </small>
+          </div>
         </div>
       </div>
     </div>

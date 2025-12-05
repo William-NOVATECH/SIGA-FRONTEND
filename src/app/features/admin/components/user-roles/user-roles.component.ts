@@ -5,6 +5,8 @@ import { UsuarioService } from '../../services/usuario.service';
 import { Usuario, UsuarioRolResponse } from '../../interfaces/usuario.interface';
 import { Rol } from '../../interfaces/rol.interface';
 import { AsignarRol, ActualizarRol } from '../../interfaces/usuario-rol.interface';
+import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-user-roles',
@@ -32,7 +34,9 @@ export class UserRolesComponent implements OnInit {
   constructor(
     private rolService: RolService,
     private usuarioService: UsuarioService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService,
+    private confirmService: ConfirmService
   ) {
     this.asignacionForm = this.fb.group({
       id_usuario: ['', Validators.required],
@@ -66,6 +70,7 @@ export class UserRolesComponent implements OnInit {
       error: (error: any) => {
         console.error('Error cargando usuarios con roles:', error);
         this.error = 'Error al cargar los usuarios con roles';
+        this.toastService.showError('Error al cargar', 'No se pudieron cargar los usuarios con roles.');
         this.loading = false;
         this.cargarUsuariosBasicos();
       }
@@ -85,6 +90,7 @@ export class UserRolesComponent implements OnInit {
       error: (error: any) => {
         console.error('Error cargando usuarios básicos:', error);
         this.error += ' - También falló la carga de usuarios básicos';
+        this.toastService.showError('Error al cargar', 'No se pudieron cargar los usuarios básicos.');
       }
     });
   }
@@ -104,6 +110,7 @@ export class UserRolesComponent implements OnInit {
       error: (error: any) => {
         console.error('Error cargando roles:', error);
         this.error += ' - Error cargando roles';
+        this.toastService.showError('Error al cargar', 'No se pudieron cargar los roles.');
       }
     });
   }
@@ -111,6 +118,7 @@ export class UserRolesComponent implements OnInit {
   buscarUsuarios(): void {
     if (!this.terminoBusqueda.trim()) {
       this.usuariosFiltrados = this.usuarios;
+      this.toastService.showWarn('Búsqueda vacía', 'Por favor ingrese un término de búsqueda.');
       return;
     }
 
@@ -118,17 +126,25 @@ export class UserRolesComponent implements OnInit {
     const termino = this.terminoBusqueda.toLowerCase();
     
     // Búsqueda local por username o email
-    this.usuariosFiltrados = this.usuarios.filter(usuario => 
+    const resultados = this.usuarios.filter(usuario => 
       usuario.username.toLowerCase().includes(termino) ||
       usuario.email.toLowerCase().includes(termino)
     );
     
+    this.usuariosFiltrados = resultados;
     this.buscando = false;
+
+    if (resultados.length === 0) {
+      this.toastService.showInfo('Sin resultados', 'No se encontraron usuarios que coincidan con la búsqueda.');
+    } else {
+      this.toastService.showSuccess('Búsqueda completada', `Se encontraron ${resultados.length} usuario(s).`);
+    }
   }
 
   limpiarBusqueda(): void {
     this.terminoBusqueda = '';
     this.usuariosFiltrados = this.usuarios;
+    this.toastService.showInfo('Búsqueda limpiada', 'Se mostraron todos los usuarios.');
   }
 
   // ========== ASIGNAR NUEVO ROL ==========
@@ -140,6 +156,9 @@ export class UserRolesComponent implements OnInit {
         id_rol: formValue.id_rol,
         estado: formValue.estado
       };
+
+      const usuarioSeleccionado = this.usuarios.find(u => u.id_usuario === formValue.id_usuario);
+      const rolSeleccionado = this.roles.find(r => r.id_rol === formValue.id_rol);
 
       console.log('Asignando rol:', {
         usuarioId: formValue.id_usuario,
@@ -154,16 +173,21 @@ export class UserRolesComponent implements OnInit {
           this.cargarDatosIniciales();
           this.asignacionForm.reset({ estado: 'activo' });
           
-          alert('✅ Rol asignado correctamente al usuario');
+          const mensaje = `Rol "${rolSeleccionado?.nombre_rol || 'seleccionado'}" asignado correctamente al usuario "${usuarioSeleccionado?.username || 'seleccionado'}"`;
+          this.toastService.showSuccess('Rol asignado', mensaje);
         },
         error: (error: any) => {
           console.error('Error asignando rol:', error);
           const mensajeError = error.error?.message || error.message || 'Error al asignar el rol';
-          alert(`❌ Error: ${mensajeError}`);
+          this.toastService.showError('Error al asignar rol', mensajeError);
         }
       });
     } else {
-      alert('⚠️ Por favor complete todos los campos requeridos');
+      this.toastService.showWarn('Formulario inválido', 'Por favor complete todos los campos requeridos.');
+      // Marcar todos los campos como touched para mostrar errores
+      Object.keys(this.asignacionForm.controls).forEach(key => {
+        this.asignacionForm.get(key)?.markAsTouched();
+      });
     }
   }
 
@@ -217,7 +241,7 @@ export class UserRolesComponent implements OnInit {
     
     // Si no hay cambios, mostrar mensaje
     if (Object.keys(datosActualizacion).length === 0) {
-      alert('⚠️ No se detectaron cambios para guardar');
+      this.toastService.showWarn('Sin cambios', 'No se detectaron cambios para guardar.');
       return;
     }
 
@@ -285,20 +309,20 @@ export class UserRolesComponent implements OnInit {
         this.cancelarEdicionRol();
         
         // 6. Mostrar mensaje de éxito
-        let mensaje = '✅ Cambios guardados correctamente\n\n';
+        let mensaje = 'Cambios guardados correctamente.';
         if (rolCambio) {
           const nuevoRolNombre = this.roles.find(r => r.id_rol === nuevoRolId)?.nombre_rol || 'nuevo rol';
-          mensaje += `• Rol cambiado a: ${nuevoRolNombre}\n`;
+          mensaje += ` Rol cambiado a: ${nuevoRolNombre}.`;
         }
         if (estadoCambio) {
-          mensaje += `• Estado cambiado a: ${nuevoEstado}\n`;
+          mensaje += ` Estado cambiado a: ${nuevoEstado}.`;
         }
-        alert(mensaje);
+        this.toastService.showSuccess('Rol actualizado', mensaje);
       },
       error: (error: any) => {
         console.error('Error actualizando rol:', error);
         const mensajeError = error.error?.message || error.message || 'Error al actualizar el rol';
-        alert(`❌ Error: ${mensajeError}`);
+        this.toastService.showError('Error al actualizar', mensajeError);
       }
     });
   }
@@ -329,31 +353,41 @@ private actualizarUsuarioFiltrado(): void {
   // ========== CAMBIAR SOLO ESTADO ==========
 
   cambiarEstadoRol(usuario: Usuario, usuarioRol: UsuarioRolResponse, nuevoEstado: string): void {
-    console.log('Cambiando estado del rol:', {
-      usuarioId: usuario.id_usuario,
-      usuarioRolId: usuarioRol.id_usuario_rol,
-      nuevoEstado: nuevoEstado
-    });
+    const accion = nuevoEstado === 'activo' ? 'activar' : 'desactivar';
+    const mensaje = `¿Estás seguro de que deseas ${accion} el rol "${usuarioRol.rol.nombre_rol}" del usuario "${usuario.username}"?`;
 
-    const datosActualizacion: ActualizarRol = {
-      estado: nuevoEstado
-    };
+    this.confirmService.confirm({
+      message: mensaje,
+      header: 'Confirmar cambio de estado',
+      icon: nuevoEstado === 'activo' ? 'pi pi-check-circle' : 'pi pi-pause-circle',
+      acceptCallback: () => {
+        console.log('Cambiando estado del rol:', {
+          usuarioId: usuario.id_usuario,
+          usuarioRolId: usuarioRol.id_usuario_rol,
+          nuevoEstado: nuevoEstado
+        });
 
-    this.rolService.actualizarRolUsuario(
-      usuario.id_usuario, 
-      usuarioRol.id_usuario_rol, 
-      datosActualizacion
-    ).subscribe({
-      next: (response: any) => {
-        console.log('Estado actualizado:', response);
-        // Actualizar el estado localmente
-        usuarioRol.estado = nuevoEstado;
-        alert('✅ Estado del rol actualizado correctamente');
-      },
-      error: (error: any) => {
-        console.error('Error actualizando estado:', error);
-        const mensajeError = error.error?.message || error.message || 'Error al actualizar el estado del rol';
-        alert(`❌ Error: ${mensajeError}`);
+        const datosActualizacion: ActualizarRol = {
+          estado: nuevoEstado
+        };
+
+        this.rolService.actualizarRolUsuario(
+          usuario.id_usuario, 
+          usuarioRol.id_usuario_rol, 
+          datosActualizacion
+        ).subscribe({
+          next: (response: any) => {
+            console.log('Estado actualizado:', response);
+            // Actualizar el estado localmente
+            usuarioRol.estado = nuevoEstado;
+            this.toastService.showSuccess('Estado actualizado', `El rol se ha ${accion}do correctamente.`);
+          },
+          error: (error: any) => {
+            console.error('Error actualizando estado:', error);
+            const mensajeError = error.error?.message || error.message || 'Error al actualizar el estado del rol';
+            this.toastService.showError('Error al actualizar', mensajeError);
+          }
+        });
       }
     });
   }
@@ -364,30 +398,40 @@ private actualizarUsuarioFiltrado(): void {
     const rolNombre = usuarioRol.rol.nombre_rol;
     const usuarioNombre = usuario.username;
     
-    if (confirm(`¿Estás seguro de que deseas remover el rol "${rolNombre}" del usuario "${usuarioNombre}"?`)) {
-      console.log('Removiendo rol:', {
-        usuarioId: usuario.id_usuario,
-        usuarioRolId: usuarioRol.id_usuario_rol
-      });
-      
-      this.rolService.removerRolUsuario(usuario.id_usuario, usuarioRol.id_usuario_rol).subscribe({
-        next: () => {
-          console.log('Rol removido exitosamente');
-          
-          // Remover localmente del array de roles
-          if (usuario.roles) {
-            usuario.roles = usuario.roles.filter(r => r.id_usuario_rol !== usuarioRol.id_usuario_rol);
+    this.confirmService.confirmDelete(
+      () => {
+        console.log('Removiendo rol:', {
+          usuarioId: usuario.id_usuario,
+          usuarioRolId: usuarioRol.id_usuario_rol
+        });
+        
+        this.rolService.removerRolUsuario(usuario.id_usuario, usuarioRol.id_usuario_rol).subscribe({
+          next: () => {
+            console.log('Rol removido exitosamente');
+            
+            // Remover localmente del array de roles
+            if (usuario.roles) {
+              usuario.roles = usuario.roles.filter(r => r.id_usuario_rol !== usuarioRol.id_usuario_rol);
+            }
+            
+            // Actualizar usuarios filtrados
+            const usuarioFiltrado = this.usuariosFiltrados.find(u => u.id_usuario === usuario.id_usuario);
+            if (usuarioFiltrado && usuarioFiltrado.roles) {
+              usuarioFiltrado.roles = usuarioFiltrado.roles.filter(r => r.id_usuario_rol !== usuarioRol.id_usuario_rol);
+            }
+            
+            this.toastService.showSuccess('Rol removido', `El rol "${rolNombre}" ha sido removido del usuario "${usuarioNombre}".`);
+          },
+          error: (error: any) => {
+            console.error('Error removiendo rol:', error);
+            const mensajeError = error.error?.message || error.message || 'Error al remover el rol';
+            this.toastService.showError('Error al remover', mensajeError);
           }
-          
-          alert('✅ Rol removido correctamente del usuario');
-        },
-        error: (error: any) => {
-          console.error('Error removiendo rol:', error);
-          const mensajeError = error.error?.message || error.message || 'Error al remover el rol';
-          alert(`❌ Error: ${mensajeError}`);
-        }
-      });
-    }
+        });
+      },
+      `¿Estás seguro de que deseas remover el rol "${rolNombre}" del usuario "${usuarioNombre}"? Esta acción no se puede deshacer.`,
+      'Confirmar eliminación de rol'
+    );
   }
 
   // ========== UTILIDADES ==========

@@ -1,21 +1,18 @@
 <div class="container">
   <!-- Header -->
   <div class="header">
-    <div class="flex justify-between items-center">
-      <div>
-        <h1 class="header-title">Gestión de Asignaturas</h1>
-        <p class="header-subtitle">Administra las asignaturas académicas</p>
-      </div>
-      <button 
-        (click)="createAsignatura()"
-        class="btn-primary"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-        </svg>
-        Nueva Asignatura
-      </button>
+
+    <div>
+      <h1 class="header-title">Gestión de Asignaturas</h1>
+      <p class="header-subtitle">Administra las asignaturas académicas</p>
     </div>
+    <button (click)="createAsignatura()" class="btn-primary">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+      </svg>
+      Nueva Asignatura
+    </button>
+
   </div>
 
   <!-- Mensaje de error -->
@@ -24,17 +21,8 @@
   </div>
 
   <!-- Tabla Reutilizable -->
-  <app-data-table
-    [data]="asignaturas"
-    [columns]="columns"
-    [actions]="actions"
-    [loading]="loading"
-    [itemsPerPage]="10"
-    [showSearch]="true"
-    [showPagination]="true"
-    title="Lista de Asignaturas"
-    emptyMessage="No se encontraron asignaturas"
-    emptyIcon="fa-book"
-    (rowClick)="viewAsignatura($event.id_asignatura)"
-  ></app-data-table>
+  <app-data-table [data]="asignaturas" [columns]="columns" [actions]="actions" [loading]="loading" [itemsPerPage]="10"
+    [showSearch]="true" [showPagination]="true" title="Lista de Asignaturas"
+    emptyMessage="No se encontraron asignaturas" emptyIcon="fa-book"
+    (rowClick)="viewAsignatura($event.id_asignatura)"></app-data-table>
 </div>
