@@ -1,13 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CreateGrupoAsignaturaDocente } from '../models/create-grupo-asignatura-docente.model';
 import { GrupoAsignaturaDocente } from '../models/grupo-asignatura-docente.model';
 
 @Component({
   selector: 'app-grupo-asignatura-docente-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  standalone: false,
   templateUrl: './grupo-asignatura-docente-form.component.html',
   styleUrls: ['./grupo-asignatura-docente-form.component.css']
 })

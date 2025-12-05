@@ -1,13 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GrupoAsignaturaDocenteService } from '../../services/grupo-asignatura-docente.service';
 import { GrupoAsignaturaDocente } from '../../models/grupo-asignatura-docente.model';
 
 @Component({
   selector: 'app-detail-grupo-asignatura-docente',
-  standalone: true,
-  imports: [CommonModule],
+  standalone: false,
   templateUrl: './detail-grupo-asignatura-docente.page.html',
   styleUrls: ['./detail-grupo-asignatura-docente.page.css']
 })

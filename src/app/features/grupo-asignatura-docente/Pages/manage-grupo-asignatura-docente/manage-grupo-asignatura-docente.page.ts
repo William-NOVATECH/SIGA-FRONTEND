@@ -1,8 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GrupoAsignaturaDocenteFormComponent } from '../../grupo-asignatura-docente-form/grupo-asignatura-docente-form.component';
-import { GrupoAsignaturaDocenteBulkFormComponent } from '../../grupo-asignatura-docente-bulk-form/grupo-asignatura-docente-bulk-form.component';
 import { GrupoAsignaturaDocenteService } from '../../services/grupo-asignatura-docente.service';
 import { GrupoService } from '../../services/grupo.service';
 import { AsignaturaService } from '../../services/asignatura.service';
@@ -13,8 +10,7 @@ import { BulkCreateResponse, GrupoAsignaturaDocente } from '../../models/grupo-a
 
 @Component({
   selector: 'app-manage-grupo-asignatura-docente',
-  standalone: true,
-  imports: [CommonModule, GrupoAsignaturaDocenteFormComponent, GrupoAsignaturaDocenteBulkFormComponent],
+  standalone: false,
   templateUrl: './manage-grupo-asignatura-docente.page.html',
   styleUrls: ['./manage-grupo-asignatura-docente.page.css']
 })

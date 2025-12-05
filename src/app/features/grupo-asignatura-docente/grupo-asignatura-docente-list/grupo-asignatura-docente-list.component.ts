@@ -1,11 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { GrupoAsignaturaDocente } from '../models/grupo-asignatura-docente.model';
 
 @Component({
   selector: 'app-grupo-asignatura-docente-list',
-  standalone: true,
-  imports: [CommonModule],
+  standalone: false,
   templateUrl: './grupo-asignatura-docente-list.component.html',
   styleUrls: ['./grupo-asignatura-docente-list.component.css']
 })

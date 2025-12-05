@@ -10,6 +10,15 @@
         </div>
       </div>
       <div class="user-actions">
+        <div class="user-info" *ngIf="currentUser">
+          <div class="user-avatar">
+            {{ userInitials }}
+          </div>
+          <div class="user-details">
+            <span class="user-name">{{ currentUser.username }}</span>
+            <span class="user-email">{{ currentUser.email }}</span>
+          </div>
+        </div>
         <button class="logout-btn" (click)="logOut()">
           <span class="logout-icon">🚪</span>
           Cerrar Sesión

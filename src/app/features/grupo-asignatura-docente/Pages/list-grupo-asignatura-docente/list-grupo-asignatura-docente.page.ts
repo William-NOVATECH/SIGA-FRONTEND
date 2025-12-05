@@ -1,14 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { GrupoAsignaturaDocenteGroupedListComponent } from '../../grupo-asignatura-docente-grouped-list/grupo-asignatura-docente-grouped-list.component';
 import { GrupoAsignaturaDocenteService } from '../../services/grupo-asignatura-docente.service';
 import { GrupoConAsignaciones } from '../../models/grupo-asignatura-docente.model';
 
 @Component({
   selector: 'app-list-grupo-asignatura-docente',
-  standalone: true,
-  imports: [CommonModule, GrupoAsignaturaDocenteGroupedListComponent],
+  standalone: false,
   templateUrl: './list-grupo-asignatura-docente.page.html',
   styleUrls: ['./list-grupo-asignatura-docente.page.css']
 })

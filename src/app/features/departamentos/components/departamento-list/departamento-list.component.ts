@@ -6,6 +6,7 @@ import { DepartamentoService } from '../../services/departamento.service';
 import { Departamento, QueryDepartamento, DepartamentoResponse } from '../../models/departamento.model';
 import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-departamento-list',
@@ -69,7 +70,8 @@ export class DepartamentoListComponent implements OnInit {
     private departamentoService: DepartamentoService,
     private fb: FormBuilder,
     private router: Router,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private confirmService: ConfirmService
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -136,25 +138,29 @@ export class DepartamentoListComponent implements OnInit {
   }
 
   deleteDepartamento(id: number) {
-    if (confirm('¿Estás seguro de que quieres eliminar este departamento?')) {
-      this.departamentoService.remove(id).subscribe({
-        next: () => {
-          this.toastService.showSuccess(
-            'Departamento eliminado',
-            'El departamento se ha eliminado correctamente.'
-          );
-          this.loadDepartamentos();
-        },
-        error: (error) => {
-          console.error('Error deleting departamento:', error);
-          const errorMessage = error?.error?.message || 'No se pudo eliminar el departamento. Por favor, intente nuevamente.';
-          this.toastService.showError(
-            'Error al eliminar',
-            errorMessage
-          );
-        }
-      });
-    }
+    this.confirmService.confirmDelete(
+      () => {
+        this.departamentoService.remove(id).subscribe({
+          next: () => {
+            this.toastService.showSuccess(
+              'Departamento eliminado',
+              'El departamento se ha eliminado correctamente.'
+            );
+            this.loadDepartamentos();
+          },
+          error: (error) => {
+            console.error('Error deleting departamento:', error);
+            const errorMessage = error?.error?.message || 'No se pudo eliminar el departamento. Por favor, intente nuevamente.';
+            this.toastService.showError(
+              'Error al eliminar',
+              errorMessage
+            );
+          }
+        });
+      },
+      '¿Estás seguro de que deseas eliminar este departamento? Esta acción no se puede deshacer.',
+      'Confirmar eliminación'
+    );
   }
 
   clearFilters() {

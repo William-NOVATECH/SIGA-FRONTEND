@@ -1,12 +1,10 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray, AbstractControl } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormArray, AbstractControl } from '@angular/forms';
 import { CreateBulkGrupoAsignaturaDocente } from '../models/create-bulk-grupo-asignatura-docente.model';
 
 @Component({
   selector: 'app-grupo-asignatura-docente-bulk-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  standalone: false,
   templateUrl: './grupo-asignatura-docente-bulk-form.component.html',
   styleUrls: ['./grupo-asignatura-docente-bulk-form.component.css']
 })

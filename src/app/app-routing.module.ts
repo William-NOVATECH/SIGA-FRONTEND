@@ -35,8 +35,12 @@ const routes: Routes = [
         loadChildren: () => import('./features/grupos/grupos.module').then(m => m.GruposModule) 
       },
       {
+        path: 'grupo-asignatura-docente',
+        loadChildren: () => import('./features/grupo-asignatura-docente/grupo-asignatura-docente.module').then(m => m.GrupoAsignaturaDocenteModule)
+      },
+      {
         path: 'carga-docente',
-        loadChildren: () => import('./features/grupo-asignatura-docente/grupo-asignatura-docente.routes').then(m => m.GRUPO_ASIGNATURA_DOCENTE_ROUTES)
+        loadChildren: () => import('./features/grupo-asignatura-docente/grupo-asignatura-docente.module').then(m => m.GrupoAsignaturaDocenteModule)
       },
       { 
         path: 'admin', 

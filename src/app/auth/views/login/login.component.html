@@ -31,18 +31,16 @@
             <div class="field">
               <label for="username">Usuario</label>
               <div class="input-container">
-                <span class="p-input-icon-left">
-                  <i class="pi pi-user"></i>
-                  <input 
-                    id="username"
-                    type="text" 
-                    pInputText 
-                    formControlName="username" 
-                    placeholder="Ingrese su nombre de usuario"
-                    class="custom-input"
-                    [class]="{'ng-invalid ng-dirty': submitted && f['username'].errors}"
-                    autocomplete="username">
-                </span>
+                <i class="fa-solid fa-user input-icon-left"></i>
+                <input 
+                  id="username"
+                  type="text" 
+                  pInputText 
+                  formControlName="username" 
+                  placeholder="Ingrese su nombre de usuario"
+                  class="custom-input"
+                  [class]="{'ng-invalid ng-dirty': submitted && f['username'].errors}"
+                  autocomplete="username">
               </div>
               <small *ngIf="submitted && f['username'].errors" class="error-message">
                 <span *ngIf="f['username'].errors['required']">El usuario es requerido</span>
@@ -52,23 +50,21 @@
             <div class="field">
               <label for="password">Contraseña</label>
               <div class="input-container">
-                <span class="p-input-icon-left p-input-icon-right">
-                  <i class="pi pi-lock"></i>
-                  <input 
-                    id="password"
-                    [type]="passwordFieldType" 
-                    pInputText 
-                    formControlName="password" 
-                    placeholder="Ingrese su contraseña"
-                    class="custom-input"
-                    [class]="{'ng-invalid ng-dirty': submitted && f['password'].errors}"
-                    autocomplete="current-password">
-                  <i 
-                    class="pi password-toggle-icon" 
-                    [ngClass]="showPassword ? 'pi-eye-slash' : 'pi-eye'"
-                    (click)="togglePasswordVisibility()">
-                  </i>
-                </span>
+                <i class="fa-solid fa-lock input-icon-left"></i>
+                <input 
+                  id="password"
+                  [type]="passwordFieldType" 
+                  pInputText 
+                  formControlName="password" 
+                  placeholder="Ingrese su contraseña"
+                  class="custom-input"
+                  [class]="{'ng-invalid ng-dirty': submitted && f['password'].errors}"
+                  autocomplete="current-password">
+                <i 
+                  class="fa-solid password-toggle-icon" 
+                  [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"
+                  (click)="togglePasswordVisibility()">
+                </i>
               </div>
               <small *ngIf="submitted && f['password'].errors" class="error-message">
                 <span *ngIf="f['password'].errors['required']">La contraseña es requerida</span>
@@ -80,11 +76,11 @@
                <button 
                  pButton 
                  type="submit" 
-                 label="Iniciar Sesión" 
                  class="p-button-raised login-button"
                  [loading]="loading"
-                 [disabled]="loading"
-                  icon="pi pi-sign-in">
+                 [disabled]="loading">
+                 <i class="fa-solid fa-sign-in-alt"></i>
+                 <span>Iniciar Sesión</span>
                 </button>
             </div>
 

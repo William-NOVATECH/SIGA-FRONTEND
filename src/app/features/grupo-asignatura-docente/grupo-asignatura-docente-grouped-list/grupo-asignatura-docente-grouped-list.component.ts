@@ -1,12 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { GrupoConAsignaciones } from '../models/grupo-asignatura-docente.model';
 
 @Component({
   selector: 'app-grupo-asignatura-docente-grouped-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  standalone: false,
   templateUrl: './grupo-asignatura-docente-grouped-list.component.html',
   styleUrls: ['./grupo-asignatura-docente-grouped-list.component.css']
 })

@@ -8,8 +8,9 @@ import { AppComponent } from './app.component';
 import { JwtInterceptor } from './core/Interceptors/jwt.interceptor';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 import { NavbarComponent } from './navigation/navbar/navbar.component';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { providePrimeNG } from 'primeng/config';
 import Material from '@primeng/themes/material';
 
@@ -24,16 +25,18 @@ import Material from '@primeng/themes/material';
     BrowserAnimationsModule,
     AppRoutingModule,
     HttpClientModule,
-    ToastModule
+    ToastModule,
+    ConfirmDialogModule
   ],
   providers: [
     MessageService,
+    ConfirmationService,
     providePrimeNG({
       theme: {
         preset: Material,
         options: {
           prefix: 'p',
-          darkModeSelector: 'system',
+          darkModeSelector: 'none',
           cssLayer: false
         }
       }
