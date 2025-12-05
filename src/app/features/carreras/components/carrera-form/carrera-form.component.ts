@@ -1,11 +1,11 @@
 // features/carreras/components/carrera-form/carrera-form.component.ts
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CarreraService } from '../../services/carrera.service';
 import { DepartamentoService, Departamento } from '../../services/departamento.service';
 import { CreateCarrera, UpdateCarrera, Carrera } from '../../models/carrera.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-carrera-form',
@@ -27,7 +27,8 @@ export class CarreraFormComponent implements OnInit {
     private carreraService: CarreraService,
     private departamentoService: DepartamentoService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.carreraForm = this.fb.group({
       nombre_carrera: ['', [Validators.required, Validators.maxLength(200)]],
@@ -61,35 +62,41 @@ export class CarreraFormComponent implements OnInit {
       error: (error) => {
         console.error('Error loading departamentos:', error);
         this.errorMessage = 'Error al cargar los departamentos';
+        this.toastService.showError(
+          'Error al cargar departamentos',
+          'No se pudieron cargar los departamentos. Por favor, intente nuevamente.'
+        );
         this.loadingDepartamentos = false;
       }
     });
   }
 
   loadCarrera() {
-  if (this.carreraId) {
-    this.loading = true;
-    this.carreraService.findOne(this.carreraId).subscribe({
-      next: (response: any) => {
-        const carrera: Carrera = response.data;
-        this.carreraForm.patchValue({
-          nombre_carrera: carrera.nombre_carrera,
-          codigo_carrera: carrera.codigo_carrera,
-          duracion_semestres: carrera.duracion_semestres || null,
-          titulo_otorga: carrera.titulo_otorga || '',
-          estado: carrera.estado,
-          id_departamento: carrera.departamento.id_departamento // ← Ya es number
-        });
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading carrera:', error);
-        this.errorMessage = 'Error al cargar la carrera';
-        this.loading = false;
-      }
-    });
+    if (this.carreraId) {
+      this.loading = true;
+      this.carreraService.findOne(this.carreraId).subscribe({
+        next: (response: any) => {
+          const carrera: Carrera = response.data;
+          this.carreraForm.patchValue({
+            nombre_carrera: carrera.nombre_carrera,
+            codigo_carrera: carrera.codigo_carrera,
+            duracion_semestres: carrera.duracion_semestres || null,
+            titulo_otorga: carrera.titulo_otorga || '',
+            estado: carrera.estado,
+            id_departamento: carrera.departamento.id_departamento
+          });
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading carrera:', error);
+          this.errorMessage = 'Error al cargar la carrera';
+          const errorMessage = error?.error?.message || 'No se pudo cargar la carrera. Por favor, intente nuevamente.';
+          this.toastService.showError('Error al cargar carrera', errorMessage);
+          this.loading = false;
+        }
+      });
+    }
   }
-}
 
   onSubmit() {
     if (this.carreraForm.valid) {
@@ -108,11 +115,17 @@ export class CarreraFormComponent implements OnInit {
         this.carreraService.update(this.carreraId, updateData).subscribe({
           next: () => {
             this.loading = false;
+            this.toastService.showSuccess(
+              'Carrera actualizada',
+              'La carrera se ha actualizado correctamente.'
+            );
             this.router.navigate(['/carreras']);
           },
           error: (error) => {
             console.error('Error updating carrera:', error);
-            this.errorMessage = error.error?.message || 'Error al actualizar la carrera';
+            const errorMessage = error?.error?.message || 'No se pudo actualizar la carrera. Por favor, intente nuevamente.';
+            this.errorMessage = errorMessage;
+            this.toastService.showError('Error al actualizar', errorMessage);
             this.loading = false;
           }
         });
@@ -121,11 +134,17 @@ export class CarreraFormComponent implements OnInit {
         this.carreraService.create(createData).subscribe({
           next: () => {
             this.loading = false;
+            this.toastService.showSuccess(
+              'Carrera creada',
+              'La carrera se ha creado correctamente.'
+            );
             this.router.navigate(['/carreras']);
           },
           error: (error) => {
             console.error('Error creating carrera:', error);
-            this.errorMessage = error.error?.message || 'Error al crear la carrera';
+            const errorMessage = error?.error?.message || 'No se pudo crear la carrera. Por favor, intente nuevamente.';
+            this.errorMessage = errorMessage;
+            this.toastService.showError('Error al crear', errorMessage);
             this.loading = false;
           }
         });
