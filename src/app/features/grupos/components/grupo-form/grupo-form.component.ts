@@ -3,8 +3,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GrupoService } from '../../services/grupo.service';
 import { CarreraService } from '../../services/carrera.service';
-// ❌ ELIMINADO: import { DocenteService, Docente } from '../../services/docente.service';
 import { Carrera, CreateGrupoDto, UpdateGrupoDto } from '../../models/grupo.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-grupo-form',
@@ -26,21 +26,24 @@ export class GrupoFormComponent implements OnInit {
     private router: Router,
     private grupoService: GrupoService,
     private carreraService: CarreraService,
-    // ❌ ELIMINADO: private docenteService: DocenteService
+    private toastService: ToastService
   ) {
     this.grupoForm = this.createForm();
   }
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([
-      this.loadCarreras()
-      // ❌ ELIMINADO: this.loadDocentes()
-    ]);
+    // Cargar carreras primero
+    await this.loadCarreras();
 
-    this.route.params.subscribe(params => {
+    // Luego cargar el grupo si estamos en modo edición
+    this.route.params.subscribe(async params => {
       if (params['id']) {
         this.isEditMode = true;
         this.grupoId = +params['id'];
+        // Asegurar que las carreras estén cargadas antes de cargar el grupo
+        if (this.carreras.length === 0) {
+          await this.loadCarreras();
+        }
         this.loadGrupo(this.grupoId);
       }
     });
@@ -62,21 +65,50 @@ export class GrupoFormComponent implements OnInit {
   loadGrupo(id: number): void {
     this.isLoading = true;
     this.grupoService.findOne(id).subscribe({
-      next: (grupo) => {
+      next: (response: any) => {
+        // Manejar diferentes formatos de respuesta del backend
+        let grupo: any;
+        if (response && typeof response === 'object') {
+          if (response.data) {
+            grupo = response.data;
+          } else {
+            grupo = response;
+          }
+        } else {
+          grupo = response;
+        }
+
+        console.log('Grupo cargado:', grupo); // Para debugging
+
+        // Obtener id_carrera: puede venir directamente o dentro de carrera
+        let idCarrera: number | null = null;
+        if (grupo.id_carrera) {
+          idCarrera = Number(grupo.id_carrera);
+        } else if (grupo.carrera?.id_carrera) {
+          idCarrera = Number(grupo.carrera.id_carrera);
+        }
+
+        console.log('ID Carrera encontrado:', idCarrera); // Para debugging
+        
         this.grupoForm.patchValue({
-          id_carrera: grupo.id_carrera,
-          codigo_grupo: grupo.codigo_grupo,
-          nombre_grupo: grupo.nombre_grupo,
-          periodo_academico: grupo.periodo_academico,
-          // ❌ ELIMINADO: id_docente_titular: grupo.id_docente_titular || '',
+          id_carrera: idCarrera || '',
+          codigo_grupo: grupo.codigo_grupo || '',
+          nombre_grupo: grupo.nombre_grupo || '',
+          periodo_academico: grupo.periodo_academico || '',
           min_asignaturas: grupo.min_asignaturas || '',
           max_asignaturas: grupo.max_asignaturas || '',
-          estado: grupo.estado
+          estado: grupo.estado || 'activo'
         });
+        
+        // Verificar que el valor se asignó correctamente
+        console.log('Valor de id_carrera en el formulario:', this.grupoForm.get('id_carrera')?.value);
+        
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading grupo:', error);
+        const errorMessage = error?.error?.message || 'No se pudo cargar el grupo. Por favor, intente nuevamente.';
+        this.toastService.showError('Error al cargar grupo', errorMessage);
         this.isLoading = false;
       }
     });
@@ -85,13 +117,23 @@ export class GrupoFormComponent implements OnInit {
   async loadCarreras(): Promise<void> {
     return new Promise((resolve) => {
       this.carreraService.findAll().subscribe({
-        next: (carreras) => {
-          this.carreras = carreras;
+        next: (response: any) => {
+          if (Array.isArray(response)) {
+            this.carreras = response;
+          } else if (response && typeof response === 'object' && 'data' in response) {
+            this.carreras = Array.isArray(response.data) ? response.data : [response.data];
+          } else {
+            this.carreras = [];
+          }
           resolve();
         },
         error: (error) => {
           console.error('Error cargando carreras:', error);
           this.carreras = [];
+          this.toastService.showError(
+            'Error al cargar carreras',
+            'No se pudieron cargar las carreras. Por favor, intente nuevamente.'
+          );
           resolve();
         }
       });
@@ -118,10 +160,17 @@ export class GrupoFormComponent implements OnInit {
 
         this.grupoService.update(this.grupoId, updateDto).subscribe({
           next: () => {
+            this.isLoading = false;
+            this.toastService.showSuccess(
+              'Grupo actualizado',
+              'El grupo se ha actualizado correctamente.'
+            );
             this.router.navigate(['/grupos']);
           },
           error: (error) => {
             console.error('Error updating grupo:', error);
+            const errorMessage = error?.error?.message || 'No se pudo actualizar el grupo. Por favor, intente nuevamente.';
+            this.toastService.showError('Error al actualizar', errorMessage);
             this.isLoading = false;
           }
         });
@@ -130,16 +179,27 @@ export class GrupoFormComponent implements OnInit {
 
         this.grupoService.create(createDto).subscribe({
           next: () => {
+            this.isLoading = false;
+            this.toastService.showSuccess(
+              'Grupo creado',
+              'El grupo se ha creado correctamente.'
+            );
             this.router.navigate(['/grupos']);
           },
           error: (error) => {
             console.error('Error creating grupo:', error);
+            const errorMessage = error?.error?.message || 'No se pudo crear el grupo. Por favor, intente nuevamente.';
+            this.toastService.showError('Error al crear', errorMessage);
             this.isLoading = false;
           }
         });
       }
     } else {
       this.markFormGroupTouched();
+      this.toastService.showWarn(
+        'Formulario inválido',
+        'Por favor, complete todos los campos requeridos.'
+      );
     }
   }
 
