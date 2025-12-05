@@ -7,8 +7,8 @@ export interface TableColumn {
   sortable?: boolean;
   width?: string;
   template?: 'default' | 'badge' | 'status' | 'actions' | 'custom';
-  badgeClass?: (value: any) => string;
-  format?: (value: any) => string;
+  badgeClass?: (value: any, row?: any) => string;
+  format?: (value: any, row?: any) => string;
 }
 
 export interface TableAction {
@@ -146,14 +146,14 @@ export class DataTableComponent implements OnInit, OnChanges {
   getFormattedValue(item: any, column: TableColumn): string {
     const value = this.getFieldValue(item, column.field);
     if (column.format) {
-      return column.format(value);
+      return column.format(value, item);
     }
     return value?.toString() || '';
   }
 
   getBadgeClass(item: any, column: TableColumn): string {
     if (column.badgeClass) {
-      return column.badgeClass(this.getFieldValue(item, column.field));
+      return column.badgeClass(this.getFieldValue(item, column.field), item);
     }
     return '';
   }

@@ -8,8 +8,7 @@ import { CreateAsignatura, UpdateAsignatura, Asignatura } from '../../models/asi
 
 @Component({
   selector: 'app-asignatura-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  standalone: false,
   templateUrl: './asignatura-form.component.html',
   styleUrls: ['./asignatura-form.component.css']
 })

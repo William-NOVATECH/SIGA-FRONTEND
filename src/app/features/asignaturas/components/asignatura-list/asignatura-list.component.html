@@ -23,135 +23,18 @@
     {{ errorMessage }}
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading-container">
-    <div class="loading-spinner"></div>
-  </div>
-
-  <!-- Tabla de asignaturas -->
-  <div *ngIf="!loading" class="table-container">
-    <!-- Header de Tabla -->
-    <div class="table-header">
-      <div class="flex justify-between items-center">
-        <h3 class="table-title">Lista de Asignaturas</h3>
-      </div>
-    </div>
-
-    <!-- Tabla -->
-    <div class="overflow-x-auto">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Carrera</th>
-            <th>Créditos</th>
-            <th>Horas</th>
-            <th>Semestre</th>
-            <th>Tipo</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Filas de datos -->
-          <tr *ngFor="let asignatura of asignaturas" class="table-row">
-            <!-- Código -->
-            <td class="code-cell">{{ asignatura.codigo_asignatura }}</td>
-            
-            <!-- Nombre -->
-            <td>
-              <div class="name-cell">{{ asignatura.nombre_asignatura }}</div>
-            </td>
-            
-            <!-- Carrera -->
-            <td>
-              <span class="career-badge">{{ getNombreCarrera(asignatura) }}</span>
-            </td>
-            
-            <!-- Créditos -->
-            <td class="number-cell">{{ asignatura.creditos }}</td>
-            
-            <!-- Horas Semanales -->
-            <td class="number-cell">{{ asignatura.horas_semanales }}</td>
-            
-            <!-- Semestre -->
-            <td class="number-cell">{{ asignatura.semestre || '-' }}</td>
-            
-            <!-- Tipo -->
-            <td>
-              <span 
-                [class]="'type-badge type-' + asignatura.tipo"
-              >
-                <span class="status-dot"></span>
-                {{ asignatura.tipo }}
-              </span>
-            </td>
-            
-            <!-- Estado -->
-            <td>
-              <span 
-                [class]="asignatura.estado === 'activa' ? 'status-badge status-active' : 'status-badge status-inactive'"
-              >
-                <span class="status-dot"></span>
-                {{ asignatura.estado }}
-              </span>
-            </td>
-            
-            <!-- Acciones -->
-            <td>
-              <div class="action-buttons">
-                <button 
-                  (click)="viewAsignatura(asignatura.id_asignatura)"
-                  class="action-btn btn-view"
-                  title="Ver detalles"
-                >
-                  👁️
-                </button>
-                <button 
-                  (click)="editAsignatura(asignatura.id_asignatura)"
-                  class="action-btn btn-edit"
-                  title="Editar"
-                >
-                  ✏️
-                </button>
-                <button 
-                  (click)="deleteAsignatura(asignatura.id_asignatura)"
-                  class="action-btn btn-delete"
-                  title="Eliminar"
-                >
-                  🗑️
-                </button>
-              </div>
-            </td>
-          </tr>
-          
-          <!-- Estado vacío -->
-          <tr *ngIf="asignaturas.length === 0">
-            <td colspan="9">
-              <div class="empty-state">
-                <div class="empty-icon">📚</div>
-                <h3 class="empty-title">No se encontraron asignaturas</h3>
-                <p class="empty-description">Comienza creando la primera asignatura académica</p>
-                <button 
-                  (click)="createAsignatura()"
-                  class="btn-primary"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                  Crear primera asignatura
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Contador -->
-  <div *ngIf="!loading && asignaturas.length > 0" class="counter">
-    Total: {{ asignaturas.length }} asignatura(s)
-  </div>
+  <!-- Tabla Reutilizable -->
+  <app-data-table
+    [data]="asignaturas"
+    [columns]="columns"
+    [actions]="actions"
+    [loading]="loading"
+    [itemsPerPage]="10"
+    [showSearch]="true"
+    [showPagination]="true"
+    title="Lista de Asignaturas"
+    emptyMessage="No se encontraron asignaturas"
+    emptyIcon="fa-book"
+    (rowClick)="viewAsignatura($event.id_asignatura)"
+  ></app-data-table>
 </div>

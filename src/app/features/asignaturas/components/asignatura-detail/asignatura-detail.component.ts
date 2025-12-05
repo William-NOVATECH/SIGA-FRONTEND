@@ -6,8 +6,7 @@ import { Asignatura } from '../../models/asignatura.model';
 
 @Component({
   selector: 'app-asignatura-detail',
-  standalone: true,
-  imports: [CommonModule],
+  standalone: false,
   templateUrl: './asignatura-detail.component.html',
   styleUrls: ['./asignatura-detail.component.css']
 })
