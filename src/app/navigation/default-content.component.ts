@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-default-content',
+  standalone:false,
   template: `
     <div class="central-image-container">
       <img src="../../../../assets/images/managua.jpg" 

@@ -1,20 +1,12 @@
 /* ... (mantén todo el CSS anterior) ... */
 
 /* Content Area - Actualizado para features */
-.content-area {
+.content-area-da{
   flex: 1;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
-  background: #ffffff;
-  position: relative;
-  overflow: auto;
-  min-height: calc(100vh - 140px);
 }
 
 /* Cuando hay una feature cargada */
-.content-area:has(> router-outlet:not(:empty)) {
+.content-area-da:has(> router-outlet:not(:empty)) {
   background: #f8f9fa; /* Fondo gris claro para las features */
 }
 

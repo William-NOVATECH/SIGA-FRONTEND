@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { MessageService } from 'primeng/api';
 import { catchError, tap } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { loginRequest } from '../../auth/models/login-request';
@@ -25,7 +24,6 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private messageService: MessageService,
     private router: Router
   ) {}
 
@@ -41,12 +39,6 @@ export class AuthService {
             errorMessage = 'El usuario o email ya existe';
           }
           
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error en registro',
-            detail: errorMessage
-          });
-          
           return throwError(error);
         })
       );
@@ -61,32 +53,15 @@ export class AuthService {
         // Guardar el token automáticamente cuando el login es exitoso
         if (response.access_token) {
           this.setToken(response.access_token);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Éxito',
-            detail: 'Inicio de sesión exitoso'
-          });
         }
       }),
       catchError((error) => {
         if (error.status === 401) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: error.error?.message || 'Credenciales inválidas'
-          });
+
         } else if (error.status === 400) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: error.error?.message || 'Datos inválidos'
-          });
+
         } else {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Error del servidor. Intente más tarde.'
-          });
+
         }
         return throwError(error);
       })

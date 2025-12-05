@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { NavbarComponent } from './navigation/navbar/navbar.component';
-import { DefaultContentComponent } from './navigation/default-content.component';
 
 const routes: Routes = [
   { 
@@ -13,13 +12,8 @@ const routes: Routes = [
   { 
     path: '', 
     component: NavbarComponent,
-    canActivate: [AuthGuard],
+
     children: [
-      // Ruta por defecto (muestra la imagen central)
-      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
-      { path: 'inicio', component: DefaultContentComponent },
-      
-      // Rutas hijas
       { 
         path: 'departamentos', 
         loadChildren: () => import('./features/departamentos/departamentos.module').then(m => m.DepartamentosModule) 

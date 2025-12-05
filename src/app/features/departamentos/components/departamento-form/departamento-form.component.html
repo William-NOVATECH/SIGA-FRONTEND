@@ -21,9 +21,7 @@
         <!-- Campo Nombre -->
         <div class="form-group">
           <label for="nombre_departamento" class="form-label">
-            <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
+            <i class="fa-solid fa-user"></i>
             Nombre del Departamento
             <span class="required-star">*</span>
           </label>
@@ -38,15 +36,11 @@
               [class.ng-touched]="nombre_departamento?.touched"
             >
             <div class="input-icon">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-              </svg>
+              <i class="fa-solid fa-user"></i>
             </div>
           </div>
           <div *ngIf="nombre_departamento?.invalid && nombre_departamento?.touched" class="error-message">
-            <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+            <i class="fa-solid fa-exclamation"></i>
             <div *ngIf="nombre_departamento?.errors?.['required']">El nombre del departamento es obligatorio</div>
             <div *ngIf="nombre_departamento?.errors?.['maxlength']">El nombre no puede exceder los 100 caracteres</div>
           </div>
@@ -55,9 +49,7 @@
         <!-- Campo Código -->
         <div class="form-group">
           <label for="codigo_departamento" class="form-label">
-            <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-            </svg>
+            <i class="fa-solid fa-code"></i>
             Código del Departamento
             <span class="required-star">*</span>
           </label>
@@ -72,15 +64,11 @@
               [class.ng-touched]="codigo_departamento?.touched"
             >
             <div class="input-icon">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-              </svg>
+              <i class="fa-solid fa-code"></i>
             </div>
           </div>
           <div *ngIf="codigo_departamento?.invalid && codigo_departamento?.touched" class="error-message">
-            <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+            <i class="fa-solid fa-exclamation"></i>
             <div *ngIf="codigo_departamento?.errors?.['required']">El código del departamento es obligatorio</div>
             <div *ngIf="codigo_departamento?.errors?.['maxlength']">El código no puede exceder los 10 caracteres</div>
           </div>
@@ -89,9 +77,7 @@
         <!-- Campo Estado -->
         <div class="form-group">
           <label for="estado" class="form-label">
-            <svg class="form-label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+            <i class="fa-solid fa-toggle-on"></i>
             Estado del Departamento
           </label>
           <div class="input-group">
@@ -104,14 +90,10 @@
               <option value="inactivo">Inactivo</option>
             </select>
             <div class="input-icon">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
+              <i class="fa-solid fa-toggle-on"></i>
             </div>
             <div class="select-arrow">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
+              <i class="fa-solid fa-chevron-down"></i>
             </div>
           </div>
         </div>

@@ -1,14 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DepartamentoService } from '../../services/departamento.service';
 import { CreateDepartamento, UpdateDepartamento } from '../../models/departamento.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-departamento-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  standalone: false,
   templateUrl: './departamento-form.component.html',
   styleUrls: ['./departamento-form.component.css']
 })
@@ -22,7 +21,8 @@ export class DepartamentoFormComponent implements OnInit {
     private fb: FormBuilder,
     private departamentoService: DepartamentoService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.departamentoForm = this.fb.group({
       nombre_departamento: ['', [Validators.required, Validators.maxLength(100)]],
@@ -52,6 +52,10 @@ export class DepartamentoFormComponent implements OnInit {
         error: (error) => {
           console.error('Error loading departamento:', error);
           this.loading = false;
+          this.toastService.showError(
+            'Error al cargar',
+            'No se pudo cargar la información del departamento. Por favor, intente nuevamente.'
+          );
         }
       });
     }
@@ -67,11 +71,20 @@ export class DepartamentoFormComponent implements OnInit {
         this.departamentoService.update(this.departamentoId, updateData).subscribe({
           next: () => {
             this.loading = false;
+            this.toastService.showSuccess(
+              'Departamento actualizado',
+              'El departamento se ha actualizado correctamente.'
+            );
             this.router.navigate(['/departamentos']);
           },
           error: (error) => {
             console.error('Error updating departamento:', error);
             this.loading = false;
+            const errorMessage = error?.error?.message || 'No se pudo actualizar el departamento. Por favor, intente nuevamente.';
+            this.toastService.showError(
+              'Error al actualizar',
+              errorMessage
+            );
           }
         });
       } else {
@@ -79,11 +92,20 @@ export class DepartamentoFormComponent implements OnInit {
         this.departamentoService.create(createData).subscribe({
           next: () => {
             this.loading = false;
+            this.toastService.showSuccess(
+              'Departamento creado',
+              'El departamento se ha creado correctamente.'
+            );
             this.router.navigate(['/departamentos']);
           },
           error: (error) => {
             console.error('Error creating departamento:', error);
             this.loading = false;
+            const errorMessage = error?.error?.message || 'No se pudo crear el departamento. Por favor, intente nuevamente.';
+            this.toastService.showError(
+              'Error al crear',
+              errorMessage
+            );
           }
         });
       }

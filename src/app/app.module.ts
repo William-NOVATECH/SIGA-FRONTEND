@@ -5,30 +5,39 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 
 import { AppComponent } from './app.component';
-import { MessageService } from 'primeng/api';
 import { JwtInterceptor } from './core/Interceptors/jwt.interceptor';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
-import { DepartamentosComponent } from './features/departamentos/departamentos.component';
-import { NavigationModule } from './navigation/navigation.module';
-
-// REMOVED: DefaultContentComponent from declarations
+import { NavbarComponent } from './navigation/navbar/navbar.component';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { providePrimeNG } from 'primeng/config';
+import Material from '@primeng/themes/material';
 
 @NgModule({
   declarations: [
     AppComponent,
     AdminLayoutComponent,
-    DepartamentosComponent
-    // DefaultContentComponent ← ELIMINADO de aquí
+    NavbarComponent,
   ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
     AppRoutingModule,
     HttpClientModule,
-    NavigationModule
+    ToastModule
   ],
   providers: [
     MessageService,
+    providePrimeNG({
+      theme: {
+        preset: Material,
+        options: {
+          prefix: 'p',
+          darkModeSelector: 'system',
+          cssLayer: false
+        }
+      }
+    }),
     { 
       provide: HTTP_INTERCEPTORS, 
       useClass: JwtInterceptor, 

@@ -1,0 +1,179 @@
+<div class="data-table-container">
+  <!-- Header -->
+  <div *ngIf="title" class="table-header">
+    <h3 class="table-title">{{ title }}</h3>
+    <div class="table-count" *ngIf="showPagination">
+      {{ startItem }}-{{ endItem }} de {{ totalItems }} registros
+    </div>
+  </div>
+
+  <!-- Búsqueda -->
+  <div *ngIf="showSearch" class="search-container">
+    <div class="search-input-wrapper">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        (ngModelChange)="onSearchChange()"
+        [placeholder]="searchPlaceholder"
+        class="search-input"
+      />
+      <button 
+        *ngIf="searchTerm" 
+        (click)="searchTerm = ''; onSearchChange()" 
+        class="search-clear"
+      >
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="table-wrapper">
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th 
+              *ngFor="let col of columns" 
+              [style.width]="col.width"
+              [class.sortable]="col.sortable"
+              (click)="col.sortable && onSort(col.field)"
+            >
+              <div class="th-content">
+                {{ col.header }}
+                <span *ngIf="col.sortable" class="sort-indicator">
+                  <i 
+                    *ngIf="sortField !== col.field" 
+                    class="fa-solid fa-sort sort-icon"
+                  ></i>
+                  <i 
+                    *ngIf="sortField === col.field && sortDirection === 'ASC'" 
+                    class="fa-solid fa-sort-up sort-icon active"
+                  ></i>
+                  <i 
+                    *ngIf="sortField === col.field && sortDirection === 'DESC'" 
+                    class="fa-solid fa-sort-down sort-icon active"
+                  ></i>
+                </span>
+              </div>
+            </th>
+            <th *ngIf="actions.length > 0" class="actions-column">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading State -->
+          <tr *ngIf="loading">
+            <td [attr.colspan]="columns.length + (actions.length > 0 ? 1 : 0)">
+              <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Cargando datos...</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="!loading && paginatedData.length === 0">
+            <td [attr.colspan]="columns.length + (actions.length > 0 ? 1 : 0)">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <i [class]="'fa-solid ' + emptyIcon"></i>
+                </div>
+                <h3 class="empty-title">{{ emptyMessage }}</h3>
+                <p class="empty-description" *ngIf="searchTerm">
+                  No se encontraron resultados para "{{ searchTerm }}"
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data Rows -->
+          <tr 
+            *ngFor="let row of paginatedData" 
+            class="table-row"
+            (click)="onRowClick(row)"
+          >
+            <td *ngFor="let col of columns">
+              <!-- Default Template -->
+              <span *ngIf="!col.template || col.template === 'default'">
+                {{ getFormattedValue(row, col) }}
+              </span>
+
+              <!-- Badge Template -->
+              <span 
+                *ngIf="col.template === 'badge'" 
+                [class]="'badge ' + getBadgeClass(row, col)"
+              >
+                {{ getFormattedValue(row, col) }}
+              </span>
+
+              <!-- Status Template -->
+              <span 
+                *ngIf="col.template === 'status'" 
+                [class]="'status-badge ' + getBadgeClass(row, col)"
+              >
+                <span class="status-dot"></span>
+                {{ getFormattedValue(row, col) }}
+              </span>
+            </td>
+
+            <!-- Actions Column -->
+            <td *ngIf="actions.length > 0" class="actions-cell" (click)="$event.stopPropagation()">
+              <div class="action-buttons">
+                <ng-container *ngFor="let action of actions">
+                  <button
+                    *ngIf="shouldShowAction(action, row)"
+                    (click)="onActionClick(action, row, $event)"
+                    [class]="'btn-action ' + (action.class || '')"
+                    [title]="action.label"
+                  >
+                    <i *ngIf="action.icon" [class]="'fa-solid ' + action.icon"></i>
+                    <span>{{ action.label }}</span>
+                  </button>
+                </ng-container>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div *ngIf="showPagination && totalPages > 1 && !loading" class="pagination">
+    <div class="pagination-info">
+      Página {{ currentPage }} de {{ totalPages }} • {{ totalItems }} registros
+    </div>
+    <div class="pagination-controls">
+      <button 
+        (click)="onPageChange(currentPage - 1)" 
+        [disabled]="currentPage === 1" 
+        class="pagination-btn"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+        Anterior
+      </button>
+
+      <div class="pagination-pages">
+        <button 
+          *ngFor="let page of pages" 
+          (click)="onPageChange(page)" 
+          [class.active]="page === currentPage"
+          class="page-btn"
+        >
+          {{ page }}
+        </button>
+      </div>
+
+      <button 
+        (click)="onPageChange(currentPage + 1)" 
+        [disabled]="currentPage === totalPages" 
+        class="pagination-btn"
+      >
+        Siguiente
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+

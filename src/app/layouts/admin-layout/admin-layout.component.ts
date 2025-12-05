@@ -4,10 +4,20 @@ import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-admin-layout',
+  standalone:false,
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.css'
 })
 export class AdminLayoutComponent {
+
+  navItem: any[] = [
+    {
+      displayName: 'Navbar',
+      iconName: 'dashboard',
+      route: '/navbar'
+    }
+  ];
+
   constructor(
     private authService: AuthService,
     private router: Router
