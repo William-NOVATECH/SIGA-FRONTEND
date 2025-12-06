@@ -1,15 +1,18 @@
 <div class="page-container">
   <div class="detail-header">
     <button (click)="onBack()" class="btn btn-back">
-      ← Volver a la lista
+      <i class="fa-solid fa-arrow-left"></i>
+      Volver
     </button>
     <h1>Detalles de Asignación</h1>
     <div class="header-actions">
-      <button (click)="onEdit()" class="btn btn-edit" [disabled]="!asignacion">
-        ✏️ Editar
+      <button (click)="onEdit()" class="btn btn-edit btn-sm" [disabled]="!asignacion" title="Editar">
+        <i class="fa-solid fa-pencil"></i>
+        Editar
       </button>
-      <button (click)="onDelete()" class="btn btn-delete" [disabled]="!asignacion">
-        🗑️ Eliminar
+      <button (click)="onDelete()" class="btn btn-delete btn-sm" [disabled]="!asignacion" title="Eliminar">
+        <i class="fa-solid fa-trash"></i>
+        Eliminar
       </button>
     </div>
   </div>
@@ -28,14 +31,14 @@
   <!-- Detalles -->
   <div *ngIf="asignacion && !loading" class="detail-card">
     <div class="card-header">
-      <h2>Información de la Asignación</h2>
+      <h2><i class="fa-solid fa-info-circle"></i> Información de la Asignación</h2>
       <div class="header-badges">
-        <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge">
+        <span [class]="getEstadoClass(asignacion.estado)" class="estado-badge badge-sm">
           {{ asignacion.estado }}
         </span>
         <span *ngIf="asignacion.estado_aprobacion" 
               [class]="getEstadoAprobacionClass(asignacion.estado_aprobacion)" 
-              class="estado-aprobacion-badge">
+              class="estado-aprobacion-badge badge-sm">
           <i class="fa-solid" [ngClass]="{
             'fa-file-pen': asignacion.estado_aprobacion === 'borrador',
             'fa-clock': asignacion.estado_aprobacion === 'pendiente_revision' || asignacion.estado_aprobacion === 'pendiente_aprobacion',
@@ -45,9 +48,9 @@
           }"></i>
           {{ asignacion.estado_aprobacion | titlecase }}
         </span>
-        <span *ngIf="asignacion.version_actual" class="version-badge">
+        <span *ngIf="asignacion.version_actual" class="version-badge badge-sm">
           <i class="fa-solid fa-code-branch"></i>
-          Versión {{ asignacion.version_actual }}
+          v{{ asignacion.version_actual }}
         </span>
       </div>
     </div>
@@ -56,9 +59,8 @@
       <div class="detail-grid">
         
         <!-- Grupo y Carrera -->
-         <!-- En la sección de Grupo y Carrera -->
 <div class="detail-section">
-  <h3>🏫 Grupo y Carrera</h3>
+  <h3><i class="fa-solid fa-users"></i> Grupo y Carrera</h3>
   <div class="detail-item">
     <label>Código Grupo:</label>
     <span>{{ asignacion.grupo.codigo_grupo }}</span>
@@ -78,8 +80,8 @@
   </div>
 </div>
         <!-- Asignatura -->
-         <div class="detail-section">
-          <h3>📚 Asignatura</h3>
+<div class="detail-section">
+  <h3><i class="fa-solid fa-book"></i> Asignatura</h3>
            <div class="detail-item" *ngIf="asignacion.asignatura">
             <label>Código:</label>
             <span>{{ asignacion.asignatura.codigo_asignatura || 'N/A' }}</span>
@@ -91,8 +93,8 @@
         </div>
 
         <!-- Docente -->
-          <div class="detail-section">
-          <h3>👨‍🏫 Docente</h3>
+<div class="detail-section">
+  <h3><i class="fa-solid fa-chalkboard-teacher"></i> Docente</h3>
             <div class="detail-item" *ngIf="asignacion.docente">
             <label>Código:</label>
             <span>{{ asignacion.docente.codigo_docente || 'N/A' }}</span>
@@ -107,8 +109,8 @@
         </div>
 
         <!-- Información de Asignación -->
-        <div class="detail-section">
-          <h3>📋 Información de Asignación</h3>
+<div class="detail-section">
+  <h3><i class="fa-solid fa-clipboard-list"></i> Información de Asignación</h3>
           <div class="detail-item">
             <label>Fecha de Asignación:</label>
             <span class="info-value">{{ asignacion.fecha_asignacion | date:'dd/MM/yyyy HH:mm' }}</span>
@@ -125,9 +127,41 @@
           </div>
         </div>
 
+        <!-- Información del Creador -->
+<div class="detail-section" *ngIf="asignacion.id_coordinador_carrera">
+  <h3><i class="fa-solid fa-user"></i> Información del Creador</h3>
+          <div class="detail-item">
+            <label>Creado por:</label>
+            <span class="info-value">
+              <span *ngIf="loadingCreador">
+                <i class="fa-solid fa-spinner fa-spin"></i> Cargando...
+              </span>
+              <span *ngIf="!loadingCreador">
+                <strong>{{ getNombreUsuarioCreador() }}</strong>
+                <span *ngIf="usuarioCreador && usuarioCreador.email" class="email-info">
+                  ({{ usuarioCreador.email }})
+                </span>
+                <span *ngIf="esUsuarioCreador()" class="badge-creador">
+                  <i class="fa-solid fa-check-circle"></i> Eres el creador
+                </span>
+              </span>
+            </span>
+          </div>
+          <div class="detail-item" *ngIf="asignacion.fecha_creacion_inicial">
+            <label>Fecha de Creación:</label>
+            <span class="info-value">{{ asignacion.fecha_creacion_inicial | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="detail-item" *ngIf="!asignacion.id_coordinador_carrera">
+            <label class="warning-label">
+              <i class="fa-solid fa-exclamation-triangle"></i>
+              No se registró el usuario creador
+            </label>
+          </div>
+        </div>
+
         <!-- Observaciones por Rol -->
-        <div class="detail-section" *ngIf="asignacion.observaciones_coordinador || asignacion.observaciones_director || asignacion.observaciones_administrador">
-          <h3>💬 Observaciones</h3>
+<div class="detail-section" *ngIf="asignacion.observaciones_coordinador || asignacion.observaciones_director || asignacion.observaciones_administrador">
+  <h3><i class="fa-solid fa-comments"></i> Observaciones</h3>
           
           <div class="detail-item" *ngIf="asignacion.observaciones_coordinador">
             <label>Observaciones del Coordinador:</label>
@@ -159,7 +193,16 @@
         <i class="fa-solid fa-info-circle"></i>
         <div>
           <strong>No puedes enviar esta asignación a revisión</strong>
-          <p>Solo el Coordinador que creó esta asignación puede enviarla a revisión. Si necesitas enviarla, contacta al coordinador que la creó o verifica que estés logueado con la cuenta correcta.</p>
+          <p *ngIf="asignacion.id_coordinador_carrera">
+            Esta asignación fue creada por: <strong>{{ getNombreUsuarioCreador() }}</strong>.
+            Solo el coordinador que creó esta asignación puede enviarla a revisión.
+          </p>
+          <p *ngIf="!asignacion.id_coordinador_carrera">
+            Esta asignación no tiene un coordinador creador registrado. Por favor, contacta al administrador del sistema.
+          </p>
+          <p *ngIf="esUsuarioCreador() && !isCoordinador()">
+            <strong>Nota:</strong> Eres el creador de esta asignación, pero tu rol actual no es Coordinador. Verifica que tengas el rol de Coordinador activo.
+          </p>
         </div>
       </div>
 
@@ -167,23 +210,22 @@
         <!-- Botón: Enviar a Revisión (Coordinador) -->
         <button *ngIf="canEnviarRevision()" 
                 (click)="onEnviarRevision()" 
-                class="btn btn-flow btn-send-review"
+                class="btn btn-flow btn-send-review btn-compact"
                 [disabled]="loading">
           <i class="fa-solid fa-paper-plane"></i>
-          <span>Enviar a Revisión</span>
-          <i class="fa-solid fa-arrow-right"></i>
+          Enviar a Revisión
         </button>
 
         <!-- Botones: Revisar (Director) -->
         <div *ngIf="canRevisar()" class="review-actions">
-          <button (click)="onRevisar(true)" 
-                  class="btn btn-flow btn-approve-review"
+          <button (click)="onOpenRevisarModal(true)" 
+                  class="btn btn-flow btn-approve-review btn-compact"
                   [disabled]="loading">
             <i class="fa-solid fa-check-circle"></i>
-            Aprobar Revisión
+            Aprobar
           </button>
-          <button (click)="onRevisar(false)" 
-                  class="btn btn-flow btn-reject-review"
+          <button (click)="onOpenRevisarModal(false)" 
+                  class="btn btn-flow btn-reject-review btn-compact"
                   [disabled]="loading">
             <i class="fa-solid fa-times-circle"></i>
             Rechazar
@@ -192,8 +234,8 @@
 
         <!-- Botón: Aprobar Final (Administrador) -->
         <button *ngIf="canAprobarFinal()" 
-                (click)="onAprobarFinal()" 
-                class="btn btn-flow btn-approve-final"
+                (click)="onOpenAprobarFinalModal()" 
+                class="btn btn-flow btn-approve-final btn-compact"
                 [disabled]="loading">
           <i class="fa-solid fa-check-double"></i>
           Aprobar Final
@@ -203,10 +245,10 @@
       <!-- Botones de Versionamiento -->
       <div class="version-actions">
         <button (click)="loadVersiones()" 
-                class="btn btn-secondary btn-sm"
+                class="btn btn-secondary btn-sm btn-compact"
                 [disabled]="loadingVersiones">
           <i class="fa-solid fa-history"></i>
-          Ver Historial de Versiones
+          Historial
         </button>
       </div>
     </div>
@@ -375,6 +417,191 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showCompararModal = false; comparacionResult = null">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Revisar Carga Docente -->
+  <div *ngIf="showRevisarModal" class="modal-overlay" (click)="onCloseRevisarModal()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid" [ngClass]="revisarForm.aprobado ? 'fa-check-circle' : 'fa-times-circle'"></i>
+          {{ revisarForm.aprobado ? 'Aprobar Revisión' : 'Rechazar Revisión' }}
+        </h3>
+        <button class="btn-close" (click)="onCloseRevisarModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="revision-form">
+          <!-- Observaciones -->
+          <div class="form-group">
+            <label for="observaciones-revision">
+              <i class="fa-solid fa-comment"></i>
+              Observaciones {{ revisarForm.aprobado ? '(opcional)' : '' }}
+            </label>
+            <textarea 
+              id="observaciones-revision"
+              [(ngModel)]="revisarForm.observaciones"
+              class="form-control"
+              rows="4"
+              placeholder="Ingresa tus observaciones sobre esta carga docente..."></textarea>
+          </div>
+
+          <!-- Cambios (solo si se aprueba) -->
+          <div *ngIf="revisarForm.aprobado" class="changes-section">
+            <h4>
+              <i class="fa-solid fa-edit"></i>
+              Cambios Sugeridos (opcional)
+            </h4>
+            <p class="help-text">Puedes sugerir cambios que se aplicarán al crear la nueva versión.</p>
+
+            <!-- Cambiar Docente -->
+            <div class="form-group">
+              <label for="cambio-docente">
+                <i class="fa-solid fa-user-tie"></i>
+                Cambiar Docente
+              </label>
+              <select 
+                id="cambio-docente"
+                [(ngModel)]="revisarForm.cambios.id_docente"
+                class="form-control">
+                <option [value]="null">Mantener docente actual</option>
+                <option *ngFor="let docente of docentesDisponibles" [value]="docente.id_docente">
+                  {{ docente.nombres }} {{ docente.apellidos }}
+                  <span *ngIf="docente.codigo_docente">({{ docente.codigo_docente }})</span>
+                </option>
+              </select>
+              <small *ngIf="asignacion && revisarForm.cambios.id_docente === asignacion.id_docente" class="text-muted">
+                No hay cambio de docente
+              </small>
+            </div>
+
+            <!-- Cambiar Estado -->
+            <div class="form-group">
+              <label for="cambio-estado">
+                <i class="fa-solid fa-toggle-on"></i>
+                Cambiar Estado
+              </label>
+              <select 
+                id="cambio-estado"
+                [(ngModel)]="revisarForm.cambios.estado"
+                class="form-control">
+                <option [value]="null">Mantener estado actual</option>
+                <option value="activa">Activa</option>
+                <option value="finalizada">Finalizada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+              <small *ngIf="asignacion && revisarForm.cambios.estado === asignacion.estado" class="text-muted">
+                No hay cambio de estado
+              </small>
+            </div>
+
+            <!-- Observaciones para cambios -->
+            <div class="form-group">
+              <label for="observaciones-cambios">
+                <i class="fa-solid fa-sticky-note"></i>
+                Observaciones sobre los cambios
+              </label>
+              <textarea 
+                id="observaciones-cambios"
+                [(ngModel)]="revisarForm.cambios.observaciones"
+                class="form-control"
+                rows="2"
+                placeholder="Explica el motivo de los cambios sugeridos..."></textarea>
+            </div>
+
+            <!-- Resumen de cambios -->
+            <div *ngIf="hasChanges()" class="changes-summary">
+              <h5>
+                <i class="fa-solid fa-list-check"></i>
+                Resumen de Cambios:
+              </h5>
+              <ul>
+                <li *ngIf="revisarForm.cambios.id_docente && revisarForm.cambios.id_docente !== asignacion?.id_docente">
+                  <strong>Docente:</strong> Será cambiado
+                </li>
+                <li *ngIf="revisarForm.cambios.estado && revisarForm.cambios.estado !== asignacion?.estado">
+                  <strong>Estado:</strong> {{ asignacion?.estado }} → {{ revisarForm.cambios.estado }}
+                </li>
+                <li *ngIf="revisarForm.cambios.observaciones && revisarForm.cambios.observaciones.trim()">
+                  <strong>Observaciones:</strong> Se agregarán observaciones
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Mensaje de rechazo -->
+          <div *ngIf="!revisarForm.aprobado" class="rejection-warning">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+            <p>Al rechazar esta carga docente, volverá al estado <strong>borrador</strong> y el coordinador deberá corregir y reenviar.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="onCloseRevisarModal()">
+          <i class="fa-solid fa-times"></i>
+          Cancelar
+        </button>
+        <button 
+          class="btn" 
+          [ngClass]="revisarForm.aprobado ? 'btn-primary' : 'btn-danger'"
+          (click)="onConfirmRevisar()"
+          [disabled]="loading">
+          <i class="fa-solid" [ngClass]="revisarForm.aprobado ? 'fa-check' : 'fa-times'"></i>
+          {{ loading ? 'Procesando...' : (revisarForm.aprobado ? 'Aprobar' : 'Rechazar') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aprobar Final -->
+  <div *ngIf="showAprobarFinalModal" class="modal-overlay" (click)="onCloseAprobarFinalModal()">
+    <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-check-double"></i>
+          Aprobación Final
+        </h3>
+        <button class="btn-close" (click)="onCloseAprobarFinalModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="revision-form">
+          <div class="approval-info">
+            <i class="fa-solid fa-info-circle"></i>
+            <p>Al dar la aprobación final, esta carga docente quedará completamente aprobada y el proceso de aprobación finalizará.</p>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="form-group">
+            <label for="observaciones-aprobacion">
+              <i class="fa-solid fa-comment"></i>
+              Observaciones (opcional)
+            </label>
+            <textarea 
+              id="observaciones-aprobacion"
+              [(ngModel)]="aprobarFinalForm.observaciones"
+              class="form-control"
+              rows="4"
+              placeholder="Ingresa tus observaciones finales sobre esta carga docente..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="onCloseAprobarFinalModal()">
+          <i class="fa-solid fa-times"></i>
+          Cancelar
+        </button>
+        <button 
+          class="btn btn-primary"
+          (click)="onConfirmAprobarFinal()"
+          [disabled]="loading">
+          <i class="fa-solid fa-check-double"></i>
+          {{ loading ? 'Procesando...' : 'Aprobar Finalmente' }}
+        </button>
       </div>
     </div>
   </div>

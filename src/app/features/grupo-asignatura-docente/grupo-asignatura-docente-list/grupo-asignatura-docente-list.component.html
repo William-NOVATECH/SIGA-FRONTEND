@@ -1,18 +1,20 @@
 <div class="container">
   <!-- Header -->
   <div class="header">
-    <h2>Asignaciones de Carga Docente</h2>
+    <h2><i class="fa-solid fa-list-check"></i> Asignaciones de Carga Docente</h2>
     <div class="actions">
       <div class="search-box">
+        <i class="fa-solid fa-search search-icon"></i>
         <input
           type="text"
           placeholder="Buscar asignaciones..."
-          
+          [(ngModel)]="searchTerm"
           (input)="onSearch()"
           class="search-input"
         />
       </div>
-      <button (click)="onRefresh()" class="btn btn-secondary" [disabled]="loading">
+      <button (click)="onRefresh()" class="btn btn-secondary btn-compact" [disabled]="loading">
+        <i class="fa-solid" [ngClass]="loading ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
         {{ loading ? 'Cargando...' : 'Actualizar' }}
       </button>
     </div>
@@ -30,7 +32,8 @@
 
   <!-- Empty State -->
   <div *ngIf="!loading && filteredAsignaciones.length === 0" class="empty-state">
-    No se encontraron asignaciones
+    <i class="fa-solid fa-inbox"></i>
+    <p>No se encontraron asignaciones</p>
   </div>
 
   <!-- Table -->
@@ -62,26 +65,28 @@
             </span>
           </td>
           <td class="actions-cell">
-  <!-- Botón VER primero -->
-  <button 
-    (click)="onView(asignacion.id_grupo_asignatura_docente)" 
-    class="btn btn-sm btn-view"
-  >
-    Ver
-  </button>
-  <button 
-    (click)="onEdit(asignacion.id_grupo_asignatura_docente)" 
-    class="btn btn-sm btn-edit"
-  >
-    Editar
-  </button>
-  <button 
-    (click)="onDelete(asignacion.id_grupo_asignatura_docente)" 
-    class="btn btn-sm btn-delete"
-  >
-    Eliminar
-  </button>
-</td>
+            <button 
+              (click)="onView(asignacion.id_grupo_asignatura_docente)" 
+              class="btn btn-sm btn-view"
+              title="Ver detalles"
+            >
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button 
+              (click)="onEdit(asignacion.id_grupo_asignatura_docente)" 
+              class="btn btn-sm btn-edit"
+              title="Editar"
+            >
+              <i class="fa-solid fa-pencil"></i>
+            </button>
+            <button 
+              (click)="onDelete(asignacion.id_grupo_asignatura_docente)" 
+              class="btn btn-sm btn-delete"
+              title="Eliminar"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>

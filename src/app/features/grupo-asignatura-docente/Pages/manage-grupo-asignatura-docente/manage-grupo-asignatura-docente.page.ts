@@ -159,8 +159,33 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
         
         this.grupoAsignaturaDocenteService.createVersionInicial(versionInicialDto).subscribe({
           next: (asignacion) => {
-            this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
-            this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacion.id_grupo_asignatura_docente]);
+            console.log('✅ Versión inicial creada (respuesta inmediata):', asignacion);
+            console.log('ID coordinador en respuesta inmediata:', asignacion.id_coordinador_carrera);
+            
+            // Recargar la asignación completa desde el backend para obtener todos los campos
+            // (el backend puede no retornar id_coordinador_carrera en la respuesta de creación)
+            this.grupoAsignaturaDocenteService.findOne(asignacion.id_grupo_asignatura_docente).subscribe({
+              next: (asignacionCompleta) => {
+                console.log('✅ Asignación recargada completa:', asignacionCompleta);
+                console.log('ID coordinador después de recargar:', asignacionCompleta.id_coordinador_carrera);
+                
+                // Actualizar usuario actual desde el backend para asegurar que tenemos el ID correcto
+                this.authService.fetchCurrentUserWithRoles().subscribe(user => {
+                  if (user) {
+                    console.log('Usuario actualizado después de crear asignación:', user.id_usuario, user.username);
+                  }
+                });
+                
+                this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
+                this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacionCompleta.id_grupo_asignatura_docente]);
+              },
+              error: (error) => {
+                console.error('Error al recargar asignación:', error);
+                // Aún así, navegar a la página de detalle
+                this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
+                this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacion.id_grupo_asignatura_docente]);
+              }
+            });
           },
           error: (error) => {
             console.error('Error creating version inicial:', error);
@@ -208,6 +233,13 @@ onSubmitBulkForm(dto: CreateBulkGrupoAsignaturaDocente): void {
     return;
   }
 
+  // Validar que todas las asignaturas tengan docente asignado
+  if (!dto.asignaturas_docentes || dto.asignaturas_docentes.length === 0) {
+    this.toastService.showError('Error de validación', 'Debes agregar al menos una asignatura con docente.');
+    this.loading = false;
+    return;
+  }
+
   // Convertir id_plan a número si viene como string
   const bulkDto: CreateBulkGrupoAsignaturaDocente = {
     ...dto,
@@ -222,19 +254,66 @@ onSubmitBulkForm(dto: CreateBulkGrupoAsignaturaDocente): void {
   this.grupoAsignaturaDocenteService.createBulk(bulkDto).subscribe({
     next: (response: BulkCreateResponse) => {
       this.loading = false;
+      
+      // La respuesta ahora incluye información del grupo, plan y carrera
+      const grupoInfo = response.grupo ? 
+        `${response.grupo.codigo_grupo} - ${response.grupo.nombre_grupo || 'Sin nombre'}` : 
+        'grupo seleccionado';
+
       if (response.fallidas === 0) {
-        this.toastService.showSuccess('Asignaciones creadas', `Se crearon ${response.exitosas} asignaciones correctamente.`);
+        // Todo exitoso
+        const mensaje = `Se crearon ${response.exitosas} asignación(es) correctamente para el ${grupoInfo}.`;
+        this.toastService.showSuccess('Asignaciones creadas', mensaje);
+        this.router.navigate(['/grupo-asignatura-docente']);
+      } else if (response.exitosas > 0) {
+        // Parcialmente exitoso
+        let mensaje = `Se crearon ${response.exitosas} asignación(es) exitosamente para el ${grupoInfo}.`;
+        mensaje += `\n${response.fallidas} asignación(es) fallaron.`;
+        
+        // Mostrar detalles de errores
+        if (response.errores && response.errores.length > 0) {
+          const erroresDetalle = response.errores.slice(0, 3).map(e => 
+            `• Asignatura ${e.asignatura}, Docente ${e.docente}: ${e.error}`
+          ).join('\n');
+          
+          if (response.errores.length > 3) {
+            mensaje += `\n\nErrores (mostrando primeros 3):\n${erroresDetalle}\n... y ${response.errores.length - 3} más.`;
+          } else {
+            mensaje += `\n\nErrores:\n${erroresDetalle}`;
+          }
+        }
+        
+        this.toastService.showWarn('Creación parcial', mensaje);
+        console.warn('Errores completos:', response.errores);
         this.router.navigate(['/grupo-asignatura-docente']);
       } else {
-        const mensaje = `Se crearon ${response.exitosas} asignaciones exitosamente, pero ${response.fallidas} fallaron.`;
-        this.toastService.showWarn('Creación parcial', mensaje);
-        console.warn('Errores:', response.errores);
-        this.router.navigate(['/grupo-asignatura-docente']);
+        // Todo falló
+        let mensaje = `No se pudo crear ninguna asignación para el ${grupoInfo}.`;
+        if (response.errores && response.errores.length > 0) {
+          const erroresDetalle = response.errores.map(e => 
+            `• Asignatura ${e.asignatura}, Docente ${e.docente}: ${e.error}`
+          ).join('\n');
+          mensaje += `\n\nErrores:\n${erroresDetalle}`;
+        }
+        this.toastService.showError('Error al crear', mensaje);
       }
     },
     error: (error) => {
       console.error('Error creating bulk asignaciones:', error);
-      const errorMessage = error.error?.message || error.message || 'No se pudieron crear las asignaciones.';
+      
+      let errorMessage = 'No se pudieron crear las asignaciones.';
+      
+      // Mensajes de error más descriptivos
+      if (error.status === 400) {
+        errorMessage = error.error?.message || 'Error de validación: Verifica que todas las asignaturas pertenezcan al plan del grupo.';
+      } else if (error.status === 404) {
+        errorMessage = 'No se encontró el grupo o plan especificado.';
+      } else if (error.status === 409) {
+        errorMessage = error.error?.message || 'Algunas asignaciones ya existen (duplicados).';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
       this.toastService.showError('Error al crear', errorMessage);
       this.loading = false;
     }

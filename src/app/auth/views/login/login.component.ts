@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/admin/usuarios']);
+      this.router.navigate(['/admin-layout']);
     }
   }
 
@@ -60,7 +60,7 @@ export class LoginComponent implements OnInit {
             summary: 'Éxito',
             detail: 'Inicio de sesión exitoso'
           });
-          this.router.navigate(['/admin/usuarios']);
+          this.router.navigate(['/admin-layout']);
           this.loading = false;
         },
         error: (error) => {

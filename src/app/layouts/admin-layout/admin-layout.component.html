@@ -23,77 +23,91 @@
   <div class="main-content">
     <div class="access-card">
       <div class="access-header">
-        <p class="access-description">Estos son los módulos a los que su cuenta de Director de Departamento tiene acceso
+        <p class="access-description" *ngIf="!loading">
+          <span *ngIf="!isInvitado() && !hasInactiveRole()">
+            Estos son los módulos a los que su cuenta de <strong>{{ userRoleName }}</strong> tiene acceso
+          </span>
+          <span *ngIf="hasInactiveRole()">
+            Su cuenta tiene el rol <strong>{{ getInactiveRoleName() }}</strong> pero está inactivo
+          </span>
+          <span *ngIf="isInvitado() && !hasInactiveRole()">
+            Su cuenta está en espera de asignación de rol
+          </span>
+        </p>
+        <p class="access-description" *ngIf="loading">
+          Cargando información...
         </p>
       </div>
 
-      <div class="divider"></div>
+      <div class="divider" *ngIf="!loading"></div>
 
-      <div class="modules-container">
-        <!-- Módulo 1 - Gestión de Asignaturas -->
-        <div class="module-card professional-card">
-          <div class="module-header">
-            <div class="module-icon">📊</div>
-            <div class="module-title-section">
-              <h4 class="module-title">Gestión de Asignaturas</h4>
-            </div>
-          </div>
-          <div class="module-actions">
-            <button class="btn-primary" (click)="goToNavbar()">
-              <span class="btn-icon">→</span>
-              Ir al sitio
-            </button>
-            <!-- <button class="btn-secondary">
-        <span class="btn-icon">?</span>
-        Ayuda SIGI
-      </button> -->
-          </div>
+      <!-- Mensaje para usuarios con rol inactivo -->
+      <div *ngIf="!loading && hasInactiveRole()" class="inactive-role-message">
+        <div class="message-icon">🔒</div>
+        <div class="message-content">
+          <h3>Rol Inactivo</h3>
+          <p>
+            Su cuenta tiene el rol de <strong>{{ getInactiveRoleName() }}</strong>, pero actualmente está <strong>inactivo</strong>.
+          </p>
+          <p>
+            Para acceder a los módulos del sistema, un administrador debe activar su rol.
+          </p>
+          <p class="message-note">
+            <i class="fa-solid fa-info-circle"></i>
+            Por favor, contacte al administrador del sistema para activar su rol.
+          </p>
         </div>
+      </div>
 
-        <!-- Módulo 2 - Gestión Carga Docente -->
-        <div class="module-card professional-card">
-          <div class="module-header">
-            <div class="module-icon">📚</div>
-            <div class="module-title-section">
-              <h4 class="module-title">Gestión Carga Docente</h4>
-            </div>
-          </div>
-          <div class="module-actions">
-            <button class="btn-primary" (click)="goToNavbar()">
-              <span class="btn-icon">→</span>
-              Ir al sitio
-            </button>
-            <!-- <button class="btn-secondary">
-        <span class="btn-icon">📖</span>
-        Il sitio
-      </button> -->
-          </div>
+      <!-- Mensaje para usuarios invitados -->
+      <div *ngIf="!loading && isInvitado() && !hasInactiveRole()" class="invitado-message">
+        <div class="message-icon">⏳</div>
+        <div class="message-content">
+          <h3>Cuenta en Espera</h3>
+          <p>
+            Su cuenta ha sido registrada exitosamente, pero actualmente está en espera de que un administrador le asigne un rol.
+          </p>
+          <p>
+            Una vez que se le asigne un rol, podrá acceder a los módulos correspondientes según sus permisos.
+          </p>
+          <p class="message-note">
+            <i class="fa-solid fa-info-circle"></i>
+            Por favor, contacte al administrador del sistema para obtener acceso.
+          </p>
         </div>
+      </div>
 
-        <!-- Módulo 3 - Gestión de Docentes -->
-        <div class="module-card professional-card">
+      <!-- Módulos disponibles según el rol -->
+      <div class="modules-container" *ngIf="!loading && !isInvitado() && !hasInactiveRole() && availableModules.length > 0">
+        <div class="module-card professional-card" *ngFor="let module of availableModules">
           <div class="module-header">
-            <div class="module-icon">👨‍🎓</div>
+            <div class="module-icon">{{ module.icon }}</div>
             <div class="module-title-section">
-              <h4 class="module-title">Gestión de Docentes</h4>
+              <h4 class="module-title">{{ module.title }}</h4>
+              <p class="module-subtitle" *ngIf="module.description">{{ module.description }}</p>
             </div>
           </div>
           <div class="module-actions">
-            <button class="btn-primary" (click)="goToNavbar()">
+            <button class="btn-primary" (click)="goToModule(module.route)">
               <span class="btn-icon">→</span>
-              Ir al sitio
+              Ir al módulo
             </button>
-            <!-- <button class="btn-secondary">
-        <span class="btn-icon">🌐</span>
-        Il sitio
-      </button> -->
           </div>
         </div>
       </div>
 
-      <div class="divider"></div>
+      <!-- Mensaje si no hay módulos disponibles -->
+      <div *ngIf="!loading && !isInvitado() && availableModules.length === 0" class="no-modules-message">
+        <div class="message-icon">📭</div>
+        <div class="message-content">
+          <h3>No hay módulos disponibles</h3>
+          <p>No se encontraron módulos disponibles para su rol actual.</p>
+        </div>
+      </div>
 
-      <div class="logout-section">
+      <div class="divider" *ngIf="!loading"></div>
+
+      <div class="logout-section" *ngIf="!loading">
         <button class="logout-btn" (click)="logout()">
           <span class="logout-icon">⎋</span>
           Cerrar Sesión

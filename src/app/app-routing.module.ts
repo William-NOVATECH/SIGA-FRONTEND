@@ -2,11 +2,18 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { NavbarComponent } from './navigation/navbar/navbar.component';
+import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
 const routes: Routes = [
   { 
     path: 'auth', 
     loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
+  },
+  // Ruta del admin-layout (pantalla de módulos por rol)
+  {
+    path: 'admin-layout',
+    component: AdminLayoutComponent,
+    canActivate: [AuthGuard]
   },
   // Ruta principal CON navbar siempre visible
   { 

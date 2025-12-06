@@ -27,6 +27,10 @@ export class GrupoAsignaturaDocenteService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Crear asignación (para administradores o cuando no se necesita versionamiento)
+   * NOTA: Los coordinadores deben usar createVersionInicial() en su lugar
+   */
   create(dto: CreateGrupoAsignaturaDocente): Observable<GrupoAsignaturaDocente> {
     return this.http.post<GrupoAsignaturaDocente>(this.nestJsUrl, dto);
   }

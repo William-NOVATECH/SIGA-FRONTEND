@@ -11,6 +11,8 @@ export interface Grupo {
   max_asignaturas?: number;
   min_asignaturas?: number;
   carrera: Carrera;
+  plan?: Plan;
+  id_plan?: number;
 }
 
 export interface Asignatura {
@@ -66,8 +68,20 @@ export interface AsignaturaDocenteItem {
   id_docente: number;
 }
 
+export interface Plan {
+  id_plan: number;
+  nombre_plan: string;
+  codigo_plan: string;
+}
+
 export interface BulkCreateResponse {
-  creadas: GrupoAsignaturaDocente[];
+  grupo: {
+    id_grupo: number;
+    codigo_grupo: string;
+    nombre_grupo: string;
+    plan: Plan;
+    carrera: Carrera;
+  };
   errores: Array<{
     asignatura: number;
     docente: number;

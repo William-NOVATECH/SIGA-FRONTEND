@@ -1,9 +1,10 @@
 <div class="container">
   <!-- Header -->
   <div class="header">
-    <h2>Asignaciones de Carga Docente</h2>
+    <h2><i class="fa-solid fa-users-gear"></i> Asignaciones de Carga Docente</h2>
     <div class="actions">
       <div class="search-box">
+        <i class="fa-solid fa-search search-icon"></i>
         <input
           type="text"
           placeholder="Buscar por grupo, carrera..."
@@ -12,7 +13,8 @@
           class="search-input"
         />
       </div>
-      <button (click)="onRefresh()" class="btn btn-secondary" [disabled]="loading">
+      <button (click)="onRefresh()" class="btn btn-secondary btn-compact" [disabled]="loading">
+        <i class="fa-solid" [ngClass]="loading ? 'fa-spinner fa-spin' : 'fa-sync-alt'"></i>
         {{ loading ? 'Cargando...' : 'Actualizar' }}
       </button>
     </div>
@@ -41,19 +43,24 @@
       <!-- Header del Grupo -->
       <div class="grupo-header" (click)="toggleGrupo(grupo.id_grupo)">
         <div class="grupo-info">
-          <span class="expand-icon">{{ grupoExpandido === grupo.id_grupo ? '▼' : '►' }}</span>
+          <i class="fa-solid expand-icon" [ngClass]="grupoExpandido === grupo.id_grupo ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
           <h3 class="grupo-codigo">{{ grupo.codigo_grupo }}</h3>
-          <span class="grupo-nombre" *ngIf="grupo.nombre_grupo">- {{ grupo.nombre_grupo }}</span>
+          <span class="grupo-nombre" *ngIf="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</span>
           <span class="carrera-info">
-            | {{ grupo.carrera.nombre_carrera || 'Carrera no especificada' }}
+            <i class="fa-solid fa-graduation-cap"></i>
+            {{ grupo.carrera.nombre_carrera || 'Carrera no especificada' }}
             <span *ngIf="grupo.carrera.codigo_carrera">({{ grupo.carrera.codigo_carrera }})</span>
           </span>
         </div>
         
         <div class="grupo-stats">
-          <span class="asignaciones-count">{{ grupo.asignaciones.length }} asignatura(s)</span>
+          <span class="asignaciones-count">
+            <i class="fa-solid fa-book"></i>
+            {{ grupo.asignaciones.length }} asignatura(s)
+          </span>
           <span class="fecha-actualizacion">
-            Actualizado: {{ getFechaActualizacion(grupo) | date:'dd/MM/yyyy' }}
+            <i class="fa-solid fa-clock"></i>
+            {{ getFechaActualizacion(grupo) | date:'dd/MM/yyyy' }}
           </span>
           <span *ngIf="grupo.periodo_academico" class="periodo-academico">
             <i class="fa-solid fa-calendar-alt"></i>
@@ -66,9 +73,10 @@
       <div *ngIf="grupoExpandido === grupo.id_grupo" class="asignaciones-table-container">
         
         <div class="table-header">
-          <h4>Asignaturas del Grupo {{ grupo.codigo_grupo }}</h4>
-          <button (click)="onCreateAsignacion(grupo.id_grupo)" class="btn btn-primary">
-            + Agregar Asignatura
+          <h4><i class="fa-solid fa-list"></i> Asignaturas del Grupo {{ grupo.codigo_grupo }}</h4>
+          <button (click)="onCreateAsignacion(grupo.id_grupo)" class="btn btn-primary btn-compact">
+            <i class="fa-solid fa-plus"></i>
+            Agregar
           </button>
         </div>
 
@@ -171,9 +179,11 @@
 
         <!-- Mensaje si no hay asignaciones -->
         <div *ngIf="grupo.asignaciones.length === 0" class="no-asignaciones">
+          <i class="fa-solid fa-inbox"></i>
           <p>No hay asignaturas asignadas a este grupo.</p>
-          <button (click)="onCreateAsignacion(grupo.id_grupo)" class="btn btn-primary">
-            + Agregar primera asignatura
+          <button (click)="onCreateAsignacion(grupo.id_grupo)" class="btn btn-primary btn-compact">
+            <i class="fa-solid fa-plus"></i>
+            Agregar primera asignatura
           </button>
         </div>
 

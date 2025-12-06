@@ -6,7 +6,7 @@ import { Observable, throwError, of } from 'rxjs';
 import { loginRequest } from '../../auth/models/login-request';
 import { registerRequest } from '../../auth/models/register-request';
 import { Router } from '@angular/router';
-import { Usuario } from '../../features/admin/interfaces/usuario.interface';
+import { Usuario, UsuarioRolResponse } from '../../features/admin/interfaces/usuario.interface';
 
 export interface LoginResponse {
   access_token: string;
@@ -194,7 +194,20 @@ export class AuthService {
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.userId || payload.sub || null;
+      // Intentar múltiples campos comunes donde puede estar el ID
+      const userId = payload.userId || 
+                     payload.sub || 
+                     payload.id || 
+                     payload.id_usuario || 
+                     payload.user?.id || 
+                     payload.user?.id_usuario;
+      
+      if (userId) {
+        return Number(userId);
+      }
+      
+      console.warn('getUserIdFromToken: No se encontró userId en el token. Payload:', payload);
+      return null;
     } catch (error) {
       console.error('Error decoding token:', error);
       return null;
@@ -216,33 +229,55 @@ export class AuthService {
   }
 
   // Método para obtener el usuario actual con sus roles desde el backend
-  public fetchCurrentUserWithRoles(): Observable<any> {
+  public fetchCurrentUserWithRoles(): Observable<Usuario | null> {
     const token = this.getToken();
     if (!token) {
       return of(null);
     }
 
-    // Obtener todos los usuarios con roles y filtrar el usuario actual
-    return this.http.get<Usuario[]>(`${this.nestJsUrl}/usuario/with-roles`).pipe(
-      map((usuarios: Usuario[]) => {
-        // Obtener el ID del usuario actual desde el token
-        const userId = this.getUserIdFromToken();
-        if (!userId) {
-          console.warn('No se pudo obtener el ID del usuario desde el token');
-          return null;
-        }
+    // Obtener el ID del usuario actual desde el token
+    const userId = this.getUserIdFromToken();
+    if (!userId) {
+      console.warn('fetchCurrentUserWithRoles: No se pudo obtener el ID del usuario desde el token');
+      return of(null);
+    }
 
-        // Buscar el usuario actual en la lista
-        const currentUser = usuarios.find((u: Usuario) => u.id_usuario === userId);
-        if (currentUser) {
-          // Guardar el usuario con roles
-          this.setCurrentUser(currentUser);
-          return currentUser;
-        }
-        return null;
+    console.log('fetchCurrentUserWithRoles: Obteniendo usuario con ID:', userId);
+
+    // Usar el endpoint específico para obtener el usuario con su rol activo
+    return this.http.get<Usuario>(`${this.nestJsUrl}/usuario/${userId}/with-roles`).pipe(
+      map((currentUser: Usuario) => {
+        console.log('fetchCurrentUserWithRoles: ✅ Usuario recibido del backend:', {
+          id: currentUser.id_usuario,
+          username: currentUser.username,
+          email: currentUser.email,
+          tieneRol: !!currentUser.rol,
+          tieneRoles: !!currentUser.roles,
+          cantidadRoles: currentUser.roles?.length || 0,
+          estructuraRol: currentUser.rol ? {
+            id_usuario_rol: currentUser.rol.id_usuario_rol,
+            estado: currentUser.rol.estado,
+            tieneRolAnidado: !!currentUser.rol.rol,
+            rolInfo: currentUser.rol.rol ? {
+              id_rol: currentUser.rol.rol.id_rol,
+              nombre_rol: currentUser.rol.rol.nombre_rol,
+              descripcion: currentUser.rol.rol.descripcion,
+              nivel_acceso: currentUser.rol.rol.nivel_acceso
+            } : null
+          } : null,
+          rolesArray: currentUser.roles ? currentUser.roles.map(r => ({
+            id_usuario_rol: r.id_usuario_rol,
+            estado: r.estado,
+            nombre_rol: r.rol?.nombre_rol
+          })) : []
+        });
+        
+        // Guardar el usuario con roles
+        this.setCurrentUser(currentUser);
+        return currentUser;
       }),
       catchError((error) => {
-        console.error('Error fetching current user with roles:', error);
+        console.error('fetchCurrentUserWithRoles: ❌ Error obteniendo usuario con roles:', error);
         return of(null);
       })
     );
@@ -252,26 +287,117 @@ export class AuthService {
   public getCurrentUserRole(): Observable<string | null> {
     return this.fetchCurrentUserWithRoles().pipe(
       map((user: Usuario | null) => {
-        if (!user || !user.roles || user.roles.length === 0) {
-          console.log('getCurrentUserRole: Usuario sin roles');
+        if (!user) {
+          console.log('getCurrentUserRole: ❌ Usuario no encontrado');
           return null;
         }
 
-        // SOLO obtener roles activos
-        const activeRoles = user.roles.filter((r: any) => r.estado === 'activo');
-        if (activeRoles.length === 0) {
-          console.warn('getCurrentUserRole: Usuario no tiene roles activos. Roles disponibles:', user.roles.map((r: any) => ({ nombre: r.rol?.nombre_rol, estado: r.estado })));
+        console.log('getCurrentUserRole: Procesando usuario:', {
+          id: user.id_usuario,
+          username: user.username,
+          tieneRol: !!user.rol,
+          tieneRoles: !!user.roles,
+          cantidadRoles: user.roles?.length || 0
+        });
+
+        // Prioridad 1: Usar el campo 'rol' (singular) - si el backend lo devuelve directamente
+        // Estructura: user.rol.rol.nombre_rol
+        if (user.rol) {
+          // Verificar que el rol esté activo y tenga la estructura correcta
+          if (user.rol.estado === 'activo') {
+            if (user.rol.rol && user.rol.rol.nombre_rol) {
+              const nombreRol = user.rol.rol.nombre_rol;
+              console.log('getCurrentUserRole: ✅ Rol activo encontrado (campo rol):', nombreRol);
+              return nombreRol;
+            } else {
+              console.warn('getCurrentUserRole: ⚠️ Rol encontrado pero no tiene estructura completa:', user.rol);
+            }
+          } else {
+            console.warn('getCurrentUserRole: ⚠️ Rol encontrado pero no está activo. Estado:', user.rol.estado);
+          }
+        }
+
+        // Prioridad 2: Usar el campo 'roles' (array) - estructura del endpoint /usuario/{id}/with-roles
+        // Buscar el primer rol activo en el array
+        if (user.roles && user.roles.length > 0) {
+          console.log('getCurrentUserRole: Buscando rol activo en array de roles...');
+          const activeRoles = user.roles.filter((r: UsuarioRolResponse) => r.estado === 'activo');
+          
+          if (activeRoles.length > 0) {
+            const activeRole = activeRoles[0];
+            if (activeRole && activeRole.rol && activeRole.rol.nombre_rol) {
+              const nombreRol = activeRole.rol.nombre_rol;
+              console.log('getCurrentUserRole: ✅ Rol activo encontrado (campo roles):', nombreRol);
+              return nombreRol;
+            } else {
+              console.warn('getCurrentUserRole: ⚠️ Rol activo encontrado pero sin nombre:', activeRole);
+            }
+          } else {
+            // Usuario tiene roles pero todos están inactivos
+            const inactivos = user.roles.filter((r: UsuarioRolResponse) => r.estado === 'inactivo');
+            if (inactivos.length > 0) {
+              const rolInactivo = inactivos[0];
+              console.warn('getCurrentUserRole: ⚠️ Usuario tiene rol pero está INACTIVO:', {
+                nombre_rol: rolInactivo.rol?.nombre_rol,
+                estado: rolInactivo.estado,
+                id_usuario_rol: rolInactivo.id_usuario_rol,
+                mensaje: 'El rol existe pero necesita ser activado por un administrador'
+              });
+            } else {
+              console.warn('getCurrentUserRole: ⚠️ Usuario tiene roles pero ninguno está activo. Roles disponibles:', 
+                user.roles.map((r: UsuarioRolResponse) => ({
+                  id_usuario_rol: r.id_usuario_rol,
+                  nombre_rol: r.rol?.nombre_rol,
+                  estado: r.estado
+                }))
+              );
+            }
+          }
+        } else {
+          console.log('getCurrentUserRole: ℹ️ Usuario no tiene roles asignados');
+        }
+
+        console.log('getCurrentUserRole: ❌ Usuario sin rol activo - retornando null');
+        return null;
+      })
+    );
+  }
+
+  // Método para obtener información sobre roles inactivos del usuario
+  public getUserInactiveRole(): Observable<{ nombre_rol: string; id_usuario_rol: number } | null> {
+    return this.fetchCurrentUserWithRoles().pipe(
+      map((user: Usuario | null) => {
+        if (!user) {
           return null;
         }
 
-        // Obtener el primer rol activo
-        const activeRole = activeRoles[0];
-        if (activeRole && activeRole.rol) {
-          console.log('getCurrentUserRole: Rol activo encontrado:', activeRole.rol.nombre_rol);
-          return activeRole.rol.nombre_rol;
+        // Buscar roles inactivos en el array
+        if (user.roles && user.roles.length > 0) {
+          const inactivos = user.roles.filter((r: UsuarioRolResponse) => r.estado === 'inactivo');
+          if (inactivos.length > 0) {
+            const rolInactivo = inactivos[0];
+            if (rolInactivo.rol && rolInactivo.rol.nombre_rol) {
+              return {
+                nombre_rol: rolInactivo.rol.nombre_rol,
+                id_usuario_rol: rolInactivo.id_usuario_rol
+              };
+            }
+          }
+        }
+
+        // También verificar el campo 'rol' singular si está inactivo
+        if (user.rol && user.rol.estado === 'inactivo' && user.rol.rol && user.rol.rol.nombre_rol) {
+          return {
+            nombre_rol: user.rol.rol.nombre_rol,
+            id_usuario_rol: user.rol.id_usuario_rol
+          };
         }
 
         return null;
+      }),
+      catchError((error) => {
+        console.error('getUserInactiveRole: Error obteniendo rol inactivo:', error);
+        return of(null);
       })
     );
   }
@@ -280,21 +406,40 @@ export class AuthService {
   public getActiveRoles(): Observable<string[]> {
     return this.fetchCurrentUserWithRoles().pipe(
       map((user: Usuario | null) => {
-        if (!user || !user.roles || user.roles.length === 0) {
+        if (!user) {
           return [];
         }
 
-        // SOLO obtener roles activos
-        const activeRoles = user.roles
-          .filter((r: any) => r.estado === 'activo')
-          .map((r: any) => r.rol?.nombre_rol)
-          .filter((nombre: string | undefined) => nombre !== undefined) as string[];
+        const activeRoles: string[] = [];
 
-        console.log('getActiveRoles: Roles activos encontrados:', activeRoles);
+        // Prioridad 1: Usar el campo 'rol' (singular) - si el backend lo devuelve directamente
+        // Estructura: user.rol.rol.nombre_rol
+        if (user.rol && user.rol.estado === 'activo' && user.rol.rol && user.rol.rol.nombre_rol) {
+          activeRoles.push(user.rol.rol.nombre_rol);
+          console.log('getActiveRoles: ✅ Rol agregado desde campo "rol":', user.rol.rol.nombre_rol);
+        }
+
+        // Prioridad 2: Usar el campo 'roles' (array) - estructura del endpoint /usuario/{id}/with-roles
+        if (user.roles && user.roles.length > 0) {
+          const rolesFromArray = user.roles
+            .filter((r: UsuarioRolResponse) => r.estado === 'activo')
+            .map((r: UsuarioRolResponse) => r.rol?.nombre_rol)
+            .filter((nombre: string | undefined) => nombre !== undefined) as string[];
+          
+          // Agregar roles del array que no estén ya en la lista
+          rolesFromArray.forEach(role => {
+            if (!activeRoles.includes(role)) {
+              activeRoles.push(role);
+              console.log('getActiveRoles: ✅ Rol agregado desde campo "roles":', role);
+            }
+          });
+        }
+
+        console.log('getActiveRoles: ✅ Roles activos encontrados:', activeRoles);
         return activeRoles;
       }),
       catchError((error) => {
-        console.error('Error obteniendo roles activos:', error);
+        console.error('getActiveRoles: ❌ Error obteniendo roles activos:', error);
         return of([]);
       })
     );

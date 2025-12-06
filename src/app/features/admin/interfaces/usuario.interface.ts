@@ -18,7 +18,8 @@ export interface Usuario {
   estado: string;
   fecha_creacion: Date;
   fecha_ultimo_acceso?: Date;
-  roles?: UsuarioRolResponse[]; // Cambié de usuarioRoles a roles para coincidir con tu DTO
+  rol?: UsuarioRolResponse; // Rol activo del usuario (singular, según nueva estructura del backend)
+  roles?: UsuarioRolResponse[]; // Mantenemos roles para compatibilidad con código existente
 }
 
 export interface CreateUsuario {
