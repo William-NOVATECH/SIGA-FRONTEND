@@ -6,6 +6,7 @@ import { Rol } from '../../interfaces/rol.interface';
 import { AsignarRol } from '../../interfaces/usuario-rol.interface';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
 
 @Component({
@@ -79,7 +80,8 @@ export class UserManagementComponent implements OnInit {
     private usuarioService: UsuarioService,
     private rolService: RolService,
     private toastService: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {
     this.setupActions();
   }
@@ -430,6 +432,55 @@ export class UserManagementComponent implements OnInit {
   closeAssignRoleModal(): void {
     this.showAssignRoleModal = false;
     this.usuarioSeleccionado = undefined;
+  }
+
+  exportToCSV(): void {
+    if (this.usuarios.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Usuario', 'Email', 'Estado', 'Rol', 'Fecha Creación'];
+    const csvData = this.usuarios.map(u => ({
+      'ID': u.id_usuario,
+      'Usuario': u.username,
+      'Email': u.email,
+      'Estado': u.estado || 'N/A',
+      'Rol': u.roles && u.roles.length > 0 ? u.roles[0].rol.nombre_rol : 'Sin rol',
+      'Fecha Creación': u.fecha_creacion ? new Date(u.fecha_creacion).toLocaleDateString('es-ES') : 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'usuarios', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.usuarios.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.usuarios.map(u => ({
+        'ID': u.id_usuario,
+        'Usuario': u.username,
+        'Email': u.email,
+        'Estado': u.estado || 'N/A',
+        'Rol': u.roles && u.roles.length > 0 ? u.roles[0].rol.nombre_rol : 'Sin rol',
+        'Fecha Creación': u.fecha_creacion ? new Date(u.fecha_creacion).toLocaleDateString('es-ES') : 'N/A'
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'usuarios',
+        'Reporte de Usuarios',
+        ['ID', 'Usuario', 'Email', 'Estado', 'Rol', 'Fecha Creación']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 }
 

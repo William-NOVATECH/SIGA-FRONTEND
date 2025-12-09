@@ -6,6 +6,7 @@ import { Carrera, CarreraResponse } from '../../models/carrera.model';
 import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 
 @Component({
   selector: 'app-carrera-list',
@@ -26,7 +27,8 @@ export class CarreraListComponent implements OnInit {
     private carreraService: CarreraService,
     private router: Router,
     private toastService: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {}
 
   ngOnInit() {
@@ -152,6 +154,56 @@ export class CarreraListComponent implements OnInit {
       '¿Estás seguro de que quieres eliminar esta carrera? Esta acción no se puede deshacer.',
       'Confirmar eliminación'
     );
+  }
+
+  exportToCSV(): void {
+    if (this.carreras.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Código', 'Nombre', 'Departamento', 'Duración (semestres)', 'Título', 'Estado'];
+    const csvData = this.carreras.map(c => ({
+      'ID': c.id_carrera,
+      'Código': c.codigo_carrera || 'N/A',
+      'Nombre': c.nombre_carrera,
+      'Departamento': c.departamento ? c.departamento.nombre_departamento : 'N/A',
+      'Duración (semestres)': c.duracion_semestres || 'N/A',
+      'Título': c.titulo_otorga || 'N/A',
+      'Estado': c.estado || 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'carreras', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.carreras.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.carreras.map(c => ({
+        'Código': c.codigo_carrera || 'N/A',
+        'Nombre': c.nombre_carrera,
+        'Departamento': c.departamento ? c.departamento.nombre_departamento : 'N/A',
+        'Duración': c.duracion_semestres ? `${c.duracion_semestres} semestres` : 'N/A',
+        'Título': c.titulo_otorga || 'N/A',
+        'Estado': c.estado || 'N/A'
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'carreras',
+        'Reporte de Carreras',
+        ['Código', 'Nombre', 'Departamento', 'Duración', 'Título', 'Estado']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 }
 

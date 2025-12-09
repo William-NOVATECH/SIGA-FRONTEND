@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { GrupoAsignaturaDocenteService } from '../../services/grupo-asignatura-docente.service';
 import { GrupoConAsignaciones, GrupoAsignaturaDocente } from '../../models/grupo-asignatura-docente.model';
+import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 
 @Component({
   selector: 'app-list-grupo-asignatura-docente',
@@ -17,7 +20,10 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
 
   constructor(
     private grupoAsignaturaDocenteService: GrupoAsignaturaDocenteService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService,
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {}
 
   ngOnInit(): void {
@@ -68,15 +74,85 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
   }
 
   onDelete(id: number): void {
-    this.grupoAsignaturaDocenteService.remove(id).subscribe({
-      next: () => {
-        this.loadAsignaciones();
+    const asignacion = this.asignaciones.find(a => a.id_grupo_asignatura_docente === id);
+    const asignacionNombre = asignacion 
+      ? `${asignacion.asignatura?.nombre_asignatura || 'Asignación'} - ${asignacion.docente?.nombres || ''} ${asignacion.docente?.apellidos || ''}`
+      : 'esta asignación';
+
+    this.confirmService.confirmDelete(
+      () => {
+        this.grupoAsignaturaDocenteService.remove(id).subscribe({
+          next: () => {
+            this.toastService.showSuccess('Asignación eliminada', `La asignación se ha eliminado correctamente.`);
+            this.loadAsignaciones();
+          },
+          error: (error) => {
+            console.error('Error deleting asignacion:', error);
+            const errorMessage = error?.error?.message || 'No se pudo eliminar la asignación. Por favor, intente nuevamente.';
+            this.toastService.showError('Error al eliminar', errorMessage);
+          }
+        });
       },
-      error: (error) => {
-        this.error = 'Error al eliminar la asignación';
-        console.error('Error deleting asignacion:', error);
-      }
-    });
+      `¿Estás seguro de que deseas eliminar ${asignacionNombre}? Esta acción no se puede deshacer.`,
+      'Confirmar eliminación'
+    );
+  }
+
+  exportToCSV(): void {
+    if (this.asignaciones.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Código Grupo', 'Nombre Grupo', 'Carrera', 'Asignatura', 'Código Asignatura', 'Docente', 'Código Docente', 'Fecha Asignación', 'Estado', 'Estado Aprobación', 'Versión', 'Observaciones'];
+    const csvData = this.asignaciones.map(a => ({
+      'ID': a.id_grupo_asignatura_docente,
+      'Código Grupo': a.grupo?.codigo_grupo || 'N/A',
+      'Nombre Grupo': a.grupo?.nombre_grupo || 'N/A',
+      'Carrera': a.grupo?.carrera?.nombre_carrera || 'N/A',
+      'Asignatura': a.asignatura?.nombre_asignatura || 'N/A',
+      'Código Asignatura': a.asignatura?.codigo_asignatura || 'N/A',
+      'Docente': `${a.docente?.nombres || ''} ${a.docente?.apellidos || ''}`.trim() || 'N/A',
+      'Código Docente': a.docente?.codigo_docente || 'N/A',
+      'Fecha Asignación': this.formatDate(a.fecha_asignacion),
+      'Estado': a.estado || 'N/A',
+      'Estado Aprobación': this.getEstadoAprobacionDisplay(a.estado_aprobacion),
+      'Versión': a.version_actual || 'N/A',
+      'Observaciones': a.observaciones || 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'carga_docente', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.asignaciones.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.asignaciones.map(a => ({
+        'Grupo': `${a.grupo?.codigo_grupo || 'N/A'} - ${a.grupo?.nombre_grupo || 'N/A'}`,
+        'Carrera': a.grupo?.carrera?.nombre_carrera || 'N/A',
+        'Asignatura': a.asignatura?.nombre_asignatura || 'N/A',
+        'Docente': `${a.docente?.nombres || ''} ${a.docente?.apellidos || ''}`.trim() || 'N/A',
+        'Fecha': this.formatDate(a.fecha_asignacion),
+        'Estado': a.estado || 'N/A',
+        'Aprobación': this.getEstadoAprobacionDisplay(a.estado_aprobacion)
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'carga_docente',
+        'Reporte de Carga Docente',
+        ['Grupo', 'Carrera', 'Asignatura', 'Docente', 'Fecha', 'Estado', 'Aprobación']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 
   onView(id: number): void {

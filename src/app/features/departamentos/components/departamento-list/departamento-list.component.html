@@ -6,10 +6,26 @@
         <h1 class="header-title">Gestión de Departamentos</h1>
         <p class="header-subtitle">Administra los departamentos académicos de la institución</p>
       </div>
-      <button (click)="createDepartamento()" class="btn-primary">
-        <i class="fa-solid fa-plus"></i>
-        Nuevo Departamento
-      </button>
+      <div class="header-actions-group">
+        <button *ngIf="!loading && departamentos.length > 0" 
+                (click)="exportToCSV()" 
+                class="btn-export-csv"
+                title="Exportar a CSV">
+          <i class="fa-solid fa-file-csv"></i>
+          CSV
+        </button>
+        <button *ngIf="!loading && departamentos.length > 0" 
+                (click)="exportToPDF()" 
+                class="btn-export-pdf"
+                title="Exportar a PDF">
+          <i class="fa-solid fa-file-pdf"></i>
+          PDF
+        </button>
+        <button (click)="createDepartamento()" class="btn-primary">
+          <i class="fa-solid fa-plus"></i>
+          Nuevo Departamento
+        </button>
+      </div>
     </div>
   </div>
 

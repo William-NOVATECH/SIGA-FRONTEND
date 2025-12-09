@@ -6,6 +6,7 @@ import { Asignatura } from '../../models/asignatura.model';
 import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 
 @Component({
   selector: 'app-asignatura-list',
@@ -26,7 +27,8 @@ export class AsignaturaListComponent implements OnInit {
     private asignaturaService: AsignaturaService,
     private router: Router,
     private toastService: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {}
 
   ngOnInit() {
@@ -178,5 +180,59 @@ export class AsignaturaListComponent implements OnInit {
       '¿Estás seguro de que quieres eliminar esta asignatura? Esta acción no se puede deshacer.',
       'Confirmar eliminación'
     );
+  }
+
+  exportToCSV(): void {
+    if (this.asignaturas.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Código', 'Nombre', 'Carrera', 'Créditos', 'Horas Semanales', 'Semestre', 'Tipo', 'Estado'];
+    const csvData = this.asignaturas.map(a => ({
+      'ID': a.id_asignatura,
+      'Código': a.codigo_asignatura || 'N/A',
+      'Nombre': a.nombre_asignatura,
+      'Carrera': a.carrera ? (typeof a.carrera === 'object' ? a.carrera.nombre_carrera : 'N/A') : 'N/A',
+      'Créditos': a.creditos || 'N/A',
+      'Horas Semanales': a.horas_semanales || 'N/A',
+      'Semestre': a.semestre || 'N/A',
+      'Tipo': a.tipo || 'N/A',
+      'Estado': a.estado || 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'asignaturas', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.asignaturas.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.asignaturas.map(a => ({
+        'Código': a.codigo_asignatura || 'N/A',
+        'Nombre': a.nombre_asignatura,
+        'Carrera': a.carrera ? (typeof a.carrera === 'object' ? a.carrera.nombre_carrera : 'N/A') : 'N/A',
+        'Créditos': a.creditos || 'N/A',
+        'Horas': a.horas_semanales || 'N/A',
+        'Semestre': a.semestre || 'N/A',
+        'Tipo': a.tipo || 'N/A',
+        'Estado': a.estado || 'N/A'
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'asignaturas',
+        'Reporte de Asignaturas',
+        ['Código', 'Nombre', 'Carrera', 'Créditos', 'Horas', 'Semestre', 'Tipo', 'Estado']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 }

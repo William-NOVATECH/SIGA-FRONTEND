@@ -1,18 +1,32 @@
 <div class="container">
   <!-- Header -->
   <div class="header">
-
     <div>
       <h1 class="header-title">Gestión de Asignaturas</h1>
       <p class="header-subtitle">Administra las asignaturas académicas</p>
     </div>
-    <button (click)="createAsignatura()" class="btn-primary">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-      </svg>
-      Nueva Asignatura
-    </button>
-
+    <div class="header-actions-group">
+      <button *ngIf="!loading && asignaturas.length > 0" 
+              (click)="exportToCSV()" 
+              class="btn-export-csv"
+              title="Exportar a CSV">
+        <i class="fa-solid fa-file-csv"></i>
+        CSV
+      </button>
+      <button *ngIf="!loading && asignaturas.length > 0" 
+              (click)="exportToPDF()" 
+              class="btn-export-pdf"
+              title="Exportar a PDF">
+        <i class="fa-solid fa-file-pdf"></i>
+        PDF
+      </button>
+      <button (click)="createAsignatura()" class="btn-primary">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Nueva Asignatura
+      </button>
+    </div>
   </div>
 
   <!-- Mensaje de error -->

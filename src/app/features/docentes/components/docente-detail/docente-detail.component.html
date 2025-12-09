@@ -92,6 +92,9 @@
 <div *ngIf="activeTab === 'formacion'" class="tab-pane">
   <div class="section-header">
     <h3>Formación Académica</h3>
+  </div>
+  
+  <div class="form-section">
     <app-formacion-academica-form 
       *ngIf="docenteId"
       [docenteId]="docenteId"
@@ -170,6 +173,9 @@
 <div *ngIf="activeTab === 'experiencia'" class="tab-pane">
   <div class="section-header">
     <h3>Experiencia Laboral</h3>
+  </div>
+  
+  <div class="form-section">
     <app-experiencia-laboral-form
       *ngIf="docenteId"
       [docenteId]="docenteId"
@@ -251,9 +257,14 @@
   </div>
 </div>
 <!-- Modal de Edición de Formación -->
-<div *ngIf="editingFormacionId" class="modal-overlay">
-  <div class="modal-content">
-    <h3>Editar Formación Académica</h3>
+<div *ngIf="editingFormacionId" class="modal-overlay" (click)="editingFormacionId = undefined">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar Formación Académica</h3>
+      <button class="modal-close-btn" (click)="editingFormacionId = undefined" aria-label="Cerrar modal">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
     <app-formacion-academica-form
       [docenteId]="docenteId!"
       [formacionId]="editingFormacionId"
@@ -264,9 +275,14 @@
 </div>
 
 <!-- Modal de Edición de Experiencia -->
-<div *ngIf="editingExperienciaId" class="modal-overlay">
-  <div class="modal-content">
-    <h3>Editar Experiencia Laboral</h3>
+<div *ngIf="editingExperienciaId" class="modal-overlay" (click)="editingExperienciaId = undefined">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar Experiencia Laboral</h3>
+      <button class="modal-close-btn" (click)="editingExperienciaId = undefined" aria-label="Cerrar modal">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
     <app-experiencia-laboral-form
       [docenteId]="docenteId!"
       [experienciaId]="editingExperienciaId"

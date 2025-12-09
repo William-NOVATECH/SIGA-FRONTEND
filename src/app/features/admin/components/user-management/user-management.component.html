@@ -9,6 +9,16 @@
         </h1>
         <p>Gestiona los usuarios del sistema, asigna roles y controla el acceso</p>
       </div>
+      <div class="header-actions" *ngIf="!loading && usuarios.length > 0">
+        <button class="btn btn-export-csv" (click)="exportToCSV()" title="Exportar a CSV">
+          <i class="fa-solid fa-file-csv"></i>
+          CSV
+        </button>
+        <button class="btn btn-export-pdf" (click)="exportToPDF()" title="Exportar a PDF">
+          <i class="fa-solid fa-file-pdf"></i>
+          PDF
+        </button>
+      </div>
     </div>
   </div>
 

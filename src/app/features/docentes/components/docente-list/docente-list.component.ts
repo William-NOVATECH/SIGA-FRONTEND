@@ -6,6 +6,7 @@ import { QueryDocenteDto } from '../../models/query-docente.model';
 import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 
 @Component({
   selector: 'app-docente-list',
@@ -27,7 +28,8 @@ export class DocenteListComponent implements OnInit {
     private docenteService: DocenteService,
     private router: Router,
     private toastService: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {}
 
   ngOnInit(): void {
@@ -173,5 +175,57 @@ export class DocenteListComponent implements OnInit {
       '¿Estás seguro de que quieres eliminar este docente? Esta acción no se puede deshacer.',
       'Confirmar eliminación'
     );
+  }
+
+  exportToCSV(): void {
+    if (this.docentes.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Código', 'Nombres', 'Apellidos', 'Identificación', 'Departamento', 'Cargo', 'Estado'];
+    const csvData = this.docentes.map(d => ({
+      'ID': d.id_docente,
+      'Código': d.codigo_docente || 'N/A',
+      'Nombres': d.nombres || 'N/A',
+      'Apellidos': d.apellidos || 'N/A',
+      'Identificación': d.identificacion || 'N/A',
+      'Departamento': d.departamento?.nombre_departamento || 'N/A',
+      'Cargo': d.cargo?.nombre_cargo || 'N/A',
+      'Estado': d.estado || 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'docentes', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.docentes.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.docentes.map(d => ({
+        'Código': d.codigo_docente || 'N/A',
+        'Nombres': d.nombres || 'N/A',
+        'Apellidos': d.apellidos || 'N/A',
+        'Identificación': d.identificacion || 'N/A',
+        'Departamento': d.departamento?.nombre_departamento || 'N/A',
+        'Cargo': d.cargo?.nombre_cargo || 'N/A',
+        'Estado': d.estado || 'N/A'
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'docentes',
+        'Reporte de Docentes',
+        ['Código', 'Nombres', 'Apellidos', 'Identificación', 'Departamento', 'Cargo', 'Estado']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 }

@@ -2,10 +2,26 @@
   <!-- Header -->
   <div class="list-header">
     <h2>Planes Académicos</h2>
-    <button class="btn btn-primary" (click)="onCreate()">
-      <i class="fa-solid fa-plus"></i>
-      Nuevo Plan
-    </button>
+    <div class="header-actions-group">
+      <button *ngIf="!loading && planes.length > 0" 
+              (click)="exportToCSV()" 
+              class="btn btn-export-csv"
+              title="Exportar a CSV">
+        <i class="fa-solid fa-file-csv"></i>
+        CSV
+      </button>
+      <button *ngIf="!loading && planes.length > 0" 
+              (click)="exportToPDF()" 
+              class="btn btn-export-pdf"
+              title="Exportar a PDF">
+        <i class="fa-solid fa-file-pdf"></i>
+        PDF
+      </button>
+      <button class="btn btn-primary" (click)="onCreate()">
+        <i class="fa-solid fa-plus"></i>
+        Nuevo Plan
+      </button>
+    </div>
   </div>
 
   <!-- Loading -->

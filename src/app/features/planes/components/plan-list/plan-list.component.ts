@@ -3,6 +3,7 @@ import { PlanService } from '../../services/plan.service';
 import { Plan } from '../../models/plan.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 
 @Component({
   selector: 'app-plan-list',
@@ -21,7 +22,8 @@ export class PlanListComponent implements OnInit {
   constructor(
     private planService: PlanService,
     private toastService: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {}
 
   ngOnInit(): void {
@@ -97,6 +99,56 @@ export class PlanListComponent implements OnInit {
 
   getFechaFin(plan: Plan): Date | string | undefined {
     return plan.fecha_fin;
+  }
+
+  exportToCSV(): void {
+    if (this.planes.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Nombre', 'Código', 'Año', 'Fecha Inicio', 'Fecha Fin', 'Estado'];
+    const csvData = this.planes.map(p => ({
+      'ID': p.id_plan,
+      'Nombre': p.nombre_plan || 'N/A',
+      'Código': p.codigo_plan || 'N/A',
+      'Año': p.año || 'N/A',
+      'Fecha Inicio': this.formatDate(p.fecha_inicio),
+      'Fecha Fin': this.formatDate(p.fecha_fin),
+      'Estado': p.estado || 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'planes', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.planes.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.planes.map(p => ({
+        'Nombre': p.nombre_plan || 'N/A',
+        'Código': p.codigo_plan || 'N/A',
+        'Año': p.año || 'N/A',
+        'Fecha Inicio': this.formatDate(p.fecha_inicio),
+        'Fecha Fin': this.formatDate(p.fecha_fin),
+        'Estado': p.estado || 'N/A'
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'planes',
+        'Reporte de Planes Académicos',
+        ['Nombre', 'Código', 'Año', 'Fecha Inicio', 'Fecha Fin', 'Estado']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 }
 

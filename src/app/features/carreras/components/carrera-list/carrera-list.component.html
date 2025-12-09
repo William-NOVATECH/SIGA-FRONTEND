@@ -6,13 +6,29 @@
         <h1 class="header-title">Gestión de Carreras</h1>
         <p class="header-subtitle">Administra las carreras académicas de la institución</p>
       </div>
-      <button 
-        (click)="createCarrera()"
-        class="btn-primary"
-      >
-        <i class="fa-solid fa-plus"></i>
-        Nueva Carrera
-      </button>
+      <div class="header-actions-group">
+        <button *ngIf="!loading && carreras.length > 0" 
+                (click)="exportToCSV()" 
+                class="btn-export-csv"
+                title="Exportar a CSV">
+          <i class="fa-solid fa-file-csv"></i>
+          CSV
+        </button>
+        <button *ngIf="!loading && carreras.length > 0" 
+                (click)="exportToPDF()" 
+                class="btn-export-pdf"
+                title="Exportar a PDF">
+          <i class="fa-solid fa-file-pdf"></i>
+          PDF
+        </button>
+        <button 
+          (click)="createCarrera()"
+          class="btn-primary"
+        >
+          <i class="fa-solid fa-plus"></i>
+          Nueva Carrera
+        </button>
+      </div>
     </div>
   </div>
 

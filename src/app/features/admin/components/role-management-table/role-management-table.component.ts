@@ -3,6 +3,7 @@ import { RolService } from '../../services/rol.service';
 import { Rol, CreateRol, UpdateRol } from '../../interfaces/rol.interface';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
 
 @Component({
@@ -62,7 +63,8 @@ export class RoleManagementTableComponent implements OnInit {
   constructor(
     private rolService: RolService,
     private toastService: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {
     this.setupActions();
   }
@@ -220,6 +222,51 @@ export class RoleManagementTableComponent implements OnInit {
     this.showEditModal = false;
     this.rolSeleccionado = undefined;
     this.editForm = {};
+  }
+
+  exportToCSV(): void {
+    if (this.roles.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Nombre', 'Descripción', 'Nivel de Acceso'];
+    const csvData = this.roles.map(r => ({
+      'ID': r.id_rol,
+      'Nombre': r.nombre_rol,
+      'Descripción': r.descripcion || 'N/A',
+      'Nivel de Acceso': r.nivel_acceso || 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'roles', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.roles.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.roles.map(r => ({
+        'ID': r.id_rol,
+        'Nombre': r.nombre_rol,
+        'Descripción': r.descripcion || 'N/A',
+        'Nivel de Acceso': r.nivel_acceso || 'N/A'
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'roles',
+        'Reporte de Roles',
+        ['ID', 'Nombre', 'Descripción', 'Nivel de Acceso']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 }
 

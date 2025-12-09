@@ -7,6 +7,7 @@ import { Departamento, QueryDepartamento, DepartamentoResponse } from '../../mod
 import { TableColumn, TableAction } from '../../../../core/components/data-table/data-table.component';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { ExportService } from '../../../../core/services/export.service';
 
 @Component({
   selector: 'app-departamento-list',
@@ -71,7 +72,8 @@ export class DepartamentoListComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private toastService: ToastService,
-    private confirmService: ConfirmService
+    private confirmService: ConfirmService,
+    private exportService: ExportService
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -170,6 +172,51 @@ export class DepartamentoListComponent implements OnInit {
       orderBy: 'nombre_departamento',
       orderDirection: 'ASC'
     });
+  }
+
+  exportToCSV(): void {
+    if (this.departamentos.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    const csvHeaders = ['ID', 'Nombre', 'Código', 'Estado'];
+    const csvData = this.departamentos.map(d => ({
+      'ID': d.id_departamento,
+      'Nombre': d.nombre_departamento,
+      'Código': d.codigo_departamento || 'N/A',
+      'Estado': d.estado || 'N/A'
+    }));
+
+    this.exportService.exportToCSV(csvData, 'departamentos', csvHeaders);
+    this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a CSV correctamente.');
+  }
+
+  async exportToPDF(): Promise<void> {
+    if (this.departamentos.length === 0) {
+      this.toastService.showError('Sin datos', 'No hay datos para exportar.');
+      return;
+    }
+
+    try {
+      const pdfData = this.departamentos.map(d => ({
+        'ID': d.id_departamento,
+        'Nombre': d.nombre_departamento,
+        'Código': d.codigo_departamento || 'N/A',
+        'Estado': d.estado || 'N/A'
+      }));
+
+      await this.exportService.exportToPDF(
+        pdfData,
+        'departamentos',
+        'Reporte de Departamentos',
+        ['ID', 'Nombre', 'Código', 'Estado']
+      );
+      this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      this.toastService.showError('Error al exportar', 'No se pudo exportar a PDF. Por favor, intente nuevamente.');
+    }
   }
 
 }
