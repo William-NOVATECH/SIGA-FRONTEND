@@ -127,35 +127,71 @@
           </div>
         </div>
 
-        <!-- Información del Creador -->
-<div class="detail-section" *ngIf="asignacion.id_coordinador_carrera">
-  <h3><i class="fa-solid fa-user"></i> Información del Creador</h3>
-          <div class="detail-item">
-            <label>Creado por:</label>
+        <!-- Información del Creador del Borrador -->
+<div class="detail-section">
+  <h3><i class="fa-solid fa-user-pen"></i> Información del Creador del Borrador</h3>
+          
+          <!-- Si hay creador registrado -->
+          <div *ngIf="asignacion.id_coordinador_carrera" class="detail-item">
+            <label><i class="fa-solid fa-user"></i> Creado por:</label>
             <span class="info-value">
-              <span *ngIf="loadingCreador">
-                <i class="fa-solid fa-spinner fa-spin"></i> Cargando...
+              <span *ngIf="loadingCreador" class="loading-creador">
+                <i class="fa-solid fa-spinner fa-spin"></i> Cargando información del creador...
               </span>
-              <span *ngIf="!loadingCreador">
-                <strong>{{ getNombreUsuarioCreador() }}</strong>
-                <span *ngIf="usuarioCreador && usuarioCreador.email" class="email-info">
-                  ({{ usuarioCreador.email }})
-                </span>
+              <span *ngIf="!loadingCreador && usuarioCreador" class="creador-info">
+                <div class="creador-details">
+                  <strong class="creador-nombre">{{ usuarioCreador.username || 'Usuario sin nombre' }}</strong>
+                  <span *ngIf="usuarioCreador.email" class="email-info">
+                    <i class="fa-solid fa-envelope"></i> {{ usuarioCreador.email }}
+                  </span>
+                  <span *ngIf="usuarioCreador.id_usuario" class="id-info">
+                    <i class="fa-solid fa-id-card"></i> ID: {{ usuarioCreador.id_usuario }}
+                  </span>
+                </div>
                 <span *ngIf="esUsuarioCreador()" class="badge-creador">
-                  <i class="fa-solid fa-check-circle"></i> Eres el creador
+                  <i class="fa-solid fa-check-circle"></i> Eres el creador de este borrador
                 </span>
+              </span>
+              <span *ngIf="!loadingCreador && !usuarioCreador" class="creador-fallback">
+                <strong>Usuario ID: {{ asignacion.id_coordinador_carrera }}</strong>
+                <span class="text-muted">(Información no disponible)</span>
               </span>
             </span>
           </div>
-          <div class="detail-item" *ngIf="asignacion.fecha_creacion_inicial">
-            <label>Fecha de Creación:</label>
-            <span class="info-value">{{ asignacion.fecha_creacion_inicial | date:'dd/MM/yyyy HH:mm' }}</span>
-          </div>
-          <div class="detail-item" *ngIf="!asignacion.id_coordinador_carrera">
+
+          <!-- Si no hay creador registrado -->
+          <div *ngIf="!asignacion.id_coordinador_carrera" class="detail-item warning-item">
             <label class="warning-label">
               <i class="fa-solid fa-exclamation-triangle"></i>
-              No se registró el usuario creador
+              Creador no registrado
             </label>
+            <span class="info-value text-muted">
+              Esta asignación no tiene un coordinador creador registrado. 
+              Por favor, contacta al administrador del sistema.
+            </span>
+          </div>
+
+          <!-- Fecha de creación -->
+          <div class="detail-item" *ngIf="asignacion.fecha_creacion_inicial">
+            <label><i class="fa-solid fa-calendar"></i> Fecha de Creación del Borrador:</label>
+            <span class="info-value">
+              <i class="fa-solid fa-clock"></i>
+              {{ asignacion.fecha_creacion_inicial | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+
+          <!-- Estado del borrador -->
+          <div class="detail-item" *ngIf="asignacion.estado_aprobacion === 'borrador'">
+            <label><i class="fa-solid fa-file-pen"></i> Estado Actual:</label>
+            <span class="info-value">
+              <span class="estado-badge estado-borrador">
+                <i class="fa-solid fa-file-pen"></i>
+                Borrador
+              </span>
+              <span class="text-muted" style="margin-left: 8px;">
+                Esta asignación aún no ha sido enviada a revisión.
+              </span>
+            </span>
           </div>
         </div>
 
@@ -206,6 +242,22 @@
         </div>
       </div>
 
+      <!-- Mensaje informativo para Jefe departamento -->
+      <div *ngIf="isJefeDepartamento() && asignacion.estado_aprobacion !== 'pendiente_revision' && asignacion.estado_aprobacion !== 'revisada' && asignacion.estado_aprobacion !== 'pendiente_aprobacion'" 
+           class="info-message">
+        <i class="fa-solid fa-info-circle"></i>
+        <div>
+          <strong>No puedes revisar esta asignación en este momento</strong>
+          <p>
+            El estado actual es: <strong>{{ asignacion.estado_aprobacion | titlecase }}</strong>
+          </p>
+          <p>
+            Solo puedes revisar asignaciones que estén en estado <strong>Pendiente Revisión</strong>.
+            El coordinador debe enviar la asignación a revisión primero.
+          </p>
+        </div>
+      </div>
+
       <div class="flow-actions">
         <!-- Botón: Enviar a Revisión (Coordinador) -->
         <button *ngIf="canEnviarRevision()" 
@@ -216,7 +268,7 @@
           Enviar a Revisión
         </button>
 
-        <!-- Botones: Revisar (Director) -->
+        <!-- Botones: Revisar (Jefe departamento id_rol: 1) -->
         <div *ngIf="canRevisar()" class="review-actions">
           <button (click)="onOpenRevisarModal(true)" 
                   class="btn btn-flow btn-approve-review btn-compact"
@@ -232,7 +284,7 @@
           </button>
         </div>
 
-        <!-- Botón: Aprobar Final (Administrador) -->
+        <!-- Botón: Aprobar Final (Director departamento id_rol: 5) -->
         <button *ngIf="canAprobarFinal()" 
                 (click)="onOpenAprobarFinalModal()" 
                 class="btn btn-flow btn-approve-final btn-compact"
@@ -288,7 +340,7 @@
                 </span>
               </div>
               <div class="version-actions">
-                <button *ngIf="!version.activa && (isCoordinador() || isAdministrador())"
+                <button *ngIf="!version.activa && (isCoordinador() || isDirectorDepartamento())"
                         (click)="onRestaurarVersion(version.id_version)"
                         class="btn btn-sm btn-restore"
                         title="Restaurar esta versión">

@@ -21,7 +21,7 @@
           </div>
         </div>
         <button class="logout-btn" (click)="logOut()">
-          <span class="logout-icon">🚪</span>
+          <i class="pi pi-sign-out logout-icon"></i>
           Cerrar Sesión
         </button>
       </div>
@@ -36,100 +36,37 @@
       </div>
       
       <ul class="menu-items">
-
-         <!-- Admin -->
-        <li class="menu-item" 
-            routerLink="/admin"
+        <!-- Items dinámicos según el rol del usuario -->
+        <li *ngFor="let item of availableMenuItems" 
+            class="menu-item" 
+            [routerLink]="item.route"
             routerLinkActive="active">
-          <span class="menu-icon">💼</span>
-          <span class="menu-text">Administración</span>
+          <i [class]="item.icon + ' menu-icon'"></i>
+          <span class="menu-text">{{ item.title }}</span>
         </li>
 
-        <!-- Roles -->
-        <li class="menu-item" 
-            routerLink="/admin/roles"
-            routerLinkActive="active">
-          <span class="menu-icon">🛡️</span>
-          <span class="menu-text">Roles</span>
-        </li>
-
-        <!-- Inicio -->
-        <li class="menu-item" 
-            routerLink="/inicio"
-            routerLinkActive="active">
-          <span class="menu-icon">🏠</span>
-          <span class="menu-text">Inicio</span>
-        </li>
-
-            <!-- Departamentos -->
-        <li class="menu-item" 
-            routerLink="/departamentos"
-            routerLinkActive="active">
-          <span class="menu-icon">📁</span>
-          <span class="menu-text">Departamentos</span>
-        </li>
-
-         <!-- Asignaturas -->
-        <li class="menu-item" 
-            routerLink="/asignaturas"
-            routerLinkActive="active">
-          <span class="menu-icon">📋</span>
-          <span class="menu-text">Asignaturas</span>
-        </li>
-        
-        <!-- Carreras -->
-        <li class="menu-item" 
-            routerLink="/carreras"
-            routerLinkActive="active">
-          <span class="menu-icon">📊</span>
-          <span class="menu-text">Carreras</span>
-        </li>
-        
-        <!-- Grupos -->
-        <li class="menu-item" 
-            routerLink="/grupos"
-            routerLinkActive="active">
-          <span class="menu-icon">📚</span>
-          <span class="menu-text">Grupos</span>
-        </li>
-        
-        <!-- Docentes -->
-        <li class="menu-item" 
-            routerLink="/docentes"
-            routerLinkActive="active">
-          <span class="menu-icon">🎓</span>
-          <span class="menu-text">Docentes</span>
-        </li>
-        
-        <!-- Carga Docente -->
-        <li class="menu-item" 
-            routerLink="/carga-docente"
-            routerLinkActive="active">
-          <span class="menu-icon">👨‍🏫</span>
-          <span class="menu-text">Carga Docente</span>
-        </li>
-
-        <li class="menu-item" 
-            routerLink="/planes"
-            routerLinkActive="active">
-          <span class="menu-icon">�</span>
-          <span class="menu-text">Planes</span>
+        <!-- Mensaje para usuarios invitados sin acceso -->
+        <li *ngIf="activeRoleId === 6 || (activeRoleId === null && availableMenuItems.length === 0)" 
+            class="menu-item menu-item-disabled">
+          <i class="pi pi-info-circle menu-icon"></i>
+          <span class="menu-text">Esperando asignación de rol</span>
         </li>
       </ul>
     </nav>
 
     <!-- Main Content Area -->
     <main class="content-area-da">
-      <router-outlet></router-outlet>
+      <div class="content-wrapper">
+        <router-outlet></router-outlet>
+        <!-- Footer - Al final del contenido, después del router-outlet -->
+        <footer class="siga-footer">
+          <div class="footer-content">
+            <p class="footer-text">
+              © 2025 - UNAM MANAGUA | UNIVERSIDAD DEL PUEBLO Y PARA EL PUEBLO!
+            </p>
+          </div>
+        </footer>
+      </div>
     </main>
   </div>
-
-  <!-- Footer -->
-  <footer class="siga-footer">
-    <div class="footer-content">
-      <p class="footer-text">
-        © 2025 - UNAM MANAGUA | UNIVERSIDAD DEL PUEBLO Y PARA EL PUEBLO!
-      </p>
-    </div>
-  </footer>
 </div>

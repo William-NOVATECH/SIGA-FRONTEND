@@ -178,13 +178,55 @@ export class AuthService {
   }
 
   public logOut(): void {
+    console.log('AuthService - Cerrando sesión...');
     this.removeToken();
     this.removeCurrentUser();
-    this.router.navigate(['/auth/login']);
+    
+    // Usar navigateByUrl para evitar problemas con el historial
+    this.router.navigateByUrl('/auth/login', { replaceUrl: true }).then(() => {
+      console.log('AuthService - Redirigido al login');
+    }).catch((error) => {
+      console.error('AuthService - Error al redirigir al login:', error);
+      // Fallback: usar window.location si hay problemas con el router
+      window.location.href = '/auth/login';
+    });
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    if (!token) {
+      return false;
+    }
+
+    // Verificar si el token está vencido
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      // Verificar si el token tiene fecha de expiración
+      if (payload.exp) {
+        const expirationDate = new Date(payload.exp * 1000); // exp está en segundos
+        const now = new Date();
+        
+        // Agregar un margen de 30 segundos para evitar problemas de sincronización
+        const margin = 30 * 1000; // 30 segundos en milisegundos
+        
+        if (expirationDate.getTime() - margin < now.getTime()) {
+          console.warn('AuthService - Token vencido detectado. Fecha expiración:', expirationDate, 'Fecha actual:', now);
+          // Limpiar el token vencido
+          this.removeToken();
+          this.removeCurrentUser();
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('AuthService - Error verificando token:', error);
+      // Si hay error al decodificar, considerar el token como inválido
+      this.removeToken();
+      this.removeCurrentUser();
+      return false;
+    }
   }
 
   // Método para obtener información del usuario desde el token (opcional)
@@ -567,5 +609,73 @@ export class AuthService {
         return of(this.isAdministrador());
       })
     );
+  }
+
+  // ========== MÉTODOS BASADOS EN ID_ROL ==========
+
+  /**
+   * Obtiene el ID del rol activo del usuario desde el backend
+   * @returns Observable con el id_rol activo o null si no hay rol activo
+   */
+  public getActiveRoleId(): Observable<number | null> {
+    return this.fetchCurrentUserWithRoles().pipe(
+      map((user: Usuario | null) => {
+        if (!user) {
+          return null;
+        }
+
+        // Prioridad 1: Usar el campo 'rol' (singular)
+        if (user.rol && user.rol.estado === 'activo' && user.rol.rol) {
+          return user.rol.rol.id_rol;
+        }
+
+        // Prioridad 2: Usar el campo 'roles' (array)
+        if (user.roles && user.roles.length > 0) {
+          const activeRole = user.roles.find((r: UsuarioRolResponse) => r.estado === 'activo');
+          if (activeRole && activeRole.rol) {
+            return activeRole.rol.id_rol;
+          }
+        }
+
+        return null;
+      }),
+      catchError((error) => {
+        console.error('getActiveRoleId: Error obteniendo id_rol:', error);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * Verifica si el usuario tiene un rol específico por ID
+   * @param roleId ID del rol a verificar
+   * @returns Observable con true si el usuario tiene el rol activo
+   */
+  public hasRoleId(roleId: number): Observable<boolean> {
+    return this.getActiveRoleId().pipe(
+      map((activeRoleId) => activeRoleId === roleId),
+      catchError(() => of(false))
+    );
+  }
+
+  /**
+   * Verifica si el usuario es Coordinador de carrera (id_rol: 2)
+   */
+  public isCoordinadorById(): Observable<boolean> {
+    return this.hasRoleId(2);
+  }
+
+  /**
+   * Verifica si el usuario es Jefe departamento (id_rol: 1)
+   */
+  public isJefeDepartamentoById(): Observable<boolean> {
+    return this.hasRoleId(1);
+  }
+
+  /**
+   * Verifica si el usuario es Director departamento (id_rol: 5)
+   */
+  public isDirectorDepartamentoById(): Observable<boolean> {
+    return this.hasRoleId(5);
   }
 }

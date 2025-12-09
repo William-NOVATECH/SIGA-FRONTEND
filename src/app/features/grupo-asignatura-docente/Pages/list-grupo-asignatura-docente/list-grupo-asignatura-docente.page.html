@@ -1,27 +1,117 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>Gestión de Carga Docente</h1>
-    <div class="page-actions">
-      <button (click)="onCreateNew()" class="btn btn-primary">
-        <i class="fa-solid fa-plus-circle"></i>
-        Nueva Asignación
-      </button>
-      <button (click)="onCreateBulk()" class="btn btn-secondary">
+<div class="asignacion-list-container">
+  <!-- Header -->
+  <div class="list-header">
+    <h2>Gestión de Carga Docente</h2>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="onCreateBulk()">
         <i class="fa-solid fa-users"></i>
         Creación Masiva
+      </button>
+      <button class="btn btn-primary" (click)="onCreateNew()">
+        <i class="fa-solid fa-plus"></i>
+        Nueva Asignación
       </button>
     </div>
   </div>
 
-  <app-grupo-asignatura-docente-grouped-list
-  [grupos]="grupos"
-   [loading]="loading"
-   [error]="error"
-   (view)="onView($event)"       
-  (edit)="onEdit($event)"
-   (delete)="onDelete($event)"
-   (refresh)="onRefresh()"
-   (viewGrupo)="onViewGrupo($event)"
-   (createAsignacion)="onCreateAsignacion($event)"
- ></app-grupo-asignatura-docente-grouped-list>
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando asignaciones...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-state">
+    <i class="fa-solid fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadAsignaciones()">Reintentar</button>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && asignaciones.length === 0" class="empty-state">
+    <i class="fa-solid fa-clipboard-list"></i>
+    <p>No hay asignaciones registradas</p>
+    <button class="btn btn-primary" (click)="onCreateNew()">
+      <i class="fa-solid fa-plus"></i>
+      Crear primera asignación
+    </button>
+  </div>
+
+  <!-- Asignaciones Grid -->
+  <div *ngIf="!loading && !error && asignaciones.length > 0" class="asignaciones-grid">
+    <div *ngFor="let asignacion of asignaciones" class="asignacion-card">
+      <div class="asignacion-card-header">
+        <div class="asignacion-title-section">
+          <h3>{{ asignacion.asignatura?.nombre_asignatura || 'Asignatura sin nombre' }}</h3>
+          <span *ngIf="asignacion.asignatura?.codigo_asignatura" class="asignacion-code">
+            {{ asignacion.asignatura.codigo_asignatura }}
+          </span>
+        </div>
+        <span *ngIf="asignacion.grupo?.codigo_grupo" class="grupo-code">
+          {{ asignacion.grupo.codigo_grupo }}
+        </span>
+      </div>
+      
+      <div class="asignacion-card-body">
+        <div class="asignacion-info">
+          <div class="info-item">
+            <i class="fa-solid fa-users"></i>
+            <strong>Grupo:</strong> 
+            <span>{{ asignacion.grupo?.nombre_grupo || asignacion.grupo?.codigo_grupo || 'N/A' }}</span>
+          </div>
+          <div class="info-item">
+            <i class="fa-solid fa-user-tie"></i>
+            <strong>Docente:</strong> 
+            <span>{{ asignacion.docente?.nombres }} {{ asignacion.docente?.apellidos }}</span>
+            <span *ngIf="asignacion.docente?.codigo_docente" class="docente-code">
+              ({{ asignacion.docente.codigo_docente }})
+            </span>
+          </div>
+          <div class="info-item" *ngIf="asignacion.grupo?.carrera">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <strong>Carrera:</strong> 
+            <span>{{ asignacion.grupo.carrera.nombre_carrera }}</span>
+          </div>
+        </div>
+        
+        <div class="asignacion-dates">
+          <span class="date-item">
+            <i class="fa-solid fa-calendar-day"></i>
+            <strong>Asignado:</strong> {{ formatDate(asignacion.fecha_asignacion) }}
+          </span>
+        </div>
+        
+        <div class="asignacion-meta">
+          <span *ngIf="asignacion.estado" class="asignacion-status" [class.active]="asignacion.estado === 'activa'">
+            {{ asignacion.estado }}
+          </span>
+          <span *ngIf="asignacion.estado_aprobacion" class="aprobacion-status" 
+                [class.borrador]="asignacion.estado_aprobacion === 'borrador'"
+                [class.pendiente]="asignacion.estado_aprobacion === 'pendiente_revision' || asignacion.estado_aprobacion === 'pendiente_aprobacion'"
+                [class.aprobada]="asignacion.estado_aprobacion === 'aprobada'"
+                [class.rechazada]="asignacion.estado_aprobacion === 'rechazada'">
+            {{ getEstadoAprobacionDisplay(asignacion.estado_aprobacion) }}
+          </span>
+          <span *ngIf="!asignacion.estado_aprobacion" class="sin-versionamiento">
+            Sin versionamiento
+          </span>
+        </div>
+      </div>
+
+      <div class="asignacion-card-actions">
+        <button class="btn btn-view" (click)="onView(asignacion.id_grupo_asignatura_docente)" title="Ver detalles">
+          <i class="fa-solid fa-eye"></i>
+          <span>Ver</span>
+        </button>
+        <button class="btn btn-edit" (click)="onEdit(asignacion.id_grupo_asignatura_docente)" title="Editar asignación">
+          <i class="fa-solid fa-pencil"></i>
+          <span>Editar</span>
+        </button>
+        <button class="btn btn-delete" (click)="onDelete(asignacion.id_grupo_asignatura_docente)" title="Eliminar asignación">
+          <i class="fa-solid fa-trash"></i>
+          <span>Eliminar</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

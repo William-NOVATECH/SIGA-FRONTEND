@@ -147,68 +147,173 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
     this.loading = true;
 
     if (this.mode === 'create') {
-      // Si es coordinador, usar createVersionInicial
-      if (this.authService.isCoordinador()) {
-        const versionInicialDto: CreateVersionInicialDto = {
-          id_grupo: dto.id_grupo,
-          id_asignatura: dto.id_asignatura,
-          id_docente: dto.id_docente,
-          estado: dto.estado || 'activa',
-          observaciones: dto.observaciones
-        };
-        
-        this.grupoAsignaturaDocenteService.createVersionInicial(versionInicialDto).subscribe({
-          next: (asignacion) => {
-            console.log('✅ Versión inicial creada (respuesta inmediata):', asignacion);
-            console.log('ID coordinador en respuesta inmediata:', asignacion.id_coordinador_carrera);
-            
-            // Recargar la asignación completa desde el backend para obtener todos los campos
-            // (el backend puede no retornar id_coordinador_carrera en la respuesta de creación)
-            this.grupoAsignaturaDocenteService.findOne(asignacion.id_grupo_asignatura_docente).subscribe({
-              next: (asignacionCompleta) => {
-                console.log('✅ Asignación recargada completa:', asignacionCompleta);
-                console.log('ID coordinador después de recargar:', asignacionCompleta.id_coordinador_carrera);
+      // Si es coordinador (id_rol: 2), usar createVersionInicial
+      // Verificar por id_rol en lugar de nombre_rol
+      console.log('🔍 Verificando rol del usuario antes de crear versión inicial...');
+      
+      // Obtener información completa del usuario antes de hacer la petición
+      this.authService.fetchCurrentUserWithRoles().subscribe({
+        next: (user) => {
+          console.log('👤 Usuario completo obtenido:', user);
+          console.log('📋 Roles del usuario:', user?.roles || user?.rol);
+          
+          // Obtener el id_rol activo
+          this.authService.getActiveRoleId().subscribe({
+            next: (roleId) => {
+              console.log('🆔 ID de rol activo obtenido:', roleId);
+              
+              // Verificar también el nombre del rol para debugging
+              let roleName = 'desconocido';
+              if (user?.roles && user.roles.length > 0) {
+                const activeRole = user.roles.find((r: any) => r.estado === 'activo');
+                if (activeRole?.rol) {
+                  roleName = activeRole.rol.nombre_rol;
+                  console.log('📛 Nombre del rol activo:', roleName);
+                }
+              }
+              
+              const isCoordinador = roleId === 2;
+              console.log('✅ ¿Es coordinador (id_rol === 2)?', isCoordinador);
+              
+              if (!isCoordinador) {
+                console.warn('⚠️ Usuario no es coordinador. id_rol:', roleId, 'nombre_rol:', roleName);
+                this.loading = false;
+                this.toastService.showError(
+                  'Sin permisos', 
+                  'Solo los Coordinadores de carrera (id_rol: 2) pueden crear versiones iniciales. Tu rol actual: ' + roleName + ' (id_rol: ' + roleId + ')'
+                );
+                return;
+              }
+              
+              // Verificar que el token esté presente
+              const token = this.authService.getToken();
+              if (!token) {
+                console.error('❌ No hay token disponible');
+                this.loading = false;
+                this.toastService.showError('Error de autenticación', 'No hay token de autenticación. Por favor, inicia sesión nuevamente.');
+                return;
+              }
+              
+              // Decodificar el token para verificar su contenido
+              try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                console.log('🎫 Contenido del token JWT:', {
+                  sub: payload.sub,
+                  username: payload.username,
+                  roles: payload.roles,
+                  exp: payload.exp ? new Date(payload.exp * 1000).toISOString() : 'No expira'
+                });
+              } catch (error) {
+                console.error('❌ Error decodificando token:', error);
+              }
+              
+              // Crear versión inicial (solo coordinadores)
+              const versionInicialDto: CreateVersionInicialDto = {
+                id_grupo: dto.id_grupo,
+                id_asignatura: dto.id_asignatura,
+                id_docente: dto.id_docente,
+                estado: dto.estado || 'activa',
+                observaciones: dto.observaciones
+              };
+              
+              console.log('📤 Enviando petición POST a /version-inicial con datos:', versionInicialDto);
+              console.log('🔑 Token presente:', !!token, 'Longitud:', token?.length);
+              
+              this.grupoAsignaturaDocenteService.createVersionInicial(versionInicialDto).subscribe({
+                next: (asignacion) => {
+                console.log('✅ Versión inicial creada (respuesta inmediata):', asignacion);
+                console.log('ID coordinador en respuesta inmediata:', asignacion.id_coordinador_carrera);
                 
-                // Actualizar usuario actual desde el backend para asegurar que tenemos el ID correcto
-                this.authService.fetchCurrentUserWithRoles().subscribe(user => {
-                  if (user) {
-                    console.log('Usuario actualizado después de crear asignación:', user.id_usuario, user.username);
+                // Recargar la asignación completa desde el backend para obtener todos los campos
+                // (el backend puede no retornar id_coordinador_carrera en la respuesta de creación)
+                this.grupoAsignaturaDocenteService.findOne(asignacion.id_grupo_asignatura_docente).subscribe({
+                  next: (asignacionCompleta) => {
+                    console.log('✅ Asignación recargada completa:', asignacionCompleta);
+                    console.log('ID coordinador después de recargar:', asignacionCompleta.id_coordinador_carrera);
+                    
+                    // Actualizar usuario actual desde el backend para asegurar que tenemos el ID correcto
+                    this.authService.fetchCurrentUserWithRoles().subscribe(user => {
+                      if (user) {
+                        console.log('Usuario actualizado después de crear asignación:', user.id_usuario, user.username);
+                      }
+                    });
+                    
+                    this.loading = false;
+                    this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
+                    this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacionCompleta.id_grupo_asignatura_docente]);
+                  },
+                  error: (error) => {
+                    console.error('Error al recargar asignación:', error);
+                    // Aún así, navegar a la página de detalle
+                    this.loading = false;
+                    this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
+                    this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacion.id_grupo_asignatura_docente]);
                   }
                 });
-                
-                this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
-                this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacionCompleta.id_grupo_asignatura_docente]);
-              },
-              error: (error) => {
-                console.error('Error al recargar asignación:', error);
-                // Aún así, navegar a la página de detalle
-                this.toastService.showSuccess('Versión inicial creada', 'La carga docente se ha creado correctamente en estado borrador.');
-                this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacion.id_grupo_asignatura_docente]);
-              }
-            });
-          },
-          error: (error) => {
-            console.error('Error creating version inicial:', error);
-            const errorMessage = error.error?.message || error.message || 'No se pudo crear la versión inicial.';
-            this.toastService.showError('Error al crear', errorMessage);
-            this.loading = false;
-          }
-        });
-      } else {
-        // Si no es coordinador, usar el método normal
-        this.grupoAsignaturaDocenteService.create(dto).subscribe({
-          next: () => {
-            this.toastService.showSuccess('Asignación creada', 'La asignación se ha creado correctamente.');
-            this.router.navigate(['/grupo-asignatura-docente']);
-          },
-          error: (error) => {
-            console.error('Error creating asignacion:', error);
-            const errorMessage = error.error?.message || error.message || 'No se pudo crear la asignación.';
-            this.toastService.showError('Error al crear', errorMessage);
-            this.loading = false;
-          }
-        });
-      }
+                },
+                error: (err) => {
+                  console.error('❌ Error creating version inicial:', err);
+                  console.error('📊 Detalles del error:', {
+                    status: err.status,
+                    statusText: err.statusText,
+                    url: err.url,
+                    message: err.message,
+                    error: err.error
+                  });
+                  
+                  this.loading = false;
+                  
+                  // Mensaje de error más descriptivo
+                  let errorMessage = 'No se pudo crear la versión inicial.';
+                  
+                  if (err.status === 403) {
+                    errorMessage = 'No tienes permisos para crear una versión inicial. Verifica que:';
+                    errorMessage += '\n1. Tu rol sea "Coordinador de carrera" (id_rol: 2)';
+                    errorMessage += '\n2. Tu token de autenticación sea válido';
+                    errorMessage += '\n3. El backend tenga configurado correctamente los permisos para este endpoint';
+                    
+                    // Mostrar información adicional en consola
+                    console.error('🔒 Error 403 - Posibles causas:');
+                    console.error('1. El backend está validando el rol de manera diferente');
+                    console.error('2. El token no contiene la información correcta del rol');
+                    console.error('3. El backend espera un formato específico de autenticación');
+                    console.error('4. El usuario no tiene el rol correcto en la base de datos del backend');
+                  } else if (err.status === 401) {
+                    errorMessage = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+                  } else {
+                    errorMessage = err.error?.message || err.message || errorMessage;
+                  }
+                  
+                  this.toastService.showError('Error al crear versión inicial', errorMessage);
+                }
+              });
+            },
+            error: (roleErr) => {
+              console.error('❌ Error obteniendo id_rol:', roleErr);
+              this.loading = false;
+              this.toastService.showError('Error', 'No se pudo verificar tu rol. Por favor, intenta nuevamente.');
+            }
+          });
+        },
+        error: (userErr) => {
+          console.error('❌ Error obteniendo usuario completo:', userErr);
+          this.loading = false;
+          // Fallback: usar método create normal si no se puede obtener el usuario
+          this.grupoAsignaturaDocenteService.create(dto).subscribe({
+            next: (asignacion) => {
+              this.loading = false;
+              this.toastService.showSuccess('Asignación creada', 'La asignación se ha creado correctamente.');
+              this.router.navigate(['/grupo-asignatura-docente', 'detail', asignacion.id_grupo_asignatura_docente]);
+            },
+            error: (err) => {
+              this.loading = false;
+              const errorMessage = err.error?.message || err.message || 'No se pudo crear la asignación.';
+              this.toastService.showError('Error', errorMessage);
+              console.error('Error creating asignacion:', err);
+            }
+          });
+        }
+      });
     } else if (this.mode === 'edit' && this.asignacion) {
       this.grupoAsignaturaDocenteService.update(this.asignacion.id_grupo_asignatura_docente, dto).subscribe({
         next: () => {

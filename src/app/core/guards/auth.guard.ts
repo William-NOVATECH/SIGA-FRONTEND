@@ -5,7 +5,10 @@ import { AuthService } from "../services/auth.service";
 
 @Injectable({ providedIn: "root" })
 export class AuthGuard implements CanActivate {
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(
+    private router: Router, 
+    private authService: AuthService
+  ) {}
 
   canActivate(
     route: ActivatedRouteSnapshot,
@@ -16,10 +19,23 @@ export class AuthGuard implements CanActivate {
     | Observable<boolean | UrlTree>
     | Promise<boolean | UrlTree> {
 
-    if (!this.authService.isAuthenticated()) {
-      return this.router.parseUrl("/auth/login"); // Redirige a la ruta de inicio de sesión si el usuario no está autenticado
+    console.log('AuthGuard - Verificando autenticación para ruta:', state.url);
+    
+    // Verificar si el usuario está autenticado (incluye verificación de token vencido)
+    const isAuthenticated = this.authService.isAuthenticated();
+    
+    if (!isAuthenticated) {
+      console.warn('AuthGuard - Usuario no autenticado o token vencido, redirigiendo al login');
+      console.warn('AuthGuard - Ruta bloqueada:', state.url);
+      
+      // Asegurarse de que la sesión esté completamente cerrada
+      this.authService.logOut();
+      
+      // Retornar la URL del login
+      return this.router.parseUrl("/auth/login");
     }
 
+    console.log('AuthGuard - Usuario autenticado, permitiendo acceso');
     return true;
   }
 }

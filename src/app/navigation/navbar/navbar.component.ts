@@ -2,6 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
+interface MenuItem {
+  id: string;
+  title: string;
+  icon: string;
+  route: string;
+  roles: number[]; // Array de id_rol que pueden ver este item
+}
+
 @Component({
   selector: 'app-navbar',
   standalone:false,
@@ -14,6 +22,9 @@ export class NavbarComponent implements OnInit {
   currentUser: any = null;
   userRoles: string[] = [];
   primaryRole: string = '';
+  activeRoleId: number | null = null;
+  menuItems: MenuItem[] = [];
+  availableMenuItems: MenuItem[] = [];
 
   constructor(
     private router: Router,
@@ -21,8 +32,123 @@ export class NavbarComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Verificar autenticación al inicializar el componente
+    if (!this.authService.isAuthenticated()) {
+      console.warn('NavbarComponent - Usuario no autenticado o token vencido, redirigiendo al login');
+      this.authService.logOut();
+      return;
+    }
+
+    this.initializeMenuItems();
     this.loadCurrentUser();
     this.loadUserRolesFromBackend();
+    this.loadActiveRoleId();
+  }
+
+  initializeMenuItems() {
+    // Definir todos los items del menú con sus roles permitidos
+    this.menuItems = [
+      {
+        id: 'admin',
+        title: 'Administración',
+        icon: 'pi pi-briefcase',
+        route: '/admin',
+        roles: [1, 5] // Solo Jefe departamento (1) y Director departamento (5)
+      },
+      {
+        id: 'roles',
+        title: 'Roles',
+        icon: 'pi pi-shield',
+        route: '/admin/roles',
+        roles: [1, 5] // Solo Jefe departamento (1) y Director departamento (5)
+      },
+      {
+        id: 'inicio',
+        title: 'Inicio',
+        icon: 'pi pi-home',
+        route: '/inicio',
+        roles: [1, 2, 3, 5] // Todos excepto invitado (6)
+      },
+      {
+        id: 'departamentos',
+        title: 'Departamentos',
+        icon: 'pi pi-folder',
+        route: '/departamentos',
+        roles: [1, 2, 5] // Jefe departamento, Coordinador, Director
+      },
+      {
+        id: 'asignaturas',
+        title: 'Asignaturas',
+        icon: 'pi pi-file-edit',
+        route: '/asignaturas',
+        roles: [1, 2, 3, 5] // Todos excepto invitado
+      },
+      {
+        id: 'carreras',
+        title: 'Carreras',
+        icon: 'pi pi-chart-bar',
+        route: '/carreras',
+        roles: [1, 2, 3, 5] // Todos excepto invitado
+      },
+      {
+        id: 'grupos',
+        title: 'Grupos',
+        icon: 'pi pi-book',
+        route: '/grupos',
+        roles: [1, 2, 3, 5] // Todos excepto invitado
+      },
+      {
+        id: 'docentes',
+        title: 'Docentes',
+        icon: 'pi pi-user',
+        route: '/docentes',
+        roles: [1, 2, 5] // Jefe departamento, Coordinador, Director
+      },
+      {
+        id: 'carga-docente',
+        title: 'Carga Docente',
+        icon: 'pi pi-id-card',
+        route: '/carga-docente',
+        roles: [1, 2, 5] // Jefe departamento, Coordinador, Director
+      },
+      {
+        id: 'planes',
+        title: 'Planes',
+        icon: 'pi pi-list',
+        route: '/planes',
+        roles: [1, 2, 5] // Jefe departamento, Coordinador, Director
+      }
+    ];
+  }
+
+  loadActiveRoleId() {
+    this.authService.getActiveRoleId().subscribe({
+      next: (roleId) => {
+        this.activeRoleId = roleId;
+        console.log('NavbarComponent - ID de rol activo:', roleId);
+        this.filterMenuItemsByRole();
+      },
+      error: (error) => {
+        console.error('NavbarComponent - Error obteniendo id_rol:', error);
+        this.activeRoleId = null;
+        this.availableMenuItems = [];
+      }
+    });
+  }
+
+  filterMenuItemsByRole() {
+    if (this.activeRoleId === null) {
+      // Si no hay rol activo, no mostrar items (probablemente invitado)
+      this.availableMenuItems = [];
+      return;
+    }
+
+    // Filtrar items según el rol del usuario
+    this.availableMenuItems = this.menuItems.filter(item => 
+      item.roles.includes(this.activeRoleId!)
+    );
+
+    console.log('NavbarComponent - Items del menú disponibles para rol', this.activeRoleId, ':', this.availableMenuItems.length);
   }
 
   loadCurrentUser() {
@@ -91,6 +217,8 @@ export class NavbarComponent implements OnInit {
     const roleNames: { [key: string]: string } = {
       'coordinador': 'Coordinador de Carrera',
       'coordinador de carrera': 'Coordinador de Carrera',
+      'jefe departamento': 'Jefe departamento',
+      'jefe de departamento': 'Jefe departamento',
       'director': 'Director de Departamento',
       'director de departamento': 'Director de Departamento',
       'directores': 'Director de Departamento',

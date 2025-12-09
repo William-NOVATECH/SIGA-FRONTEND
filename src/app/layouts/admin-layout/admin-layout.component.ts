@@ -106,14 +106,32 @@ export class AdminLayoutComponent implements OnInit {
       'invitado': 'Invitado',
       'docentes': 'Docente',
       'directores': 'Director de Departamento',
+      'director departamento': 'Director de Departamento',
       'coordinador': 'Coordinador de Carrera',
+      'coordinador de carrera': 'Coordinador de Carrera',
+      'jefe departamento': 'Jefe departamento',
       'administrador': 'Administrador'
     };
     return roleMap[role.toLowerCase()] || role;
   }
 
   getModulesForRole(role: string): Module[] {
-    const normalizedRole = role.toLowerCase();
+    // Normalizar el rol: convertir a minúsculas y limpiar espacios
+    const normalizedRole = role.toLowerCase().trim();
+    
+    // Mapeo de variaciones de nombres de roles
+    const roleVariations: { [key: string]: string } = {
+      'jefe departamento': 'jefe departamento',
+      'jefe de departamento': 'jefe departamento',
+      'coordinador de carrera': 'coordinador',
+      'coordinador': 'coordinador',
+      'director departamento': 'directores',
+      'director de departamento': 'directores',
+      'directores': 'directores'
+    };
+    
+    // Obtener la clave normalizada del rol
+    const roleKey = roleVariations[normalizedRole] || normalizedRole;
     
     // Definir módulos según el caso de uso
     const allModules: { [key: string]: Module[] } = {
@@ -184,6 +202,65 @@ export class AdminLayoutComponent implements OnInit {
         }
       ],
       
+      'jefe departamento': [
+        {
+          id: 'inicio',
+          title: 'Inicio',
+          icon: '🏠',
+          route: '/inicio',
+          description: 'Página principal del sistema'
+        },
+        {
+          id: 'departamentos',
+          title: 'Departamentos',
+          icon: '📁',
+          route: '/departamentos',
+          description: 'Gestionar departamentos académicos'
+        },
+        {
+          id: 'asignaturas',
+          title: 'Asignaturas',
+          icon: '📋',
+          route: '/asignaturas',
+          description: 'Gestionar asignaturas del sistema'
+        },
+        {
+          id: 'carreras',
+          title: 'Carreras',
+          icon: '📊',
+          route: '/carreras',
+          description: 'Gestionar carreras académicas'
+        },
+        {
+          id: 'grupos',
+          title: 'Grupos',
+          icon: '📚',
+          route: '/grupos',
+          description: 'Gestionar grupos académicos'
+        },
+        {
+          id: 'docentes',
+          title: 'Docentes',
+          icon: '🎓',
+          route: '/docentes',
+          description: 'Gestionar información de docentes'
+        },
+        {
+          id: 'carga-docente',
+          title: 'Carga Docente',
+          icon: '👨‍🏫',
+          route: '/carga-docente',
+          description: 'Gestionar la carga docente'
+        },
+        {
+          id: 'planes',
+          title: 'Planes',
+          icon: '📑',
+          route: '/planes',
+          description: 'Gestionar planes de estudio'
+        }
+      ],
+      
       'administrador': [
         {
           id: 'catalogos',
@@ -230,7 +307,7 @@ export class AdminLayoutComponent implements OnInit {
       ]
     };
 
-    return allModules[normalizedRole] || [];
+    return allModules[roleKey] || [];
   }
 
   goToModule(route: string): void {

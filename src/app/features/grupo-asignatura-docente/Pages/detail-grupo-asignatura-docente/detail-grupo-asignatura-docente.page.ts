@@ -49,10 +49,11 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
     observaciones: ''
   };
 
-  // Cache de roles
-  private isCoordinadorCached: boolean = false;
-  private isDirectorCached: boolean = false;
-  private isAdministradorCached: boolean = false;
+  // Cache de roles por ID
+  private activeRoleId: number | null = null;
+  private isCoordinadorCached: boolean = false; // id_rol: 2
+  private isJefeDepartamentoCached: boolean = false; // id_rol: 1
+  private isDirectorDepartamentoCached: boolean = false; // id_rol: 5
 
   // Información del usuario creador
   usuarioCreador: Usuario | null = null;
@@ -72,41 +73,56 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
   ngOnInit(): void {
     this.loadAsignacion();
     this.loadUserRoles();
+    
+    // Log de depuración después de un breve delay para verificar estado
+    setTimeout(() => {
+      console.log('📊 ESTADO INICIAL DEL COMPONENTE:');
+      console.log('- activeRoleId:', this.activeRoleId);
+      console.log('- isJefeDepartamentoCached:', this.isJefeDepartamentoCached);
+      console.log('- asignacion?.estado_aprobacion:', this.asignacion?.estado_aprobacion);
+      console.log('- canRevisar():', this.canRevisar());
+    }, 1000);
   }
 
-  // Cargar roles del usuario desde el backend
+  // Cargar roles del usuario desde el backend usando id_rol
   loadUserRoles(): void {
-    // Obtener el rol actual del usuario desde el backend
-    this.authService.getCurrentUserRole().subscribe({
-      next: (roleName) => {
-        if (roleName) {
-          const normalizedRole = roleName.toLowerCase();
-          console.log('Rol obtenido del backend:', roleName, '→ normalizado:', normalizedRole);
+    // Obtener el id_rol activo del usuario desde el backend
+    this.authService.getActiveRoleId().subscribe({
+      next: (roleId) => {
+        this.activeRoleId = roleId;
+        
+        if (roleId !== null) {
+          console.log('ID de rol obtenido del backend:', roleId);
           
-          // Actualizar cache de roles basado en el rol obtenido
-          this.isCoordinadorCached = normalizedRole === 'coordinador' || normalizedRole.includes('coordinador');
-          this.isDirectorCached = normalizedRole === 'director' || normalizedRole === 'directores' || normalizedRole.includes('director');
-          this.isAdministradorCached = normalizedRole === 'administrador' || normalizedRole === 'admin' || normalizedRole.includes('administrador');
+          // Actualizar cache de roles basado en id_rol
+          // id_rol: 2 = Coordinador de carrera
+          // id_rol: 1 = Jefe departamento
+          // id_rol: 5 = Director departamento
+          this.isCoordinadorCached = roleId === 2;
+          this.isJefeDepartamentoCached = roleId === 1;
+          this.isDirectorDepartamentoCached = roleId === 5;
           
-          console.log('Roles actualizados:', {
-            coordinador: this.isCoordinadorCached,
-            director: this.isDirectorCached,
-            administrador: this.isAdministradorCached
+          console.log('Roles actualizados por ID:', {
+            id_rol: roleId,
+            esCoordinador: this.isCoordinadorCached,
+            esJefeDepartamento: this.isJefeDepartamentoCached,
+            esDirectorDepartamento: this.isDirectorDepartamentoCached
           });
         } else {
-          console.warn('No se pudo obtener el rol del backend, usando verificación async como fallback');
-          // Fallback: usar métodos async
-          this.authService.isCoordinadorAsync().subscribe(isCoord => this.isCoordinadorCached = isCoord);
-          this.authService.isDirectorAsync().subscribe(isDir => this.isDirectorCached = isDir);
-          this.authService.isAdministradorAsync().subscribe(isAdmin => this.isAdministradorCached = isAdmin);
+          console.warn('No se pudo obtener el id_rol del backend');
+          // Limpiar cache
+          this.isCoordinadorCached = false;
+          this.isJefeDepartamentoCached = false;
+          this.isDirectorDepartamentoCached = false;
         }
       },
       error: (error) => {
-        console.error('Error obteniendo rol del backend:', error);
-        // Fallback: usar métodos async
-        this.authService.isCoordinadorAsync().subscribe(isCoord => this.isCoordinadorCached = isCoord);
-        this.authService.isDirectorAsync().subscribe(isDir => this.isDirectorCached = isDir);
-        this.authService.isAdministradorAsync().subscribe(isAdmin => this.isAdministradorCached = isAdmin);
+        console.error('Error obteniendo id_rol del backend:', error);
+        // Limpiar cache en caso de error
+        this.activeRoleId = null;
+        this.isCoordinadorCached = false;
+        this.isJefeDepartamentoCached = false;
+        this.isDirectorDepartamentoCached = false;
       }
     });
   }
@@ -163,6 +179,9 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
         
         this.asignacion = asignacion;
         this.loading = false;
+        
+        // Recargar roles del usuario para asegurar que tenemos el id_rol actualizado
+        this.loadUserRoles();
         
         // Cargar información del usuario creador si existe
         if (asignacion.id_coordinador_carrera) {
@@ -279,35 +298,41 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
 
   // ========== MÉTODOS DE VERSIONAMIENTO Y APROBACIÓN ==========
 
-  // Verificar roles (usa cache del backend como prioridad)
+  // Verificar roles usando id_rol (más confiable que nombre_rol)
   isCoordinador(): boolean {
-    // Prioridad 1: Usar cache del backend (más confiable)
-    if (this.isCoordinadorCached) {
-      return true;
-    }
-    // Prioridad 2: Verificar desde el token (fallback rápido)
-    return this.authService.isCoordinador();
+    // Verificar por id_rol: 2 = Coordinador de carrera
+    return this.isCoordinadorCached || this.activeRoleId === 2;
   }
 
-  isDirector(): boolean {
-    // Prioridad 1: Usar cache del backend (más confiable)
-    if (this.isDirectorCached) {
-      return true;
+  isJefeDepartamento(): boolean {
+    // Verificar por id_rol: 1 = Jefe departamento
+    const result = this.isJefeDepartamentoCached || this.activeRoleId === 1;
+    
+    // Si no tenemos el rol cargado y no está en cache, intentar recargarlo
+    if (!result && this.activeRoleId === null && !this.loading) {
+      console.log('⚠️ isJefeDepartamento: activeRoleId es null, recargando roles...');
+      this.loadUserRoles();
     }
-    // Prioridad 2: Verificar desde el token (fallback rápido)
-    return this.authService.isDirector();
+    
+    return result;
+  }
+
+  isDirectorDepartamento(): boolean {
+    // Verificar por id_rol: 5 = Director departamento
+    return this.isDirectorDepartamentoCached || this.activeRoleId === 5;
+  }
+
+  // Mantener métodos legacy para compatibilidad (pero usarán id_rol internamente)
+  isDirector(): boolean {
+    return this.isDirectorDepartamento();
   }
 
   isAdministrador(): boolean {
-    // Prioridad 1: Usar cache del backend (más confiable)
-    if (this.isAdministradorCached) {
-      return true;
-    }
-    // Prioridad 2: Verificar desde el token (fallback rápido)
-    return this.authService.isAdministrador();
+    // No hay administrador en el nuevo flujo, pero mantenemos por compatibilidad
+    return false;
   }
 
-  // Verificar si puede enviar a revisión (solo coordinador que creó)
+  // Verificar si puede enviar a revisión (solo coordinador id_rol: 2 que creó)
   canEnviarRevision(): boolean {
     if (!this.asignacion) {
       console.log('canEnviarRevision: No hay asignación');
@@ -320,10 +345,10 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
       return false;
     }
 
-    // Verificar que el usuario sea coordinador (usando cache o verificación directa)
+    // Verificar que el usuario sea coordinador (id_rol: 2)
     const isCoord = this.isCoordinador();
     if (!isCoord) {
-      console.log('canEnviarRevision: Usuario no es coordinador. Cache:', this.isCoordinadorCached, 'Token:', this.authService.isCoordinador());
+      console.log('canEnviarRevision: Usuario no es coordinador (id_rol debe ser 2). id_rol actual:', this.activeRoleId);
       return false;
     }
 
@@ -399,15 +424,61 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
     return true;
   }
 
-  // Verificar si puede revisar (director)
+  // Verificar si puede revisar (Jefe departamento id_rol: 1)
   canRevisar(): boolean {
-    if (!this.asignacion || !this.isDirector()) return false;
-    return this.asignacion.estado_aprobacion === 'pendiente_revision';
+    if (!this.asignacion) {
+      console.log('canRevisar: No hay asignación');
+      return false;
+    }
+    
+    // Log detallado para debugging
+    console.log('🔍 canRevisar - Verificación completa:', {
+      tieneAsignacion: !!this.asignacion,
+      estado_aprobacion: this.asignacion.estado_aprobacion,
+      activeRoleId: this.activeRoleId,
+      isJefeDepartamentoCached: this.isJefeDepartamentoCached,
+      id_asignacion: this.asignacion.id_grupo_asignatura_docente
+    });
+    
+    // Verificar que el usuario sea Jefe departamento (id_rol: 1)
+    const isJefe = this.isJefeDepartamento();
+    console.log('canRevisar - isJefeDepartamento():', isJefe, 'activeRoleId:', this.activeRoleId);
+    
+    if (!isJefe) {
+      console.log('❌ canRevisar: Usuario no es Jefe departamento (id_rol debe ser 1). id_rol actual:', this.activeRoleId);
+      // Intentar recargar el rol si no está disponible
+      if (this.activeRoleId === null) {
+        console.log('⚠️ activeRoleId es null, recargando roles...');
+        this.loadUserRoles();
+      }
+      return false;
+    }
+    
+    // Verificar que el estado sea pendiente_revision (después de que coordinador envíe)
+    const estadoCorrecto = this.asignacion.estado_aprobacion === 'pendiente_revision';
+    console.log('canRevisar - Estado correcto para revisar:', estadoCorrecto, 'estado_aprobacion:', this.asignacion.estado_aprobacion);
+    
+    if (!estadoCorrecto) {
+      console.log('❌ canRevisar: Estado no es pendiente_revision. Estado actual:', this.asignacion.estado_aprobacion);
+      return false;
+    }
+    
+    console.log('✅ canRevisar: Usuario puede revisar - es Jefe departamento y estado es pendiente_revision');
+    return true;
   }
 
-  // Verificar si puede aprobar final (administrador)
+  // Verificar si puede aprobar final (Director departamento id_rol: 5)
   canAprobarFinal(): boolean {
-    if (!this.asignacion || !this.isAdministrador()) return false;
+    if (!this.asignacion) return false;
+    
+    // Verificar que el usuario sea Director departamento (id_rol: 5)
+    const isDirector = this.isDirectorDepartamento();
+    if (!isDirector) {
+      console.log('canAprobarFinal: Usuario no es Director departamento (id_rol debe ser 5). id_rol actual:', this.activeRoleId);
+      return false;
+    }
+    
+    // Verificar que el estado sea revisada o pendiente_aprobacion (después de que jefe departamento revise)
     return this.asignacion.estado_aprobacion === 'revisada' || 
            this.asignacion.estado_aprobacion === 'pendiente_aprobacion';
   }
@@ -452,65 +523,41 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
         }
 
         // Log detallado de la estructura de roles
-        console.log('🔍 Análisis detallado de roles:');
+        console.log('🔍 Análisis detallado de roles por ID:');
         console.log('- userWithRoles.roles (array):', userWithRoles.roles);
         console.log('- userWithRoles.rol (objeto):', userWithRoles.rol);
-        console.log('- Tipo de userWithRoles.roles:', typeof userWithRoles.roles, Array.isArray(userWithRoles.roles));
         
+        // Obtener id_rol activo
+        let activeRoleId: number | null = null;
+        
+        // Prioridad 1: Verificar en el array roles
         if (userWithRoles.roles && Array.isArray(userWithRoles.roles)) {
-          userWithRoles.roles.forEach((r: any, index: number) => {
-            console.log(`  Rol ${index}:`, {
-              estado: r.estado,
-              tieneRol: !!r.rol,
-              nombre_rol: r.rol?.nombre_rol,
-              nombre_rol_lowercase: r.rol?.nombre_rol?.toLowerCase(),
-              esActivo: r.estado === 'activo',
-              esCoordinador: r.rol?.nombre_rol?.toLowerCase() === 'coordinador',
-              cumpleCondicion: r.estado === 'activo' && r.rol?.nombre_rol?.toLowerCase() === 'coordinador'
-            });
-          });
+          const activeRole = userWithRoles.roles.find((r: any) => r.estado === 'activo');
+          if (activeRole && activeRole.rol) {
+            activeRoleId = activeRole.rol.id_rol;
+            console.log(`  Rol activo encontrado en array: id_rol=${activeRoleId}, nombre=${activeRole.rol.nombre_rol}`);
+          }
+        }
+        
+        // Prioridad 2: Verificar en el objeto rol (singular)
+        if (!activeRoleId && userWithRoles.rol && userWithRoles.rol.estado === 'activo' && userWithRoles.rol.rol) {
+          activeRoleId = userWithRoles.rol.rol.id_rol;
+          console.log(`  Rol activo encontrado en objeto: id_rol=${activeRoleId}, nombre=${userWithRoles.rol.rol.nombre_rol}`);
         }
 
-        // Verificar si el usuario tiene rol de coordinador activo
-        // Primero verificar en el array roles
-        let tieneRolCoordinadorEnArray = false;
-        if (userWithRoles.roles && Array.isArray(userWithRoles.roles)) {
-          tieneRolCoordinadorEnArray = userWithRoles.roles.some((r: any) => {
-            const estadoActivo = r.estado === 'activo';
-            const nombreRol = r.rol?.nombre_rol?.toLowerCase();
-            const esCoordinador = nombreRol === 'coordinador';
-            const resultado = estadoActivo && esCoordinador;
-            console.log(`  Verificando rol en array: estado=${estadoActivo}, nombre=${nombreRol}, esCoordinador=${esCoordinador}, resultado=${resultado}`);
-            return resultado;
-          });
-        }
-
-        // También verificar en el objeto rol (por si viene en formato diferente)
-        let tieneRolCoordinadorEnObjeto = false;
-        if (userWithRoles.rol) {
-          const estadoActivo = userWithRoles.rol.estado === 'activo';
-          const nombreRol = userWithRoles.rol.rol?.nombre_rol?.toLowerCase();
-          const esCoordinador = nombreRol === 'coordinador';
-          tieneRolCoordinadorEnObjeto = estadoActivo && esCoordinador;
-          console.log(`  Verificando rol en objeto: estado=${estadoActivo}, nombre=${nombreRol}, esCoordinador=${esCoordinador}, resultado=${tieneRolCoordinadorEnObjeto}`);
-        }
-
-        const tieneRolCoordinador = tieneRolCoordinadorEnArray || tieneRolCoordinadorEnObjeto;
-
-        console.log('📊 RESUMEN DE VALIDACIÓN:');
+        console.log('📊 RESUMEN DE VALIDACIÓN POR ID_ROL:');
         console.log({
           userId: userWithRoles.id_usuario,
           username: userWithRoles.username,
-          tieneRolCoordinadorEnArray,
-          tieneRolCoordinadorEnObjeto,
-          tieneRolCoordinador,
+          id_rol_activo: activeRoleId,
+          esCoordinador: activeRoleId === 2,
           id_coordinador_carrera: this.asignacion?.id_coordinador_carrera,
-          asignacionId: this.asignacion?.id_grupo_asignatura_docente,
-          estructuraCompleta: userWithRoles
+          asignacionId: this.asignacion?.id_grupo_asignatura_docente
         });
 
-        if (!tieneRolCoordinador) {
-          this.toastService.showError('Sin permisos', 'No tienes el rol de Coordinador necesario para enviar a revisión.');
+        // Verificar que el usuario tenga id_rol: 2 (Coordinador de carrera)
+        if (activeRoleId !== 2) {
+          this.toastService.showError('Sin permisos', `No tienes el rol de Coordinador de carrera (id_rol: 2) necesario para enviar a revisión. Tu id_rol actual: ${activeRoleId || 'N/A'}`);
           return;
         }
 
@@ -524,7 +571,7 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
 
         // Si pasó todas las validaciones, mostrar confirmación y enviar
         this.confirmService.confirm({
-          message: '¿Deseas enviar esta carga docente a revisión? El director de departamento podrá revisarla.',
+          message: '¿Deseas enviar esta carga docente a revisión? El Jefe de departamento podrá revisarla.',
           header: 'Enviar a Revisión',
           icon: 'pi pi-send',
           acceptCallback: () => {
@@ -575,9 +622,15 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
     });
   }
 
-  // Abrir modal de revisión
+  // Abrir modal de revisión (solo para Jefe departamento id_rol: 1)
   onOpenRevisarModal(aprobado: boolean): void {
     if (!this.asignacion) return;
+
+    // Validar que el usuario sea Jefe departamento (id_rol: 1)
+    if (!this.isJefeDepartamento()) {
+      this.toastService.showError('Sin permisos', 'Solo el Jefe de departamento (id_rol: 1) puede revisar asignaciones.');
+      return;
+    }
 
     // Resetear formulario
     this.revisarForm = {
@@ -625,9 +678,15 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
     };
   }
 
-  // Confirmar y enviar revisión
+  // Confirmar y enviar revisión (solo para Jefe departamento id_rol: 1)
   onConfirmRevisar(): void {
     if (!this.asignacion) return;
+
+    // Validar que el usuario sea Jefe departamento (id_rol: 1)
+    if (!this.isJefeDepartamento()) {
+      this.toastService.showError('Sin permisos', 'Solo el Jefe de departamento (id_rol: 1) puede revisar asignaciones.');
+      return;
+    }
 
     // Construir DTO según la API
     const dto: RevisarCargaDto = {
@@ -695,9 +754,15 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
     );
   }
 
-  // Abrir modal de aprobación final
+  // Abrir modal de aprobación final (solo para Director departamento id_rol: 5)
   onOpenAprobarFinalModal(): void {
     if (!this.asignacion) return;
+
+    // Validar que el usuario sea Director departamento (id_rol: 5)
+    if (!this.isDirectorDepartamento()) {
+      this.toastService.showError('Sin permisos', 'Solo el Director de departamento (id_rol: 5) puede dar la aprobación final.');
+      return;
+    }
 
     this.aprobarFinalForm = {
       observaciones: ''
@@ -714,9 +779,15 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
     };
   }
 
-  // Confirmar y enviar aprobación final
+  // Confirmar y enviar aprobación final (solo para Director departamento id_rol: 5)
   onConfirmAprobarFinal(): void {
     if (!this.asignacion) return;
+
+    // Validar que el usuario sea Director departamento (id_rol: 5)
+    if (!this.isDirectorDepartamento()) {
+      this.toastService.showError('Sin permisos', 'Solo el Director de departamento (id_rol: 5) puede dar la aprobación final.');
+      return;
+    }
 
     this.loading = true;
     this.grupoAsignaturaDocenteService.aprobarFinal(
@@ -784,9 +855,15 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
     });
   }
 
-  // Restaurar versión
+  // Restaurar versión (solo para Coordinador id_rol: 2 o Director departamento id_rol: 5)
   onRestaurarVersion(versionId: number): void {
     if (!this.asignacion) return;
+
+    // Validar que el usuario sea Coordinador o Director departamento
+    if (!this.isCoordinador() && !this.isDirectorDepartamento()) {
+      this.toastService.showError('Sin permisos', 'Solo el Coordinador (id_rol: 2) o Director de departamento (id_rol: 5) pueden restaurar versiones.');
+      return;
+    }
 
     this.confirmService.confirm({
       message: '¿Deseas restaurar esta versión? Se creará una nueva versión con los datos de la versión seleccionada.',

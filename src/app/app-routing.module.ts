@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { NavbarComponent } from './navigation/navbar/navbar.component';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
+import { DefaultContentComponent } from './navigation/default-content.component';
 
 const routes: Routes = [
   { 
@@ -19,8 +20,17 @@ const routes: Routes = [
   { 
     path: '', 
     component: NavbarComponent,
-
+    canActivate: [AuthGuard],
     children: [
+      {
+        path: '',
+        redirectTo: 'inicio',
+        pathMatch: 'full'
+      },
+      {
+        path: 'inicio',
+        component: DefaultContentComponent
+      },
       { 
         path: 'departamentos', 
         loadChildren: () => import('./features/departamentos/departamentos.module').then(m => m.DepartamentosModule) 
