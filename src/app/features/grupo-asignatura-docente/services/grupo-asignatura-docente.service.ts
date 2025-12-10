@@ -119,11 +119,15 @@ private agruparPorGrupo(asignaciones: GrupoAsignaturaDocente[]): GrupoConAsignac
         return;
       }
 
+      // Extraer la carrera del grupo (viene directamente del backend)
+      const carreraDelGrupo = asignacion.grupo.carrera;
+      console.log('Carrera del grupo:', carreraDelGrupo); // Debug
+      
       gruposMap.set(grupoKey, {
         id_grupo: asignacion.id_grupo,
         codigo_grupo: asignacion.grupo.codigo_grupo,
         nombre_grupo: asignacion.grupo.nombre_grupo,
-        carrera: this.ensureCarrera(asignacion.grupo.carrera),
+        carrera: this.ensureCarrera(carreraDelGrupo),
         asignaciones: []
       });
     }
@@ -138,7 +142,9 @@ private agruparPorGrupo(asignaciones: GrupoAsignaturaDocente[]): GrupoConAsignac
         docente: asignacion.docente,
         fecha_asignacion: asignacion.fecha_asignacion,
         estado: asignacion.estado,
-        observaciones: asignacion.observaciones
+        observaciones: asignacion.observaciones,
+        estado_aprobacion: asignacion.estado_aprobacion,
+        version_actual: asignacion.version_actual
       });
     } else {
       console.warn('Asignación con estructura incompleta:', asignacion);
@@ -151,14 +157,26 @@ private agruparPorGrupo(asignaciones: GrupoAsignaturaDocente[]): GrupoConAsignac
 }
 
 private ensureCarrera(carrera: any): Carrera {
-  if (!carrera) {
+  // Si no hay carrera o no tiene nombre válido, devolver carrera por defecto
+  if (!carrera || !carrera.nombre_carrera || 
+      (typeof carrera.nombre_carrera === 'string' && carrera.nombre_carrera.trim() === '')) {
     return {
       id_carrera: 0,
       nombre_carrera: 'Carrera no especificada',
       codigo_carrera: 'N/A'
     };
   }
-  return carrera;
+  
+  // Preservar la carrera real que viene del backend
+  const nombreCarrera = typeof carrera.nombre_carrera === 'string' 
+    ? carrera.nombre_carrera.trim() 
+    : String(carrera.nombre_carrera);
+    
+  return {
+    id_carrera: carrera.id_carrera || 0,
+    nombre_carrera: nombreCarrera,
+    codigo_carrera: carrera.codigo_carrera || 'N/A'
+  };
 }
 
   // ========== ENDPOINTS DE VERSIONAMIENTO Y APROBACIÓN ==========

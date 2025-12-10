@@ -9,6 +9,10 @@ import { CreateBulkGrupoAsignaturaDocente } from '../../models/create-bulk-grupo
 import { BulkCreateResponse, GrupoAsignaturaDocente, CreateVersionInicialDto } from '../../models/grupo-asignatura-docente.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { CarreraService } from '../../../carreras/services/carrera.service';
+import { PlanService } from '../../../planes/services/plan.service';
+import { forkJoin, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-manage-grupo-asignatura-docente',
@@ -34,7 +38,9 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
     private asignaturaService: AsignaturaService,
     private docenteService: DocenteService,
     private authService: AuthService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private carreraService: CarreraService,
+    private planService: PlanService
   ) {}
 
   ngOnInit(): void {
@@ -114,9 +120,123 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
 }
 
   private loadGrupos(): void {
+    // Verificar si el usuario es coordinador de carrera (id_rol: 2)
+    this.authService.getActiveRoleId().subscribe({
+      next: (roleId) => {
+        if (roleId === 2) {
+          // Es coordinador, obtener su carrera y filtrar grupos
+          this.loadGruposForCoordinador();
+        } else {
+          // No es coordinador, cargar todos los grupos
+          this.loadAllGrupos();
+        }
+      },
+      error: (error) => {
+        console.error('Error obteniendo rol del usuario:', error);
+        // Fallback: cargar todos los grupos
+        this.loadAllGrupos();
+      }
+    });
+  }
+
+  private loadGruposForCoordinador(): void {
+    // Obtener usuario actual y carreras en paralelo
+    const userId = this.authService.getUserIdFromToken();
+    
+    if (!userId) {
+      console.warn('No se pudo obtener el ID del usuario, cargando todos los grupos');
+      this.loadAllGrupos();
+      return;
+    }
+
+    forkJoin({
+      user: this.authService.fetchCurrentUserWithRoles(),
+      carreras: this.carreraService.findAll(),
+      planes: this.planService.findAll(),
+      grupos: this.grupoService.findAll()
+    }).pipe(
+      map(({ user, carreras, planes, grupos }) => {
+        // Buscar la carrera donde el usuario es coordinador
+        const carrerasArray = Array.isArray(carreras.data) ? carreras.data : [carreras.data];
+        const carreraDelCoordinador = carrerasArray.find((carrera: any) => 
+          carrera.coordinador && carrera.coordinador.id_usuario === userId
+        );
+
+        if (!carreraDelCoordinador) {
+          console.warn('No se encontró carrera asociada al coordinador, no se mostrarán grupos');
+          return [];
+        }
+
+        console.log('Carrera del coordinador encontrada:', carreraDelCoordinador);
+        
+        // Obtener los planes que contienen la carrera del coordinador
+        const planesConCarrera = planes.filter((plan: any) => {
+          if (!plan.carreras || !Array.isArray(plan.carreras)) {
+            return false;
+          }
+          return plan.carreras.some((planCarrera: any) => 
+            planCarrera.carrera?.id_carrera === carreraDelCoordinador.id_carrera
+          );
+        });
+
+        const planesIds = planesConCarrera.map((plan: any) => plan.id_plan);
+        console.log(`Planes que contienen la carrera del coordinador (${planesIds.length}):`, planesIds);
+        console.log(`Total de grupos recibidos: ${grupos.length}`);
+
+        // Filtrar grupos que pertenezcan a la carrera del coordinador
+        // Mostrar todos los grupos de la carrera, incluso si no tienen plan asociado
+        const gruposFiltrados = grupos.filter((grupo: any) => {
+          const grupoCarreraMatch = grupo.id_carrera === carreraDelCoordinador.id_carrera || 
+                                   grupo.carrera?.id_carrera === carreraDelCoordinador.id_carrera;
+          
+          if (!grupoCarreraMatch) {
+            return false;
+          }
+
+          // Si el grupo tiene un plan, verificar que el plan contenga la carrera
+          if (grupo.id_plan) {
+            const grupoPlanMatch = planesIds.includes(grupo.id_plan);
+            if (!grupoPlanMatch) {
+              console.warn(`Grupo ${grupo.id_grupo} (${grupo.codigo_grupo}) tiene plan ${grupo.id_plan} que no contiene la carrera del coordinador`);
+              // Aún así, mostrarlo si pertenece a la carrera (puede ser un grupo nuevo sin plan válido)
+              return true;
+            }
+          } else {
+            console.warn(`Grupo ${grupo.id_grupo} (${grupo.codigo_grupo}) no tiene plan asociado, pero pertenece a la carrera del coordinador`);
+          }
+          
+          return true;
+        });
+
+        console.log(`Grupos filtrados para coordinador (${gruposFiltrados.length} de ${grupos.length}):`, gruposFiltrados.map((g: any) => ({
+          id: g.id_grupo,
+          codigo: g.codigo_grupo,
+          carrera: g.id_carrera,
+          plan: g.id_plan
+        })));
+        return gruposFiltrados;
+      }),
+      catchError((error) => {
+        console.error('Error cargando grupos para coordinador:', error);
+        return of([]);
+      })
+    ).subscribe({
+      next: (grupos) => {
+        this.grupos = grupos;
+        this.loadAsignaturas();
+      },
+      error: (error) => {
+        console.error('Error en el flujo de carga de grupos:', error);
+        this.grupos = [];
+        this.loadAsignaturas();
+      }
+    });
+  }
+
+  private loadAllGrupos(): void {
     this.grupoService.findAll().subscribe({
       next: (grupos) => {
-        console.log('Grupos cargados:', grupos);
+        console.log('Grupos cargados (todos):', grupos);
         this.grupos = grupos;
         this.loadAsignaturas();
       },

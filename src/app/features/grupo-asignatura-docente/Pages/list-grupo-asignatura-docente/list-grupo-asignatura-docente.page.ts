@@ -14,9 +14,16 @@ import { ExportService } from '../../../../core/services/export.service';
 })
 export class ListGrupoAsignaturaDocentePage implements OnInit {
   grupos: GrupoConAsignaciones[] = [];
+  gruposFiltrados: GrupoConAsignaciones[] = []; // Grupos filtrados
   asignaciones: GrupoAsignaturaDocente[] = []; // Lista aplanada de todas las asignaciones
   loading: boolean = false;
   error: string | null = null;
+
+  // Filtros
+  filtroCarrera: string = '';
+  filtroDocente: string = '';
+  filtroGrupo: string = '';
+  filtroAsignatura: string = '';
 
   constructor(
     private grupoAsignaturaDocenteService: GrupoAsignaturaDocenteService,
@@ -59,6 +66,7 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
             docente: asignacion.docente || { id_docente: 0, nombres: 'N/A', apellidos: '' }
           } as GrupoAsignaturaDocente))
         );
+        this.aplicarFiltros();
         this.loading = false;
       },
       error: (error) => {
@@ -200,5 +208,166 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
       'rechazada': 'Rechazada'
     };
     return estados[estado] || estado;
+  }
+
+  getTotalAsignaciones(): number {
+    return this.gruposFiltrados.reduce((total, grupo) => total + grupo.asignaciones.length, 0);
+  }
+
+  // Métodos para obtener opciones únicas de filtros
+  getCarrerasUnicas(): string[] {
+    const carreras = new Set<string>();
+    this.grupos.forEach(grupo => {
+      if (grupo.carrera?.nombre_carrera && grupo.carrera.nombre_carrera !== 'Carrera no especificada') {
+        carreras.add(grupo.carrera.nombre_carrera);
+      }
+    });
+    return Array.from(carreras).sort();
+  }
+
+  getDocentesUnicos(): string[] {
+    const docentes = new Set<string>();
+    this.grupos.forEach(grupo => {
+      grupo.asignaciones.forEach(asignacion => {
+        if (asignacion.docente?.nombres && asignacion.docente?.apellidos) {
+          const nombreCompleto = `${asignacion.docente.nombres} ${asignacion.docente.apellidos}`.trim();
+          if (nombreCompleto && nombreCompleto !== 'N/A') {
+            docentes.add(nombreCompleto);
+          }
+        }
+      });
+    });
+    return Array.from(docentes).sort();
+  }
+
+  getGruposUnicos(): string[] {
+    const grupos = new Set<string>();
+    this.grupos.forEach(grupo => {
+      const nombreGrupo = grupo.nombre_grupo || grupo.codigo_grupo || '';
+      if (nombreGrupo) {
+        grupos.add(nombreGrupo);
+      }
+    });
+    return Array.from(grupos).sort();
+  }
+
+  getAsignaturasUnicas(): string[] {
+    const asignaturas = new Set<string>();
+    this.grupos.forEach(grupo => {
+      grupo.asignaciones.forEach(asignacion => {
+        if (asignacion.asignatura?.nombre_asignatura && asignacion.asignatura.nombre_asignatura !== 'N/A') {
+          asignaturas.add(asignacion.asignatura.nombre_asignatura);
+        }
+      });
+    });
+    return Array.from(asignaturas).sort();
+  }
+
+  // Aplicar filtros
+  aplicarFiltros(): void {
+    this.gruposFiltrados = this.grupos.map(grupo => {
+      // Filtrar asignaciones dentro del grupo
+      const asignacionesFiltradas = grupo.asignaciones.filter(asignacion => {
+        // Filtro por carrera
+        if (this.filtroCarrera) {
+          const carreraNombre = grupo.carrera?.nombre_carrera || '';
+          if (carreraNombre !== this.filtroCarrera || carreraNombre === 'Carrera no especificada') {
+            return false;
+          }
+        }
+
+        // Filtro por docente
+        if (this.filtroDocente) {
+          const nombreDocente = `${asignacion.docente?.nombres || ''} ${asignacion.docente?.apellidos || ''}`.trim();
+          if (nombreDocente !== this.filtroDocente) {
+            return false;
+          }
+        }
+
+        // Filtro por asignatura
+        if (this.filtroAsignatura) {
+          const nombreAsignatura = asignacion.asignatura?.nombre_asignatura || '';
+          if (nombreAsignatura !== this.filtroAsignatura) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Retornar grupo solo si tiene asignaciones filtradas o si no hay filtro de grupo
+      if (asignacionesFiltradas.length === 0 && (this.filtroCarrera || this.filtroDocente || this.filtroAsignatura)) {
+        return null; // Este grupo no pasa los filtros
+      }
+
+      // Filtro por grupo
+      if (this.filtroGrupo) {
+        const nombreGrupo = grupo.nombre_grupo || grupo.codigo_grupo || '';
+        if (nombreGrupo !== this.filtroGrupo) {
+          return null;
+        }
+      }
+
+      return {
+        ...grupo,
+        asignaciones: asignacionesFiltradas
+      };
+    }).filter(grupo => grupo !== null) as GrupoConAsignaciones[];
+
+    // Actualizar asignaciones aplanadas con los filtros aplicados
+    this.asignaciones = this.gruposFiltrados.flatMap(grupo => 
+      grupo.asignaciones.map(asignacion => ({
+        id_grupo_asignatura_docente: asignacion.id_grupo_asignatura_docente,
+        id_grupo: grupo.id_grupo,
+        id_asignatura: asignacion.asignatura?.id_asignatura || 0,
+        id_docente: asignacion.docente?.id_docente || 0,
+        fecha_asignacion: asignacion.fecha_asignacion,
+        estado: asignacion.estado || 'activa',
+        observaciones: asignacion.observaciones,
+        estado_aprobacion: asignacion.estado_aprobacion,
+        version_actual: asignacion.version_actual,
+        grupo: {
+          id_grupo: grupo.id_grupo,
+          codigo_grupo: grupo.codigo_grupo,
+          nombre_grupo: grupo.nombre_grupo,
+          carrera: grupo.carrera
+        },
+        asignatura: asignacion.asignatura || { id_asignatura: 0, nombre_asignatura: 'N/A' },
+        docente: asignacion.docente || { id_docente: 0, nombres: 'N/A', apellidos: '' }
+      } as GrupoAsignaturaDocente))
+    );
+  }
+
+  // Métodos para cambiar filtros
+  onFiltroCarreraChange(carrera: string): void {
+    this.filtroCarrera = carrera;
+    this.aplicarFiltros();
+  }
+
+  onFiltroDocenteChange(docente: string): void {
+    this.filtroDocente = docente;
+    this.aplicarFiltros();
+  }
+
+  onFiltroGrupoChange(grupo: string): void {
+    this.filtroGrupo = grupo;
+    this.aplicarFiltros();
+  }
+
+  onFiltroAsignaturaChange(asignatura: string): void {
+    this.filtroAsignatura = asignatura;
+    this.aplicarFiltros();
+  }
+
+  limpiarFiltros(): void {
+    this.filtroCarrera = '';
+    this.filtroDocente = '';
+    this.filtroGrupo = '';
+    this.filtroAsignatura = '';
+    this.aplicarFiltros();
+  }
+
+  tieneFiltrosActivos(): boolean {
+    return !!(this.filtroCarrera || this.filtroDocente || this.filtroGrupo || this.filtroAsignatura);
   }
 }

@@ -319,7 +319,11 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
 
   isDirectorDepartamento(): boolean {
     // Verificar por id_rol: 5 = Director departamento
-    return this.isDirectorDepartamentoCached || this.activeRoleId === 5;
+    // Priorizar activeRoleId si está disponible, luego el cache
+    if (this.activeRoleId !== null && this.activeRoleId !== undefined) {
+      return this.activeRoleId === 5;
+    }
+    return this.isDirectorDepartamentoCached;
   }
 
   // Mantener métodos legacy para compatibilidad (pero usarán id_rol internamente)
@@ -469,18 +473,46 @@ export class DetailGrupoAsignaturaDocentePage implements OnInit {
 
   // Verificar si puede aprobar final (Director departamento id_rol: 5)
   canAprobarFinal(): boolean {
-    if (!this.asignacion) return false;
+    if (!this.asignacion) {
+      console.log('canAprobarFinal: No hay asignación');
+      return false;
+    }
+    
+    // Log detallado para debugging
+    console.log('🔍 canAprobarFinal - Verificación completa:', {
+      tieneAsignacion: !!this.asignacion,
+      estado_aprobacion: this.asignacion.estado_aprobacion,
+      activeRoleId: this.activeRoleId,
+      isDirectorDepartamentoCached: this.isDirectorDepartamentoCached,
+      id_asignacion: this.asignacion.id_grupo_asignatura_docente
+    });
     
     // Verificar que el usuario sea Director departamento (id_rol: 5)
     const isDirector = this.isDirectorDepartamento();
+    console.log('canAprobarFinal - isDirectorDepartamento():', isDirector, 'activeRoleId:', this.activeRoleId);
+    
     if (!isDirector) {
-      console.log('canAprobarFinal: Usuario no es Director departamento (id_rol debe ser 5). id_rol actual:', this.activeRoleId);
+      console.log('❌ canAprobarFinal: Usuario no es Director departamento (id_rol debe ser 5). id_rol actual:', this.activeRoleId);
+      // Intentar recargar el rol si no está disponible
+      if (this.activeRoleId === null) {
+        console.log('⚠️ activeRoleId es null, recargando roles...');
+        this.loadUserRoles();
+      }
       return false;
     }
     
     // Verificar que el estado sea revisada o pendiente_aprobacion (después de que jefe departamento revise)
-    return this.asignacion.estado_aprobacion === 'revisada' || 
-           this.asignacion.estado_aprobacion === 'pendiente_aprobacion';
+    const estadoCorrecto = this.asignacion.estado_aprobacion === 'revisada' || 
+                          this.asignacion.estado_aprobacion === 'pendiente_aprobacion';
+    console.log('canAprobarFinal - Estado correcto para aprobar:', estadoCorrecto, 'estado_aprobacion:', this.asignacion.estado_aprobacion);
+    
+    if (!estadoCorrecto) {
+      console.log('❌ canAprobarFinal: Estado no es revisada o pendiente_aprobacion. Estado actual:', this.asignacion.estado_aprobacion);
+      return false;
+    }
+    
+    console.log('✅ canAprobarFinal: Usuario puede aprobar final - es Director departamento y estado es revisada/pendiente_aprobacion');
+    return true;
   }
 
   // Enviar a revisión

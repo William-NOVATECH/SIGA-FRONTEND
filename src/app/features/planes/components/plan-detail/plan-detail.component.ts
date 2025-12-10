@@ -15,7 +15,7 @@ import { ConfirmService } from '../../../../core/services/confirm.service';
   styleUrls: ['./plan-detail.component.css']
 })
 export class PlanDetailComponent implements OnInit {
-  plan: Plan | null = null;
+  plan: Plan | PlanWithDetails | null = null;
   planCarreras: PlanCarrera[] = [];
   loading = false;
   error = '';
@@ -130,13 +130,39 @@ export class PlanDetailComponent implements OnInit {
   }
 
   onAddCarrera(): void {
+    // Verificar si ya existe una carrera en el plan
+    if (this.planCarreras.length > 0) {
+      const carreraActual = this.planCarreras[0].carrera;
+      const carreraActualNombre = carreraActual?.nombre_carrera || 'la carrera actual';
+      
+      this.confirmService.confirm({
+        message: `Este plan ya tiene una carrera asignada: "${carreraActualNombre}". Al agregar una nueva carrera, se eliminará la actual y será reemplazada por la seleccionada. ¿Deseas continuar?`,
+        header: 'Reemplazar Carrera',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Sí, reemplazar',
+        rejectLabel: 'Cancelar',
+        acceptButtonStyleClass: 'p-button-warning',
+        acceptCallback: () => {
+          // Usuario confirmó, proceder a cargar carreras para reemplazar
+          this.loadCarrerasForReplacement();
+        },
+        rejectCallback: () => {
+          // Usuario canceló, no hacer nada
+        }
+      });
+    } else {
+      // No hay carrera, cargar normalmente
+      this.loadCarrerasForReplacement();
+    }
+  }
+
+  loadCarrerasForReplacement(): void {
     this.loadingCarreras = true;
     this.carreraService.findAll().subscribe({
       next: (response: any) => {
         const carreras = Array.isArray(response.data) ? response.data : [response.data];
-        // Filtrar carreras que ya están en el plan
-        const existingCarrerasIds = this.planCarreras.map(pc => pc.id_carrera);
-        this.availableCarreras = carreras.filter((c: Carrera) => !existingCarrerasIds.includes(c.id_carrera));
+        // Mostrar todas las carreras disponibles (ya que vamos a reemplazar)
+        this.availableCarreras = carreras;
         this.selectedCarreras = [];
         this.showAddCarreraModal = true;
         this.loadingCarreras = false;
@@ -152,20 +178,68 @@ export class PlanDetailComponent implements OnInit {
   onSaveCarreras(): void {
     if (!this.plan || this.selectedCarreras.length === 0) return;
 
+    // Solo tomar el primer ID ya que ahora solo se permite una carrera por plan
+    const idCarrera = this.selectedCarreras[0];
+    if (!idCarrera || idCarrera <= 0) {
+      this.toastService.showError('Error', 'Debe seleccionar una carrera válida.');
+      return;
+    }
+
     this.loading = true;
-    this.planCarreraService.addCarreras(this.plan.id_plan, this.selectedCarreras).subscribe({
-      next: (planCarreras) => {
-        this.toastService.showSuccess('Carreras agregadas', `Se agregaron ${planCarreras.length} carreras al plan.`);
-        this.showAddCarreraModal = false;
-        this.loadPlan();
-      },
-      error: (err) => {
-        this.loading = false;
-        const errorMessage = err?.error?.message || err.message || 'No se pudieron agregar las carreras.';
-        this.toastService.showError('Error', errorMessage);
-        console.error('Error adding carreras:', err);
-      }
-    });
+    
+    // Si ya existe una carrera, eliminarla primero antes de agregar la nueva
+    if (this.planCarreras.length > 0) {
+      const carreraActual = this.planCarreras[0];
+      
+      // Eliminar la carrera actual
+      this.planCarreraService.remove(this.plan.id_plan, carreraActual.id_plan_carrera).subscribe({
+        next: () => {
+          // Después de eliminar, agregar la nueva carrera
+          this.planCarreraService.addCarrera(this.plan!.id_plan, idCarrera).subscribe({
+            next: (planCarrera) => {
+              this.loading = false;
+              const carreraNueva = this.availableCarreras.find(c => c.id_carrera === idCarrera);
+              const carreraNuevaNombre = carreraNueva?.nombre_carrera || 'la nueva carrera';
+              this.toastService.showSuccess('Carrera reemplazada', `La carrera ha sido reemplazada por "${carreraNuevaNombre}".`);
+              this.showAddCarreraModal = false;
+              this.selectedCarreras = [];
+              this.loadPlan();
+            },
+            error: (err) => {
+              this.loading = false;
+              const errorMessage = err?.error?.message || err.message || 'No se pudo agregar la nueva carrera.';
+              this.toastService.showError('Error', errorMessage);
+              console.error('Error adding carrera:', err);
+            }
+          });
+        },
+        error: (err) => {
+          this.loading = false;
+          const errorMessage = err?.error?.message || err.message || 'No se pudo eliminar la carrera actual.';
+          this.toastService.showError('Error', errorMessage);
+          console.error('Error removing carrera:', err);
+        }
+      });
+    } else {
+      // No hay carrera previa, agregar normalmente
+      this.planCarreraService.addCarrera(this.plan.id_plan, idCarrera).subscribe({
+        next: (planCarrera) => {
+          this.loading = false;
+          const carreraAgregada = this.availableCarreras.find(c => c.id_carrera === idCarrera);
+          const carreraNombre = carreraAgregada?.nombre_carrera || 'la carrera';
+          this.toastService.showSuccess('Carrera agregada', `Se agregó "${carreraNombre}" al plan.`);
+          this.showAddCarreraModal = false;
+          this.selectedCarreras = [];
+          this.loadPlan();
+        },
+        error: (err) => {
+          this.loading = false;
+          const errorMessage = err?.error?.message || err.message || 'No se pudo agregar la carrera.';
+          this.toastService.showError('Error', errorMessage);
+          console.error('Error adding carrera:', err);
+        }
+      });
+    }
   }
 
   onDeleteCarrera(planCarrera: PlanCarrera): void {

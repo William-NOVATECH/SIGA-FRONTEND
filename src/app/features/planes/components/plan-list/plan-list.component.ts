@@ -101,18 +101,27 @@ export class PlanListComponent implements OnInit {
     return plan.fecha_fin;
   }
 
+  getCarrera(plan: Plan): any | undefined {
+    if (plan.carreras && plan.carreras.length > 0) {
+      return plan.carreras[0].carrera;
+    }
+    return undefined;
+  }
+
   exportToCSV(): void {
     if (this.planes.length === 0) {
       this.toastService.showError('Sin datos', 'No hay datos para exportar.');
       return;
     }
 
-    const csvHeaders = ['ID', 'Nombre', 'Código', 'Año', 'Fecha Inicio', 'Fecha Fin', 'Estado'];
+    const csvHeaders = ['ID', 'Nombre', 'Código', 'Año', 'Carrera', 'Código Carrera', 'Fecha Inicio', 'Fecha Fin', 'Estado'];
     const csvData = this.planes.map(p => ({
       'ID': p.id_plan,
       'Nombre': p.nombre_plan || 'N/A',
       'Código': p.codigo_plan || 'N/A',
       'Año': p.año || 'N/A',
+      'Carrera': this.getCarrera(p)?.nombre_carrera || 'Sin carrera',
+      'Código Carrera': this.getCarrera(p)?.codigo_carrera || 'N/A',
       'Fecha Inicio': this.formatDate(p.fecha_inicio),
       'Fecha Fin': this.formatDate(p.fecha_fin),
       'Estado': p.estado || 'N/A'
@@ -133,6 +142,8 @@ export class PlanListComponent implements OnInit {
         'Nombre': p.nombre_plan || 'N/A',
         'Código': p.codigo_plan || 'N/A',
         'Año': p.año || 'N/A',
+        'Carrera': this.getCarrera(p)?.nombre_carrera || 'Sin carrera',
+        'Código Carrera': this.getCarrera(p)?.codigo_carrera || 'N/A',
         'Fecha Inicio': this.formatDate(p.fecha_inicio),
         'Fecha Fin': this.formatDate(p.fecha_fin),
         'Estado': p.estado || 'N/A'
@@ -142,7 +153,7 @@ export class PlanListComponent implements OnInit {
         pdfData,
         'planes',
         'Reporte de Planes Académicos',
-        ['Nombre', 'Código', 'Año', 'Fecha Inicio', 'Fecha Fin', 'Estado']
+        ['Nombre', 'Código', 'Año', 'Carrera', 'Código Carrera', 'Fecha Inicio', 'Fecha Fin', 'Estado']
       );
       this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
     } catch (error) {

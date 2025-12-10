@@ -9,6 +9,12 @@ export interface Plan {
   estado?: string;
   fecha_creacion?: Date;
   fecha_actualizacion?: Date;
+  carreras?: PlanCarreraResponse[];
+}
+
+export interface PlanCarreraResponse {
+  id_plan_carrera: number;
+  carrera: Carrera;
 }
 
 export interface PlanCarrera {
@@ -65,7 +71,7 @@ export interface CreatePlanCarreraAsignaturaDto {
 }
 
 // Vista completa con relaciones
-export interface PlanWithDetails extends Plan {
+export interface PlanWithDetails extends Omit<Plan, 'carreras'> {
   carreras: PlanCarreraWithAsignaturas[];
 }
 

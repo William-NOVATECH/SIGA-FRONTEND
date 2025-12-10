@@ -3,14 +3,14 @@
   <div class="list-header">
     <h2>Gestión de Carga Docente</h2>
     <div class="header-actions">
-      <button *ngIf="!loading && !error && asignaciones.length > 0" 
+      <button *ngIf="!loading && !error && grupos.length > 0 && getTotalAsignaciones() > 0" 
               class="btn btn-export-csv" 
               (click)="exportToCSV()"
               title="Exportar a CSV">
         <i class="fa-solid fa-file-csv"></i>
         Exportar CSV
       </button>
-      <button *ngIf="!loading && !error && asignaciones.length > 0" 
+      <button *ngIf="!loading && !error && grupos.length > 0 && getTotalAsignaciones() > 0" 
               class="btn btn-export-pdf" 
               (click)="exportToPDF()"
               title="Exportar a PDF">
@@ -28,6 +28,89 @@
     </div>
   </div>
 
+  <!-- Filtros -->
+  <div class="filtros-container" *ngIf="!loading && !error && grupos.length > 0">
+    <div class="filtros-header">
+      <h3><i class="fa-solid fa-filter"></i> Filtros</h3>
+      <button *ngIf="tieneFiltrosActivos()" 
+              class="btn btn-clear-filters" 
+              (click)="limpiarFiltros()"
+              title="Limpiar todos los filtros">
+        <i class="fa-solid fa-times"></i>
+        Limpiar Filtros
+      </button>
+    </div>
+    <div class="filtros-grid">
+      <!-- Filtro por Carrera -->
+      <div class="filtro-item">
+        <label for="filtro-carrera">
+          <i class="fa-solid fa-graduation-cap"></i>
+          Carrera
+        </label>
+        <select id="filtro-carrera" 
+                class="filtro-select"
+                [(ngModel)]="filtroCarrera"
+                (change)="onFiltroCarreraChange(filtroCarrera)">
+          <option value="">Todas las carreras</option>
+          <option *ngFor="let carrera of getCarrerasUnicas()" [value]="carrera">
+            {{ carrera }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Filtro por Grupo -->
+      <div class="filtro-item">
+        <label for="filtro-grupo">
+          <i class="fa-solid fa-users"></i>
+          Grupo
+        </label>
+        <select id="filtro-grupo" 
+                class="filtro-select"
+                [(ngModel)]="filtroGrupo"
+                (change)="onFiltroGrupoChange(filtroGrupo)">
+          <option value="">Todos los grupos</option>
+          <option *ngFor="let grupo of getGruposUnicos()" [value]="grupo">
+            {{ grupo }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Filtro por Asignatura -->
+      <div class="filtro-item">
+        <label for="filtro-asignatura">
+          <i class="fa-solid fa-book"></i>
+          Asignatura
+        </label>
+        <select id="filtro-asignatura" 
+                class="filtro-select"
+                [(ngModel)]="filtroAsignatura"
+                (change)="onFiltroAsignaturaChange(filtroAsignatura)">
+          <option value="">Todas las asignaturas</option>
+          <option *ngFor="let asignatura of getAsignaturasUnicas()" [value]="asignatura">
+            {{ asignatura }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Filtro por Docente -->
+      <div class="filtro-item">
+        <label for="filtro-docente">
+          <i class="fa-solid fa-user-tie"></i>
+          Docente
+        </label>
+        <select id="filtro-docente" 
+                class="filtro-select"
+                [(ngModel)]="filtroDocente"
+                (change)="onFiltroDocenteChange(filtroDocente)">
+          <option value="">Todos los docentes</option>
+          <option *ngFor="let docente of getDocentesUnicos()" [value]="docente">
+            {{ docente }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <!-- Loading -->
   <div *ngIf="loading" class="loading-state">
     <div class="spinner"></div>
@@ -42,89 +125,135 @@
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="!loading && !error && asignaciones.length === 0" class="empty-state">
+  <div *ngIf="!loading && !error && gruposFiltrados.length === 0 && grupos.length > 0" class="empty-state">
+    <i class="fa-solid fa-filter"></i>
+    <p>No se encontraron asignaciones con los filtros aplicados</p>
+    <button class="btn btn-secondary" (click)="limpiarFiltros()">
+      <i class="fa-solid fa-times"></i>
+      Limpiar Filtros
+    </button>
+  </div>
+
+  <!-- Empty State (sin datos) -->
+  <div *ngIf="!loading && !error && grupos.length === 0" class="empty-state">
     <i class="fa-solid fa-clipboard-list"></i>
-    <p>No hay asignaciones registradas</p>
+    <p>No hay grupos con asignaciones registradas</p>
     <button class="btn btn-primary" (click)="onCreateNew()">
       <i class="fa-solid fa-plus"></i>
       Crear primera asignación
     </button>
   </div>
 
-  <!-- Asignaciones Grid -->
-  <div *ngIf="!loading && !error && asignaciones.length > 0" class="asignaciones-grid">
-    <div *ngFor="let asignacion of asignaciones" class="asignacion-card">
-      <div class="asignacion-card-header">
-        <div class="asignacion-title-section">
-          <h3>{{ asignacion.asignatura?.nombre_asignatura || 'Asignatura sin nombre' }}</h3>
-          <span *ngIf="asignacion.asignatura?.codigo_asignatura" class="asignacion-code">
-            {{ asignacion.asignatura.codigo_asignatura }}
-          </span>
-        </div>
-        <span *ngIf="asignacion.grupo?.codigo_grupo" class="grupo-code">
-          {{ asignacion.grupo.codigo_grupo }}
-        </span>
-      </div>
-      
-      <div class="asignacion-card-body">
-        <div class="asignacion-info">
-          <div class="info-item">
-            <i class="fa-solid fa-users"></i>
-            <strong>Grupo:</strong> 
-            <span>{{ asignacion.grupo?.nombre_grupo || asignacion.grupo?.codigo_grupo || 'N/A' }}</span>
-          </div>
-          <div class="info-item">
-            <i class="fa-solid fa-user-tie"></i>
-            <strong>Docente:</strong> 
-            <span>{{ asignacion.docente?.nombres }} {{ asignacion.docente?.apellidos }}</span>
-            <span *ngIf="asignacion.docente?.codigo_docente" class="docente-code">
-              ({{ asignacion.docente.codigo_docente }})
+  <!-- Grupos Grid -->
+  <div *ngIf="!loading && !error && gruposFiltrados.length > 0" class="grupos-grid">
+    <div *ngFor="let grupo of gruposFiltrados" class="grupo-card">
+      <!-- Header del Grupo -->
+      <div class="grupo-card-header">
+        <div class="grupo-title-section">
+          <h3>{{ grupo.nombre_grupo || 'Grupo sin nombre' }}</h3>
+          <div class="grupo-meta-info">
+            <span *ngIf="grupo.codigo_grupo" class="grupo-code">
+              {{ grupo.codigo_grupo }}
+            </span>
+            <span *ngIf="grupo.carrera && grupo.carrera.nombre_carrera && grupo.carrera.nombre_carrera !== 'Carrera no especificada'" class="carrera-badge">
+              <i class="fa-solid fa-graduation-cap"></i>
+              {{ grupo.carrera.nombre_carrera }}
+            </span>
+            <span *ngIf="!grupo.carrera || !grupo.carrera.nombre_carrera || grupo.carrera.nombre_carrera === 'Carrera no especificada'" class="carrera-badge carrera-no-especificada">
+              <i class="fa-solid fa-graduation-cap"></i>
+              Carrera no especificada
             </span>
           </div>
-          <div class="info-item" *ngIf="asignacion.grupo?.carrera">
-            <i class="fa-solid fa-graduation-cap"></i>
-            <strong>Carrera:</strong> 
-            <span>{{ asignacion.grupo.carrera.nombre_carrera }}</span>
-          </div>
         </div>
-        
-        <div class="asignacion-dates">
-          <span class="date-item">
-            <i class="fa-solid fa-calendar-day"></i>
-            <strong>Asignado:</strong> {{ formatDate(asignacion.fecha_asignacion) }}
+        <div class="grupo-header-actions">
+          <span class="asignaciones-count">
+            {{ grupo.asignaciones.length }} {{ grupo.asignaciones.length === 1 ? 'asignación' : 'asignaciones' }}
           </span>
-        </div>
-        
-        <div class="asignacion-meta">
-          <span *ngIf="asignacion.estado" class="asignacion-status" [class.active]="asignacion.estado === 'activa'">
-            {{ asignacion.estado }}
-          </span>
-          <span *ngIf="asignacion.estado_aprobacion" class="aprobacion-status" 
-                [class.borrador]="asignacion.estado_aprobacion === 'borrador'"
-                [class.pendiente]="asignacion.estado_aprobacion === 'pendiente_revision' || asignacion.estado_aprobacion === 'pendiente_aprobacion'"
-                [class.aprobada]="asignacion.estado_aprobacion === 'aprobada'"
-                [class.rechazada]="asignacion.estado_aprobacion === 'rechazada'">
-            {{ getEstadoAprobacionDisplay(asignacion.estado_aprobacion) }}
-          </span>
-          <span *ngIf="!asignacion.estado_aprobacion" class="sin-versionamiento">
-            Sin versionamiento
-          </span>
+          <button class="btn btn-sm btn-add-asignacion" 
+                  (click)="onCreateAsignacion(grupo.id_grupo)" 
+                  title="Agregar asignación al grupo">
+            <i class="fa-solid fa-plus"></i>
+          </button>
         </div>
       </div>
 
-      <div class="asignacion-card-actions">
-        <button class="btn btn-view" (click)="onView(asignacion.id_grupo_asignatura_docente)" title="Ver detalles">
-          <i class="fa-solid fa-eye"></i>
-          <span>Ver</span>
-        </button>
-        <button class="btn btn-edit" (click)="onEdit(asignacion.id_grupo_asignatura_docente)" title="Editar asignación">
-          <i class="fa-solid fa-pencil"></i>
-          <span>Editar</span>
-        </button>
-        <button class="btn btn-delete" (click)="onDelete(asignacion.id_grupo_asignatura_docente)" title="Eliminar asignación">
-          <i class="fa-solid fa-trash"></i>
-          <span>Eliminar</span>
-        </button>
+      <!-- Cuerpo del Grupo con Asignaciones -->
+      <div class="grupo-card-body">
+        <!-- Lista de Asignaciones -->
+        <div *ngIf="grupo.asignaciones.length > 0" class="asignaciones-list">
+          <div *ngFor="let asignacion of grupo.asignaciones" class="asignacion-item">
+            <div class="asignacion-item-content">
+              <!-- Información principal en línea compacta -->
+              <div class="asignacion-main-info">
+                <div class="asignacion-title-compact">
+                  <span class="asignacion-name">{{ asignacion.asignatura?.nombre_asignatura || 'Asignatura sin nombre' }}</span>
+                  <span *ngIf="asignacion.asignatura?.codigo_asignatura" class="asignacion-code-compact">
+                    {{ asignacion.asignatura.codigo_asignatura }}
+                  </span>
+                </div>
+                <div class="asignacion-details-compact">
+                  <span class="detail-item">
+                    <i class="fa-solid fa-user-tie"></i>
+                    {{ asignacion.docente?.nombres }} {{ asignacion.docente?.apellidos }}
+                    <span *ngIf="asignacion.docente?.codigo_docente" class="docente-code-compact">({{ asignacion.docente.codigo_docente }})</span>
+                  </span>
+                  <span class="detail-separator">•</span>
+                  <span class="detail-item">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    {{ formatDate(asignacion.fecha_asignacion) }}
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Estados y acciones en línea -->
+              <div class="asignacion-meta-actions">
+                <div class="asignacion-status-group">
+                  <span *ngIf="asignacion.estado" class="asignacion-status-compact" [class.active]="asignacion.estado === 'activa'">
+                    {{ asignacion.estado }}
+                  </span>
+                  <span *ngIf="asignacion.estado_aprobacion" class="aprobacion-status-compact" 
+                        [class.borrador]="asignacion.estado_aprobacion === 'borrador'"
+                        [class.pendiente]="asignacion.estado_aprobacion === 'pendiente_revision' || asignacion.estado_aprobacion === 'pendiente_aprobacion'"
+                        [class.aprobada]="asignacion.estado_aprobacion === 'aprobada'"
+                        [class.rechazada]="asignacion.estado_aprobacion === 'rechazada'">
+                    {{ getEstadoAprobacionDisplay(asignacion.estado_aprobacion) }}
+                  </span>
+                  <span *ngIf="!asignacion.estado_aprobacion" class="sin-versionamiento-compact">
+                    Sin versionamiento
+                  </span>
+                </div>
+                
+                <div class="asignacion-item-actions">
+                  <button class="btn btn-xs btn-view" 
+                          (click)="onView(asignacion.id_grupo_asignatura_docente)" 
+                          title="Ver detalles">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                  <button class="btn btn-xs btn-edit" 
+                          (click)="onEdit(asignacion.id_grupo_asignatura_docente)" 
+                          title="Editar asignación">
+                    <i class="fa-solid fa-pencil"></i>
+                  </button>
+                  <button class="btn btn-xs btn-delete" 
+                          (click)="onDelete(asignacion.id_grupo_asignatura_docente)" 
+                          title="Eliminar asignación">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje si no hay asignaciones en el grupo -->
+        <div *ngIf="grupo.asignaciones.length === 0" class="grupo-empty-asignaciones">
+          <i class="fa-solid fa-inbox"></i>
+          <p>No hay asignaciones en este grupo</p>
+          <button class="btn btn-sm btn-primary" (click)="onCreateAsignacion(grupo.id_grupo)">
+            <i class="fa-solid fa-plus"></i>
+            Agregar primera asignación
+          </button>
+        </div>
       </div>
     </div>
   </div>

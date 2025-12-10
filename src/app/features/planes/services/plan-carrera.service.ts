@@ -27,9 +27,19 @@ export class PlanCarreraService {
     return this.http.delete<void>(`${this.apiUrl}/${idPlan}/carreras/${idPlanCarrera}`);
   }
 
-  // Método para agregar múltiples carreras a un plan
-  addCarreras(idPlan: number, carrerasIds: number[]): Observable<PlanCarrera[]> {
-    return this.http.post<PlanCarrera[]>(`${this.apiUrl}/${idPlan}/carreras`, { id_carreras: carrerasIds });
+  // Método para agregar una carrera a un plan (ahora solo se permite una carrera por plan)
+  addCarrera(idPlan: number, idCarrera: number): Observable<PlanCarrera> {
+    return this.http.post<PlanCarrera>(`${this.apiUrl}/${idPlan}/carreras`, { id_carrera: idCarrera });
+  }
+
+  // Método legacy - mantener por compatibilidad pero ahora solo acepta un elemento
+  addCarreras(idPlan: number, carrerasIds: number[]): Observable<PlanCarrera> {
+    // Solo tomar el primer ID ya que ahora solo se permite una carrera por plan
+    const idCarrera = carrerasIds.length > 0 ? carrerasIds[0] : 0;
+    if (idCarrera <= 0) {
+      throw new Error('Debe proporcionar al menos un ID de carrera válido');
+    }
+    return this.addCarrera(idPlan, idCarrera);
   }
 }
 

@@ -8,7 +8,7 @@
         </div>
         <div class="header-text">
           <h1>Creación Masiva de Asignaciones</h1>
-          <p>Asigna múltiples asignaturas y docentes a un grupo de manera simultánea</p>
+          <p>Asigna múltiples asignaturas y docentes a un grupo</p>
         </div>
       </div>
     </div>
@@ -117,94 +117,90 @@
         </div>
 
         <!-- Asignaturas y Docentes -->
-        <div class="asignaturas-section">
+        <div class="asignaturas-section" *ngIf="selectedGrupoCarrera">
           <div class="section-header">
-            <h3>
-              <i class="fa-solid fa-list-check"></i>
-              Asignaturas y Docentes
-            </h3>
-            <button type="button" (click)="addAsignaturaDocente()" class="btn btn-sm btn-add">
-              <i class="fa-solid fa-plus"></i>
-              Agregar Asignatura
-            </button>
+            <div>
+              <h3>
+                <i class="fa-solid fa-list-check"></i>
+                Asignaturas de la Carrera
+              </h3>
+              <p class="carrera-info">
+                <i class="fa-solid fa-graduation-cap"></i>
+                {{ selectedGrupoCarrera.nombre_carrera }}
+              </p>
+            </div>
+            <div class="selection-count">
+              {{ asignaturasSeleccionadas.size }} {{ asignaturasSeleccionadas.size === 1 ? 'asignación seleccionada' : 'asignaciones seleccionadas' }}
+            </div>
           </div>
 
-          <div formArrayName="asignaturas_docentes">
+          <div *ngIf="filteredAsignaturas.length === 0" class="empty-asignaturas">
+            <i class="fa-solid fa-inbox"></i>
+            <p>No hay asignaturas disponibles para esta carrera</p>
+          </div>
+
+          <div *ngIf="filteredAsignaturas.length > 0" class="asignaturas-grid">
             <div 
-              *ngFor="let item of asignaturasDocentesArray.controls; let i = index" 
-              [formGroupName]="i"
-              class="asignatura-item"
+              *ngFor="let asignatura of filteredAsignaturas" 
+              class="asignatura-grid-item"
+              [class.selected]="isAsignaturaSelected(asignatura.id_asignatura)"
             >
-              <div class="item-header">
-                <h4>
-                  <i class="fa-solid fa-book"></i>
-                  Asignación {{ i + 1 }}
-                </h4>
-                <button 
-                  *ngIf="asignaturasDocentesArray.length > 1"
-                  type="button" 
-                  (click)="removeAsignaturaDocente(i)" 
-                  class="btn btn-sm btn-remove"
-                  title="Eliminar esta asignación"
-                >
-                  <i class="fa-solid fa-trash"></i>
-                  Eliminar
-                </button>
+              <div class="asignatura-info">
+                <div class="asignatura-header">
+                  <h4>
+                    <i class="fa-solid fa-book"></i>
+                    {{ asignatura.codigo_asignatura }}
+                  </h4>
+                  <span *ngIf="isAsignaturaSelected(asignatura.id_asignatura)" class="selected-badge">
+                    <i class="fa-solid fa-check-circle"></i>
+                    Asignada
+                  </span>
+                </div>
+                <p class="asignatura-name">{{ asignatura.nombre_asignatura }}</p>
+                <div class="asignatura-meta">
+                  <span *ngIf="asignatura.creditos" class="meta-item">
+                    <i class="fa-solid fa-certificate"></i>
+                    {{ asignatura.creditos }} créditos
+                  </span>
+                  <span *ngIf="asignatura.horas_semanales" class="meta-item">
+                    <i class="fa-solid fa-clock"></i>
+                    {{ asignatura.horas_semanales }} hrs/sem
+                  </span>
+                </div>
               </div>
-
-              <div class="item-fields">
-                <!-- Asignatura -->
-                <div class="form-group">
-                  <label class="form-label">
-                    <i class="fa-solid fa-book form-label-icon"></i>
-                    Asignatura <span class="required-star">*</span>
-                  </label>
-                  <div class="input-group">
-                    <select 
-                      formControlName="id_asignatura"
-                      class="form-select"
-                      [class.error]="item.get('id_asignatura')?.invalid && item.get('id_asignatura')?.touched"
-                    >
-                      <option value="">Seleccionar asignatura</option>
-                      <option *ngFor="let asignatura of asignaturas" [value]="asignatura.id_asignatura">
-                        {{ asignatura.codigo_asignatura }} - {{ asignatura.nombre_asignatura }}
-                      </option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down select-arrow"></i>
-                  </div>
-                  <div *ngIf="item.get('id_asignatura')?.invalid && item.get('id_asignatura')?.touched" class="error-text">
-                    <i class="fa-solid fa-exclamation-circle error-text-icon"></i>
-                    Asignatura es requerida
-                  </div>
-                </div>
-
-                <!-- Docente -->
-                <div class="form-group">
-                  <label class="form-label">
-                    <i class="fa-solid fa-user-tie form-label-icon"></i>
-                    Docente <span class="required-star">*</span>
-                  </label>
-                  <div class="input-group">
-                    <select 
-                      formControlName="id_docente"
-                      class="form-select"
-                      [class.error]="item.get('id_docente')?.invalid && item.get('id_docente')?.touched"
-                    >
-                      <option value="">Seleccionar docente</option>
-                      <option *ngFor="let docente of docentes" [value]="docente.id_docente">
-                        {{ docente.nombres }} {{ docente.apellidos }}
-                        <span *ngIf="docente.codigo_docente"> ({{ docente.codigo_docente }})</span>
-                      </option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down select-arrow"></i>
-                  </div>
-                  <div *ngIf="item.get('id_docente')?.invalid && item.get('id_docente')?.touched" class="error-text">
-                    <i class="fa-solid fa-exclamation-circle error-text-icon"></i>
-                    Docente es requerido
-                  </div>
-                </div>
+              
+              <div class="docente-select-wrapper">
+                <label class="docente-label">
+                  <i class="fa-solid fa-user-tie"></i>
+                  Docente
+                </label>
+                <select 
+                  class="docente-select"
+                  [value]="getDocenteForAsignatura(asignatura.id_asignatura) || ''"
+                  (change)="onAsignaturaDocenteChange(asignatura.id_asignatura, $any($event.target).value ? +$any($event.target).value : null)"
+                >
+                  <option value="">Seleccionar docente</option>
+                  <option *ngFor="let docente of docentes" [value]="docente.id_docente">
+                    {{ docente.nombres }} {{ docente.apellidos }}
+                    <span *ngIf="docente.codigo_docente"> ({{ docente.codigo_docente }})</span>
+                  </option>
+                </select>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div *ngIf="!selectedGrupoCarrera && form.get('id_grupo')?.value" class="asignaturas-section waiting">
+          <div class="waiting-message">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Cargando información del grupo...</p>
+          </div>
+        </div>
+
+        <div *ngIf="!form.get('id_grupo')?.value" class="asignaturas-section waiting">
+          <div class="waiting-message">
+            <i class="fa-solid fa-info-circle"></i>
+            <p>Seleccione un grupo para ver las asignaturas disponibles</p>
           </div>
         </div>
 

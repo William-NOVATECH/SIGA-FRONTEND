@@ -60,6 +60,17 @@
       
       <div class="plan-card-body">
         <p *ngIf="plan.descripcion" class="plan-description">{{ plan.descripcion }}</p>
+        
+        <!-- Carrera del Plan -->
+        <div *ngIf="getCarrera(plan)" class="plan-carrera">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <strong>Carrera:</strong>
+          <span class="carrera-name">{{ getCarrera(plan)?.nombre_carrera }}</span>
+          <span *ngIf="getCarrera(plan)?.codigo_carrera" class="carrera-code">
+            ({{ getCarrera(plan)?.codigo_carrera }})
+          </span>
+        </div>
+        
         <div class="plan-dates" *ngIf="getFechaInicio(plan) || getFechaFin(plan)">
           <span *ngIf="getFechaInicio(plan)" class="date-item">
             <i class="fa-solid fa-calendar-day"></i>

@@ -25,6 +25,9 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
   loadingPlanes: boolean = false;
   selectedGrupoPlan: Plan | null = null;
   loadingGrupoPlan: boolean = false;
+  selectedGrupoCarrera: any = null;
+  filteredAsignaturas: any[] = [];
+  asignaturasSeleccionadas: Map<number, number> = new Map(); // Map<id_asignatura, id_docente>
 
   estados = [
     { value: 'activa', label: 'Activa' },
@@ -41,8 +44,7 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
       id_grupo: ['', [Validators.required, Validators.min(1)]],
       id_plan: [{ value: '', disabled: true }, [Validators.required, Validators.min(1)]],
       estado: ['activa', [Validators.required]],
-      observaciones: [''],
-      asignaturas_docentes: this.fb.array([this.createAsignaturaDocenteItem()])
+      observaciones: ['']
     });
 
     // Listener para cuando cambie el grupo
@@ -51,6 +53,9 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
         this.loadGrupoPlan(Number(grupoId));
       } else {
         this.selectedGrupoPlan = null;
+        this.selectedGrupoCarrera = null;
+        this.filteredAsignaturas = [];
+        this.asignaturasSeleccionadas.clear();
         this.form.get('id_plan')?.setValue('');
       }
     });
@@ -63,9 +68,18 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
   loadGrupoPlan(grupoId: number): void {
     this.loadingGrupoPlan = true;
     this.selectedGrupoPlan = null;
+    this.selectedGrupoCarrera = null;
+    this.filteredAsignaturas = [];
+    this.asignaturasSeleccionadas.clear();
     
     this.grupoService.findOne(grupoId).subscribe({
       next: (grupo: any) => {
+        // Obtener la carrera del grupo
+        if (grupo.carrera) {
+          this.selectedGrupoCarrera = grupo.carrera;
+          this.filterAsignaturasByCarrera(grupo.carrera.id_carrera);
+        }
+
         // Obtener id_plan del grupo (puede venir directamente o en la relación plan)
         let idPlan: number | null = null;
         if (grupo.id_plan) {
@@ -101,41 +115,51 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
     });
   }
 
-  // Corrección: Type casting explícito a FormArray
-  get asignaturasDocentesArray(): FormArray {
-    return this.form.get('asignaturas_docentes') as FormArray;
+  filterAsignaturasByCarrera(idCarrera: number): void {
+    this.filteredAsignaturas = this.asignaturas.filter(
+      asignatura => asignatura.id_carrera === idCarrera || asignatura.carrera?.id_carrera === idCarrera
+    );
   }
 
-  private createAsignaturaDocenteItem(): FormGroup {
-    return this.fb.group({
-      id_asignatura: ['', [Validators.required, Validators.min(1)]],
-      id_docente: ['', [Validators.required, Validators.min(1)]]
-    });
-  }
-
-  addAsignaturaDocente(): void {
-    this.asignaturasDocentesArray.push(this.createAsignaturaDocenteItem());
-  }
-
-  removeAsignaturaDocente(index: number): void {
-    if (this.asignaturasDocentesArray.length > 1) {
-      this.asignaturasDocentesArray.removeAt(index);
+  onAsignaturaDocenteChange(idAsignatura: number, idDocente: number | null): void {
+    if (idDocente && idDocente > 0) {
+      this.asignaturasSeleccionadas.set(idAsignatura, idDocente);
+    } else {
+      this.asignaturasSeleccionadas.delete(idAsignatura);
     }
   }
 
+  getDocenteForAsignatura(idAsignatura: number): number | null {
+    return this.asignaturasSeleccionadas.get(idAsignatura) || null;
+  }
+
+  isAsignaturaSelected(idAsignatura: number): boolean {
+    return this.asignaturasSeleccionadas.has(idAsignatura);
+  }
+
+
   onSubmit(): void {
+    // Validar que haya al menos una asignación seleccionada
+    if (this.asignaturasSeleccionadas.size === 0) {
+      alert('Debe seleccionar al menos una asignatura con su docente');
+      return;
+    }
+
     if (this.form.valid) {
       const formValue = this.form.getRawValue(); // Usar getRawValue() para incluir campos disabled
-      // Asegurar que id_plan sea un número
+      
+      // Convertir el Map a array de asignaturas_docentes
+      const asignaturasDocentes = Array.from(this.asignaturasSeleccionadas.entries()).map(([idAsignatura, idDocente]) => ({
+        id_asignatura: Number(idAsignatura),
+        id_docente: Number(idDocente)
+      }));
+
       const dto: CreateBulkGrupoAsignaturaDocente = {
         id_grupo: Number(formValue.id_grupo),
         id_plan: Number(formValue.id_plan),
         estado: formValue.estado,
         observaciones: formValue.observaciones || undefined,
-        asignaturas_docentes: formValue.asignaturas_docentes.map((item: any) => ({
-          id_asignatura: Number(item.id_asignatura),
-          id_docente: Number(item.id_docente)
-        }))
+        asignaturas_docentes: asignaturasDocentes
       };
       this.submitForm.emit(dto);
     } else {
@@ -151,14 +175,6 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
     Object.keys(this.form.controls).forEach(key => {
       const control = this.form.get(key);
       control?.markAsTouched();
-    });
-
-    // Corrección: Usar el getter que ya hace el type casting
-    this.asignaturasDocentesArray.controls.forEach(control => {
-      Object.keys((control as FormGroup).controls).forEach(key => {
-        const subControl = (control as FormGroup).get(key);
-        subControl?.markAsTouched();
-      });
     });
   }
 

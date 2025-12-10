@@ -171,6 +171,41 @@
   margin-bottom: 1rem;
 }
 
+.plan-carrera {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border-left: 3px solid #0072BB;
+  flex-wrap: wrap;
+}
+
+.plan-carrera i {
+  color: #0072BB;
+  font-size: 1rem;
+}
+
+.plan-carrera strong {
+  color: #02116F;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.carrera-name {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.carrera-code {
+  color: #6b7280;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
 .plan-dates {
   display: flex;
   flex-direction: column;
