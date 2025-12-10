@@ -74,7 +74,7 @@ export class NavbarComponent implements OnInit {
         title: 'Departamentos',
         icon: 'pi pi-folder',
         route: '/departamentos',
-        roles: [1, 2, 5] // Jefe departamento, Coordinador, Director
+        roles: [1, 5] // Jefe departamento, Coordinador, Director
       },
       {
         id: 'asignaturas',
@@ -88,7 +88,7 @@ export class NavbarComponent implements OnInit {
         title: 'Carreras',
         icon: 'pi pi-chart-bar',
         route: '/carreras',
-        roles: [1, 2, 3, 5] // Todos excepto invitado
+        roles: [1, 3, 5] // Todos excepto invitado
       },
       {
         id: 'grupos',
