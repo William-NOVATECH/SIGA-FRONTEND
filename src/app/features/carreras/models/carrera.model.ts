@@ -3,6 +3,12 @@ export interface DepartamentoDto {
   nombre_departamento: string;
 }
 
+export interface CoordinadorDto {
+  id_usuario: number;
+  username: string;
+  email: string;
+}
+
 export interface AsignaturaDto {
   id_asignatura: number;
   nombre_asignatura: string;
@@ -17,6 +23,7 @@ export interface Carrera {
   titulo_otorga?: string;
   estado: string;
   departamento: DepartamentoDto;
+  coordinador?: CoordinadorDto | null;
   asignaturas?: AsignaturaDto[];
 }
 
@@ -27,6 +34,7 @@ export interface CreateCarrera {
   titulo_otorga?: string;
   estado?: string;
   id_departamento: number;
+  id_coordinador?: number;
 }
 
 export interface UpdateCarrera {
@@ -36,6 +44,7 @@ export interface UpdateCarrera {
   titulo_otorga?: string;
   estado?: string;
   id_departamento?: number;
+  id_coordinador?: number;
 }
 
 export interface CarreraResponse {

@@ -62,6 +62,17 @@ export class CarreraListComponent implements OnInit {
         badgeClass: () => 'department-badge'
       },
       {
+        field: 'coordinador',
+        header: 'Coordinador',
+        sortable: true,
+        template: 'badge',
+        format: (value, item) => {
+          if (!item.coordinador) return 'Sin asignar';
+          return item.coordinador.username || item.coordinador.email || 'Sin asignar';
+        },
+        badgeClass: () => 'coordinator-badge'
+      },
+      {
         field: 'duracion_semestres',
         header: 'Duración',
         sortable: true,
@@ -162,12 +173,13 @@ export class CarreraListComponent implements OnInit {
       return;
     }
 
-    const csvHeaders = ['ID', 'Código', 'Nombre', 'Departamento', 'Duración (semestres)', 'Título', 'Estado'];
+    const csvHeaders = ['ID', 'Código', 'Nombre', 'Departamento', 'Coordinador', 'Duración (semestres)', 'Título', 'Estado'];
     const csvData = this.carreras.map(c => ({
       'ID': c.id_carrera,
       'Código': c.codigo_carrera || 'N/A',
       'Nombre': c.nombre_carrera,
       'Departamento': c.departamento ? c.departamento.nombre_departamento : 'N/A',
+      'Coordinador': c.coordinador ? (c.coordinador.username || c.coordinador.email) : 'Sin asignar',
       'Duración (semestres)': c.duracion_semestres || 'N/A',
       'Título': c.titulo_otorga || 'N/A',
       'Estado': c.estado || 'N/A'
@@ -188,6 +200,7 @@ export class CarreraListComponent implements OnInit {
         'Código': c.codigo_carrera || 'N/A',
         'Nombre': c.nombre_carrera,
         'Departamento': c.departamento ? c.departamento.nombre_departamento : 'N/A',
+        'Coordinador': c.coordinador ? (c.coordinador.username || c.coordinador.email) : 'Sin asignar',
         'Duración': c.duracion_semestres ? `${c.duracion_semestres} semestres` : 'N/A',
         'Título': c.titulo_otorga || 'N/A',
         'Estado': c.estado || 'N/A'
@@ -197,7 +210,7 @@ export class CarreraListComponent implements OnInit {
         pdfData,
         'carreras',
         'Reporte de Carreras',
-        ['Código', 'Nombre', 'Departamento', 'Duración', 'Título', 'Estado']
+        ['Código', 'Nombre', 'Departamento', 'Coordinador', 'Duración', 'Título', 'Estado']
       );
       this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
     } catch (error) {

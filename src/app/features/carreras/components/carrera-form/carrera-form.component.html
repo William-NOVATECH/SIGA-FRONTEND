@@ -116,6 +116,35 @@
             </div>
           </div>
 
+          <!-- Coordinador -->
+          <div class="form-group">
+            <label for="id_coordinador" class="form-label">
+              <i class="fa-solid fa-user-tie form-label-icon"></i>
+              Coordinador de Carrera
+            </label>
+            <div class="input-group">
+              <select
+                id="id_coordinador"
+                formControlName="id_coordinador"
+                class="form-select"
+              >
+                <option [ngValue]="null">Seleccione un coordinador</option>
+                <option *ngFor="let coordinador of coordinadores" [ngValue]="coordinador.id_usuario">
+                  {{ coordinador.username }} ({{ coordinador.email }})
+                </option>
+              </select>
+              <div class="input-icon">
+                <i class="fa-solid fa-user-tie"></i>
+              </div>
+              <div class="select-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+            <div *ngIf="loadingCoordinadores" class="select-loading">
+              Cargando coordinadores...
+            </div>
+          </div>
+
           <!-- Duración en Semestres -->
           <div class="form-group">
             <label for="duracion_semestres" class="form-label">

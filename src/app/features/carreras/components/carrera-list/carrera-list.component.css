@@ -139,6 +139,18 @@
   box-shadow: 0 2px 8px rgba(0, 114, 187, 0.3);
 }
 
+/* Coordinator Badge */
+.coordinator-badge {
+  background: linear-gradient(135deg, #F7CD02 0%, #f59e0b 100%);
+  color: #02116F;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(247, 205, 2, 0.3);
+}
+
 /* Duration Cell */
 .duration-cell {
   color: #6b7280;

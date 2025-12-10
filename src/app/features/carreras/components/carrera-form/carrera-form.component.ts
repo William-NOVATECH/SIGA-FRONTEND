@@ -6,6 +6,8 @@ import { CarreraService } from '../../services/carrera.service';
 import { DepartamentoService, Departamento } from '../../services/departamento.service';
 import { CreateCarrera, UpdateCarrera, Carrera } from '../../models/carrera.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { RolService } from '../../../admin/services/rol.service';
+import { Usuario } from '../../../admin/interfaces/usuario.interface';
 
 @Component({
   selector: 'app-carrera-form',
@@ -18,14 +20,17 @@ export class CarreraFormComponent implements OnInit {
   isEdit = false;
   loading = false;
   loadingDepartamentos = false;
+  loadingCoordinadores = false;
   carreraId?: number;
   departamentos: Departamento[] = [];
+  coordinadores: Usuario[] = [];
   errorMessage = '';
 
   constructor(
     private fb: FormBuilder,
     private carreraService: CarreraService,
     private departamentoService: DepartamentoService,
+    private rolService: RolService,
     private route: ActivatedRoute,
     private router: Router,
     private toastService: ToastService
@@ -36,12 +41,14 @@ export class CarreraFormComponent implements OnInit {
       duracion_semestres: ['null'],
       titulo_otorga: ['', [Validators.maxLength(100)]],
       estado: ['activa'],
-      id_departamento: ['null', Validators.required]
+      id_departamento: ['null', Validators.required],
+      id_coordinador: [null]
     });
   }
 
   ngOnInit() {
     this.loadDepartamentos();
+    this.loadCoordinadores();
     
     this.route.params.subscribe(params => {
       if (params['id']) {
@@ -71,6 +78,35 @@ export class CarreraFormComponent implements OnInit {
     });
   }
 
+  loadCoordinadores() {
+    this.loadingCoordinadores = true;
+    this.rolService.getUsuariosConRoles().subscribe({
+      next: (usuarios) => {
+        // Filtrar usuarios que tengan el rol de coordinador (id_rol: 2)
+        this.coordinadores = usuarios.filter(usuario => {
+          // Verificar si el usuario tiene el rol activo de coordinador
+          if (usuario.rol && usuario.rol.rol.id_rol === 2) {
+            return true;
+          }
+          // También verificar en el array de roles si existe
+          if (usuario.roles && usuario.roles.length > 0) {
+            return usuario.roles.some(r => r.rol.id_rol === 2 && r.estado === 'activo');
+          }
+          return false;
+        });
+        this.loadingCoordinadores = false;
+      },
+      error: (error) => {
+        console.error('Error loading coordinadores:', error);
+        this.toastService.showError(
+          'Error al cargar coordinadores',
+          'No se pudieron cargar los coordinadores. Por favor, intente nuevamente.'
+        );
+        this.loadingCoordinadores = false;
+      }
+    });
+  }
+
   loadCarrera() {
     if (this.carreraId) {
       this.loading = true;
@@ -83,7 +119,8 @@ export class CarreraFormComponent implements OnInit {
             duracion_semestres: carrera.duracion_semestres || null,
             titulo_otorga: carrera.titulo_otorga || '',
             estado: carrera.estado,
-            id_departamento: carrera.departamento.id_departamento
+            id_departamento: carrera.departamento.id_departamento,
+            id_coordinador: carrera.coordinador?.id_usuario || null
           });
           this.loading = false;
         },
@@ -103,11 +140,25 @@ export class CarreraFormComponent implements OnInit {
       this.loading = true;
       this.errorMessage = '';
 
-      const formValue = this.carreraForm.value;
+      const formValue = { ...this.carreraForm.value };
       
-      // Convertir duración a número si existe
-      if (formValue.duracion_semestres) {
+      // Convertir duración a número si existe y no es null/undefined
+      if (formValue.duracion_semestres && formValue.duracion_semestres !== 'null' && formValue.duracion_semestres !== null) {
         formValue.duracion_semestres = Number(formValue.duracion_semestres);
+      } else {
+        delete formValue.duracion_semestres;
+      }
+
+      // Manejar id_coordinador - solo incluir si tiene valor
+      if (!formValue.id_coordinador || formValue.id_coordinador === 'null' || formValue.id_coordinador === null) {
+        delete formValue.id_coordinador;
+      } else {
+        formValue.id_coordinador = Number(formValue.id_coordinador);
+      }
+
+      // Manejar id_departamento - asegurar que sea número
+      if (formValue.id_departamento && formValue.id_departamento !== 'null' && formValue.id_departamento !== null) {
+        formValue.id_departamento = Number(formValue.id_departamento);
       }
 
       if (this.isEdit && this.carreraId) {
@@ -180,5 +231,9 @@ export class CarreraFormComponent implements OnInit {
 
   get titulo_otorga() {
     return this.carreraForm.get('titulo_otorga');
+  }
+
+  get id_coordinador() {
+    return this.carreraForm.get('id_coordinador');
   }
 }
