@@ -1,10 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { GrupoAsignaturaDocenteService } from '../../services/grupo-asignatura-docente.service';
-import { GrupoConAsignaciones, GrupoAsignaturaDocente } from '../../models/grupo-asignatura-docente.model';
+import { GrupoConAsignaciones, GrupoAsignaturaDocente, Grupo } from '../../models/grupo-asignatura-docente.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
 import { ExportService } from '../../../../core/services/export.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { GrupoService } from '../../services/grupo.service';
+import { CarreraService } from '../../../carreras/services/carrera.service';
+import { DepartamentoService } from '../../../carreras/services/departamento.service';
 
 @Component({
   selector: 'app-list-grupo-asignatura-docente',
@@ -19,14 +25,37 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
   loading: boolean = false;
   error: string | null = null;
 
+  // Pestañas
+  activeTab: 'con-carga' | 'sin-carga' = 'con-carga';
+
+  // Grupos sin asignaciones
+  gruposSinAsignaciones: Grupo[] = [];
+  gruposSinAsignacionesFiltrados: Grupo[] = [];
+  loadingGruposSinAsignaciones: boolean = false;
+
+  // Información del usuario y roles
+  isCoordinador: boolean = false;
+  isJefe: boolean = false;
+  isDirector: boolean = false;
+  carreraCoordinador: any = null;
+
   // Filtros
   filtroCarrera: string = '';
   filtroDocente: string = '';
   filtroGrupo: string = '';
   filtroAsignatura: string = '';
+  filtroDepartamento: string = '';
+  
+  // Departamentos y carreras completas
+  departamentos: any[] = [];
+  carrerasCompletas: Map<number, any> = new Map(); // Map<id_carrera, carrera_completa>
 
   constructor(
     private grupoAsignaturaDocenteService: GrupoAsignaturaDocenteService,
+    private grupoService: GrupoService,
+    private authService: AuthService,
+    private carreraService: CarreraService,
+    private departamentoService: DepartamentoService,
     private router: Router,
     private toastService: ToastService,
     private confirmService: ConfirmService,
@@ -34,7 +63,61 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadUserRoles();
+    this.loadDepartamentos();
     this.loadAsignaciones();
+  }
+
+  loadUserRoles(): void {
+    this.authService.getActiveRoleId().subscribe({
+      next: (roleId) => {
+        this.isCoordinador = roleId === 2;
+        this.isJefe = roleId === 1;
+        this.isDirector = roleId === 5;
+        
+        if (this.isCoordinador) {
+          this.loadCarreraCoordinador();
+        }
+      },
+      error: (error) => {
+        console.error('Error obteniendo rol del usuario:', error);
+      }
+    });
+  }
+
+  loadCarreraCoordinador(): void {
+    const userId = this.authService.getUserIdFromToken();
+    if (!userId) {
+      return;
+    }
+
+    this.carreraService.findAll().subscribe({
+      next: (response: any) => {
+        const carrerasArray = Array.isArray(response.data) ? response.data : [response.data];
+        this.carreraCoordinador = carrerasArray.find((carrera: any) => 
+          carrera.coordinador && carrera.coordinador.id_usuario === userId
+        );
+        // Si ya hay grupos cargados, filtrarlos nuevamente
+        if (this.gruposSinAsignaciones.length > 0) {
+          this.filtrarGruposSinAsignacionesPorRol();
+        }
+      },
+      error: (error) => {
+        console.error('Error obteniendo carrera del coordinador:', error);
+      }
+    });
+  }
+
+  loadDepartamentos(): void {
+    this.departamentoService.findAllActive().subscribe({
+      next: (departamentos) => {
+        this.departamentos = Array.isArray(departamentos) ? departamentos : [];
+      },
+      error: (error) => {
+        console.error('Error cargando departamentos:', error);
+        this.departamentos = [];
+      }
+    });
   }
 
   loadAsignaciones(): void {
@@ -44,6 +127,10 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
     this.grupoAsignaturaDocenteService.getAsignacionesAgrupadas().subscribe({
       next: (grupos) => {
         this.grupos = grupos;
+        
+        // Cargar información completa de carreras para obtener departamentos
+        this.loadCarrerasCompletas(grupos);
+        
         // Aplanar todas las asignaciones de todos los grupos y convertir a GrupoAsignaturaDocente
         this.asignaciones = grupos.flatMap(grupo => 
           grupo.asignaciones.map(asignacion => ({
@@ -73,6 +160,52 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
         this.error = 'Error al cargar las asignaciones';
         this.loading = false;
         console.error('Error loading asignaciones agrupadas:', error);
+      }
+    });
+  }
+
+  loadCarrerasCompletas(grupos: GrupoConAsignaciones[]): void {
+    // Obtener IDs únicos de carreras
+    const carreraIds = new Set<number>();
+    grupos.forEach(grupo => {
+      if (grupo.carrera?.id_carrera) {
+        carreraIds.add(grupo.carrera.id_carrera);
+      }
+    });
+
+    if (carreraIds.size === 0) {
+      return;
+    }
+
+    // Cargar información completa de cada carrera
+    const observables = Array.from(carreraIds).map(idCarrera =>
+      this.carreraService.findOne(idCarrera).pipe(
+        map((response: any) => {
+          // Manejar diferentes formatos de respuesta
+          let carrera = null;
+          if (response && response.data) {
+            carrera = Array.isArray(response.data) ? response.data[0] : response.data;
+          } else if (response && !response.data) {
+            carrera = Array.isArray(response) ? response[0] : response;
+          }
+          return { idCarrera, carrera };
+        })
+      )
+    );
+
+    forkJoin(observables).subscribe({
+      next: (resultados) => {
+        resultados.forEach(({ idCarrera, carrera }) => {
+          if (carrera) {
+            this.carrerasCompletas.set(idCarrera, carrera);
+          }
+        });
+        // Re-aplicar filtros después de cargar las carreras
+        this.aplicarFiltros();
+      },
+      error: (error) => {
+        console.error('Error cargando carreras completas:', error);
+        // Continuar sin las carreras completas, el filtro simplemente no funcionará hasta que se carguen
       }
     });
   }
@@ -186,6 +319,55 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
     });
   }
 
+  // Métodos para pestañas
+  switchTab(tab: 'con-carga' | 'sin-carga'): void {
+    this.activeTab = tab;
+    if (tab === 'sin-carga' && this.gruposSinAsignaciones.length === 0) {
+      this.loadGruposSinAsignaciones();
+    }
+  }
+
+  loadGruposSinAsignaciones(): void {
+    this.loadingGruposSinAsignaciones = true;
+    this.error = null;
+
+    this.grupoAsignaturaDocenteService.getGruposSinAsignaciones().subscribe({
+      next: (grupos) => {
+        this.gruposSinAsignaciones = grupos;
+        this.filtrarGruposSinAsignacionesPorRol();
+        this.loadingGruposSinAsignaciones = false;
+      },
+      error: (error) => {
+        this.error = 'Error al cargar los grupos sin asignaciones';
+        this.loadingGruposSinAsignaciones = false;
+        console.error('Error loading grupos sin asignaciones:', error);
+      }
+    });
+  }
+
+  filtrarGruposSinAsignacionesPorRol(): void {
+    if (this.isCoordinador && this.carreraCoordinador) {
+      // Filtrar solo grupos de la carrera del coordinador
+      this.gruposSinAsignacionesFiltrados = this.gruposSinAsignaciones.filter(grupo => {
+        const grupoCarreraId = grupo.carrera?.id_carrera;
+        return grupoCarreraId === this.carreraCoordinador.id_carrera;
+      });
+    } else if (this.isJefe || this.isDirector) {
+      // Mostrar todos los grupos sin restricción
+      this.gruposSinAsignacionesFiltrados = this.gruposSinAsignaciones;
+    } else {
+      // Si no es coordinador, jefe o director, no mostrar grupos
+      this.gruposSinAsignacionesFiltrados = [];
+    }
+  }
+
+  onAsignarDocente(idGrupo: number): void {
+    // Navegar al formulario de asignación masiva pre-seleccionando el grupo
+    this.router.navigate(['/grupo-asignatura-docente', 'bulk-create'], {
+      queryParams: { grupo: idGrupo }
+    });
+  }
+
   onViewGrupo(idGrupo: number): void {
     // Navegar a la vista del grupo
     this.router.navigate(['/grupos', 'detail', idGrupo]);
@@ -223,6 +405,19 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
       }
     });
     return Array.from(carreras).sort();
+  }
+
+  getDepartamentosUnicos(): string[] {
+    const departamentos = new Set<string>();
+    this.grupos.forEach(grupo => {
+      if (grupo.carrera?.id_carrera) {
+        const carreraCompleta = this.carrerasCompletas.get(grupo.carrera.id_carrera);
+        if (carreraCompleta?.departamento?.nombre_departamento) {
+          departamentos.add(carreraCompleta.departamento.nombre_departamento);
+        }
+      }
+    });
+    return Array.from(departamentos).sort();
   }
 
   getDocentesUnicos(): string[] {
@@ -266,6 +461,19 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
   // Aplicar filtros
   aplicarFiltros(): void {
     this.gruposFiltrados = this.grupos.map(grupo => {
+      // Filtro por departamento (a nivel de grupo/carrera)
+      if (this.filtroDepartamento) {
+        if (grupo.carrera?.id_carrera) {
+          const carreraCompleta = this.carrerasCompletas.get(grupo.carrera.id_carrera);
+          const nombreDepartamento = carreraCompleta?.departamento?.nombre_departamento || '';
+          if (nombreDepartamento !== this.filtroDepartamento) {
+            return null; // Este grupo no pertenece al departamento seleccionado
+          }
+        } else {
+          return null; // No hay información de carrera/departamento
+        }
+      }
+
       // Filtrar asignaciones dentro del grupo
       const asignacionesFiltradas = grupo.asignaciones.filter(asignacion => {
         // Filtro por carrera
@@ -359,15 +567,21 @@ export class ListGrupoAsignaturaDocentePage implements OnInit {
     this.aplicarFiltros();
   }
 
+  onFiltroDepartamentoChange(departamento: string): void {
+    this.filtroDepartamento = departamento;
+    this.aplicarFiltros();
+  }
+
   limpiarFiltros(): void {
     this.filtroCarrera = '';
     this.filtroDocente = '';
     this.filtroGrupo = '';
     this.filtroAsignatura = '';
+    this.filtroDepartamento = '';
     this.aplicarFiltros();
   }
 
   tieneFiltrosActivos(): boolean {
-    return !!(this.filtroCarrera || this.filtroDocente || this.filtroGrupo || this.filtroAsignatura);
+    return !!(this.filtroCarrera || this.filtroDocente || this.filtroGrupo || this.filtroAsignatura || this.filtroDepartamento);
   }
 }

@@ -1,5 +1,7 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { DocenteService } from '../../services/docente.service';
 import { Docente } from '../../models/docente.model';
 import { QueryDocenteDto } from '../../models/query-docente.model';
@@ -7,6 +9,7 @@ import { TableColumn, TableAction } from '../../../../core/components/data-table
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
 import { ExportService } from '../../../../core/services/export.service';
+import { GrupoAsignaturaDocenteService } from '../../../grupo-asignatura-docente/services/grupo-asignatura-docente.service';
 
 @Component({
   selector: 'app-docente-list',
@@ -20,12 +23,14 @@ export class DocenteListComponent implements OnInit {
   docentes: Docente[] = [];
   loading = false;
   error = '';
+  asignacionesPorDocente: Map<number, number> = new Map(); // Map<id_docente, cantidad_asignaturas>
 
   columns: TableColumn[] = [];
   actions: TableAction[] = [];
 
   constructor(
     private docenteService: DocenteService,
+    private grupoAsignaturaDocenteService: GrupoAsignaturaDocenteService,
     private router: Router,
     private toastService: ToastService,
     private confirmService: ConfirmService,
@@ -60,10 +65,21 @@ export class DocenteListComponent implements OnInit {
         width: '15%' 
       },
       { 
-        field: 'identificacion', 
-        header: 'Identificación', 
+        field: 'num_asignaturas', 
+        header: 'Asignaturas Asignadas', 
         sortable: true, 
-        width: '12%' 
+        width: '12%',
+        template: 'badge',
+        badgeClass: (value, row) => {
+          const numAsignaturas = (row as any).num_asignaturas || 0;
+          if (numAsignaturas === 0) return 'asignaturas-badge asignaturas-zero';
+          if (numAsignaturas >= 5) return 'asignaturas-badge asignaturas-high';
+          return 'asignaturas-badge asignaturas-normal';
+        },
+        format: (value, row) => {
+          const numAsignaturas = (row as any).num_asignaturas || 0;
+          return `${numAsignaturas} ${numAsignaturas === 1 ? 'asignatura' : 'asignaturas'}`;
+        }
       },
       {
         field: 'departamento.nombre_departamento',
@@ -136,14 +152,69 @@ export class DocenteListComponent implements OnInit {
           docentesRaw = [];
         }
 
-        this.docentes = docentesRaw;
-        this.loading = false;
+        // Inicializar num_asignaturas en 0 para cada docente
+        this.docentes = docentesRaw.map(docente => {
+          (docente as any).num_asignaturas = 0;
+          return docente;
+        });
+        
+        // Cargar asignaciones de todos los docentes
+        this.loadAsignacionesDocentes();
       },
       error: (err) => {
         console.error('Error loading docentes:', err);
         const errorMessage = err?.error?.message || 'No se pudieron cargar los docentes. Por favor, intente nuevamente.';
         this.toastService.showError('Error al cargar', errorMessage);
         this.docentes = [];
+        this.loading = false;
+      }
+    });
+  }
+
+  loadAsignacionesDocentes(): void {
+    if (this.docentes.length === 0) {
+      this.loading = false;
+      return;
+    }
+
+    // Crear observables para obtener asignaciones de cada docente
+    const observables = this.docentes.map(docente => 
+      this.grupoAsignaturaDocenteService.findByDocente(docente.id_docente).pipe(
+        map((asignaciones: any) => {
+          const asignacionesArray = Array.isArray(asignaciones) ? asignaciones : [];
+          // Contar solo asignaciones activas
+          const asignacionesActivas = asignacionesArray.filter(
+            (a: any) => a.estado === 'activa'
+          ).length;
+          return { idDocente: docente.id_docente, cantidad: asignacionesActivas };
+        }),
+        catchError((error) => {
+          console.error(`Error cargando asignaciones del docente ${docente.id_docente}:`, error);
+          return of({ idDocente: docente.id_docente, cantidad: 0 });
+        })
+      )
+    );
+
+    // Ejecutar todas las peticiones en paralelo
+    forkJoin(observables).subscribe({
+      next: (resultados) => {
+        // Guardar el conteo de asignaturas por docente y agregar la propiedad al objeto docente
+        resultados.forEach(resultado => {
+          this.asignacionesPorDocente.set(resultado.idDocente, resultado.cantidad);
+          // Agregar la propiedad num_asignaturas directamente al docente para que el formato funcione
+          const docente = this.docentes.find(d => d.id_docente === resultado.idDocente);
+          if (docente) {
+            (docente as any).num_asignaturas = resultado.cantidad;
+          }
+        });
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error cargando asignaciones de docentes:', err);
+        // Inicializar con 0 si falla la carga
+        this.docentes.forEach(docente => {
+          (docente as any).num_asignaturas = 0;
+        });
         this.loading = false;
       }
     });
@@ -183,13 +254,13 @@ export class DocenteListComponent implements OnInit {
       return;
     }
 
-    const csvHeaders = ['ID', 'Código', 'Nombres', 'Apellidos', 'Identificación', 'Departamento', 'Cargo', 'Estado'];
+    const csvHeaders = ['ID', 'Código', 'Nombres', 'Apellidos', 'Asignaturas Asignadas', 'Departamento', 'Cargo', 'Estado'];
     const csvData = this.docentes.map(d => ({
       'ID': d.id_docente,
       'Código': d.codigo_docente || 'N/A',
       'Nombres': d.nombres || 'N/A',
       'Apellidos': d.apellidos || 'N/A',
-      'Identificación': d.identificacion || 'N/A',
+      'Asignaturas Asignadas': this.asignacionesPorDocente.get(d.id_docente) || 0,
       'Departamento': d.departamento?.nombre_departamento || 'N/A',
       'Cargo': d.cargo?.nombre_cargo || 'N/A',
       'Estado': d.estado || 'N/A'
@@ -210,7 +281,7 @@ export class DocenteListComponent implements OnInit {
         'Código': d.codigo_docente || 'N/A',
         'Nombres': d.nombres || 'N/A',
         'Apellidos': d.apellidos || 'N/A',
-        'Identificación': d.identificacion || 'N/A',
+        'Asignaturas Asignadas': this.asignacionesPorDocente.get(d.id_docente) || 0,
         'Departamento': d.departamento?.nombre_departamento || 'N/A',
         'Cargo': d.cargo?.nombre_cargo || 'N/A',
         'Estado': d.estado || 'N/A'
@@ -220,7 +291,7 @@ export class DocenteListComponent implements OnInit {
         pdfData,
         'docentes',
         'Reporte de Docentes',
-        ['Código', 'Nombres', 'Apellidos', 'Identificación', 'Departamento', 'Cargo', 'Estado']
+        ['Código', 'Nombres', 'Apellidos', 'Asignaturas Asignadas', 'Departamento', 'Cargo', 'Estado']
       );
       this.toastService.showSuccess('Exportación exitosa', 'Los datos se han exportado a PDF correctamente.');
     } catch (error) {

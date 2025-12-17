@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray, AbstractControl } from '@angular/forms';
 import { CreateBulkGrupoAsignaturaDocente } from '../models/create-bulk-grupo-asignatura-docente.model';
 import { PlanService } from '../../planes/services/plan.service';
@@ -11,11 +11,12 @@ import { GrupoService } from '../../grupos/services/grupo.service';
   templateUrl: './grupo-asignatura-docente-bulk-form.component.html',
   styleUrls: ['./grupo-asignatura-docente-bulk-form.component.css']
 })
-export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
+export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit, OnChanges {
   @Input() loading: boolean = false;
   @Input() grupos: any[] = [];
   @Input() asignaturas: any[] = [];
   @Input() docentes: any[] = [];
+  @Input() grupoIdInicial?: number; // ID del grupo a preseleccionar
   
   @Output() submitForm = new EventEmitter<CreateBulkGrupoAsignaturaDocente>();
   @Output() cancel = new EventEmitter<void>();
@@ -62,7 +63,43 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Ya no necesitamos cargar todos los planes, solo el del grupo seleccionado
+    // Si hay un grupo inicial, preseleccionarlo
+    if (this.grupoIdInicial) {
+      this.preseleccionarGrupo(this.grupoIdInicial);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Si el grupoIdInicial cambia después de la inicialización, actualizar el formulario
+    if (changes['grupoIdInicial'] && !changes['grupoIdInicial'].firstChange && this.grupoIdInicial) {
+      this.preseleccionarGrupo(this.grupoIdInicial);
+    }
+    
+    // Si los grupos se cargan y hay un grupoIdInicial, preseleccionarlo
+    if (changes['grupos'] && this.grupoIdInicial && this.grupos.length > 0) {
+      // Verificar que el grupo existe en la lista
+      const grupoExiste = this.grupos.some(g => g.id_grupo === this.grupoIdInicial);
+      if (grupoExiste) {
+        this.preseleccionarGrupo(this.grupoIdInicial);
+      }
+    }
+    
+    // Si las asignaturas se cargan y ya hay una carrera seleccionada, filtrar nuevamente
+    if (changes['asignaturas'] && this.selectedGrupoCarrera && this.asignaturas.length > 0) {
+      console.log('Asignaturas cargadas, re-filtrando por carrera:', this.selectedGrupoCarrera);
+      this.filterAsignaturasByCarrera(this.selectedGrupoCarrera.id_carrera);
+    }
+  }
+
+  private preseleccionarGrupo(grupoId: number): void {
+    // Usar setTimeout para asegurar que el formulario esté completamente inicializado
+    setTimeout(() => {
+      const currentValue = this.form.get('id_grupo')?.value;
+      if (currentValue !== grupoId) {
+        this.form.get('id_grupo')?.setValue(grupoId);
+        // El valueChanges se disparará automáticamente y cargará el plan
+      }
+    }, 0);
   }
 
   loadGrupoPlan(grupoId: number): void {
@@ -74,10 +111,16 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
     
     this.grupoService.findOne(grupoId).subscribe({
       next: (grupo: any) => {
+        console.log('Grupo cargado:', grupo);
         // Obtener la carrera del grupo
         if (grupo.carrera) {
           this.selectedGrupoCarrera = grupo.carrera;
+          console.log('Carrera del grupo:', grupo.carrera);
+          console.log('ID de carrera:', grupo.carrera.id_carrera);
+          console.log('Asignaturas disponibles:', this.asignaturas.length);
           this.filterAsignaturasByCarrera(grupo.carrera.id_carrera);
+        } else {
+          console.warn('El grupo no tiene carrera asociada:', grupo);
         }
 
         // Obtener id_plan del grupo (puede venir directamente o en la relación plan)
@@ -116,9 +159,37 @@ export class GrupoAsignaturaDocenteBulkFormComponent implements OnInit {
   }
 
   filterAsignaturasByCarrera(idCarrera: number): void {
-    this.filteredAsignaturas = this.asignaturas.filter(
-      asignatura => asignatura.id_carrera === idCarrera || asignatura.carrera?.id_carrera === idCarrera
-    );
+    console.log('Filtrando asignaturas por carrera ID:', idCarrera);
+    console.log('Total de asignaturas disponibles:', this.asignaturas.length);
+    
+    if (!this.asignaturas || this.asignaturas.length === 0) {
+      console.warn('No hay asignaturas disponibles para filtrar');
+      this.filteredAsignaturas = [];
+      return;
+    }
+    
+    // Mostrar estructura de las primeras asignaturas para debug
+    if (this.asignaturas.length > 0) {
+      console.log('Estructura de primera asignatura:', this.asignaturas[0]);
+    }
+    
+    this.filteredAsignaturas = this.asignaturas.filter((asignatura: any) => {
+      const asignaturaCarreraId = asignatura.id_carrera || asignatura.carrera?.id_carrera;
+      const match = asignaturaCarreraId === idCarrera;
+      
+      if (!match) {
+        console.log(`Asignatura ${asignatura.nombre_asignatura} (ID: ${asignatura.id_asignatura}) no coincide - tiene carrera ID: ${asignaturaCarreraId}, buscamos: ${idCarrera}`);
+      }
+      
+      return match;
+    });
+    
+    console.log(`Asignaturas filtradas: ${this.filteredAsignaturas.length} de ${this.asignaturas.length}`);
+    console.log('Asignaturas filtradas:', this.filteredAsignaturas.map((a: any) => ({
+      id: a.id_asignatura,
+      nombre: a.nombre_asignatura,
+      carrera: a.id_carrera || a.carrera?.id_carrera
+    })));
   }
 
   onAsignaturaDocenteChange(idAsignatura: number, idDocente: number | null): void {

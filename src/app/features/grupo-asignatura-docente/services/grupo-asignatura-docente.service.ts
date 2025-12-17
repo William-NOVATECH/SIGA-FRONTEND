@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, catchError, switchMap, of, forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { 
   GrupoAsignaturaDocente,
@@ -16,7 +16,8 @@ import {
   CreateVersionInicialDto,
   EnviarRevisionDto,
   RevisarCargaDto,
-  AprobarFinalDto
+  AprobarFinalDto,
+  Grupo
 } from '../models/grupo-asignatura-docente.model';
 
 @Injectable({
@@ -235,4 +236,43 @@ private ensureCarrera(carrera: any): Carrera {
     return this.http.post<GrupoAsignaturaDocente>(`${this.nestJsUrl}/${id}/restaurar-version/${versionId}`, {});
   }
 
+  /**
+   * Obtener grupos sin asignaciones de docentes
+   * Si el endpoint no existe, obtiene todos los grupos y filtra los que no tienen asignaciones
+   */
+  getGruposSinAsignaciones(): Observable<Grupo[]> {
+    return this.http.get<Grupo[]>(`${this.nestJsUrl}/grupos-sin-asignaciones`).pipe(
+      map(grupos => grupos.map(grupo => this.ensureGrupoCarrera(grupo))),
+      catchError((error) => {
+        console.warn('Endpoint grupos-sin-asignaciones no disponible, filtrando localmente:', error);
+        // Si el endpoint no existe, obtener todos los grupos y asignaciones y filtrar
+        return forkJoin({
+          asignaciones: this.findAll(),
+          grupos: this.http.get<Grupo[]>(`${environment.apiUrl}/grupos`)
+        }).pipe(
+          map(({ asignaciones, grupos }) => {
+            const asignacionesArray = Array.isArray(asignaciones) ? asignaciones : asignaciones.data;
+            const gruposConAsignaciones = new Set(asignacionesArray.map((a: GrupoAsignaturaDocente) => a.id_grupo));
+            const gruposSinAsignaciones = grupos.filter(grupo => !gruposConAsignaciones.has(grupo.id_grupo));
+            return gruposSinAsignaciones.map(grupo => this.ensureGrupoCarrera(grupo));
+          }),
+          catchError(() => {
+            console.error('Error al obtener grupos sin asignaciones');
+            return of([]);
+          })
+        );
+      })
+    );
+  }
+
+  private ensureGrupoCarrera(grupo: any): Grupo {
+    if (!grupo.carrera) {
+      grupo.carrera = {
+        id_carrera: 0,
+        nombre_carrera: 'Carrera no especificada',
+        codigo_carrera: 'N/A'
+      };
+    }
+    return grupo;
+  }
 }

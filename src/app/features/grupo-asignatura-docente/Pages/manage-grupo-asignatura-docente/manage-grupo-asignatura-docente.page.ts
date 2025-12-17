@@ -11,8 +11,14 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { CarreraService } from '../../../carreras/services/carrera.service';
 import { PlanService } from '../../../planes/services/plan.service';
+import { CargoDocenteService } from '../../../docentes/services/cargo-docente.service';
 import { forkJoin, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
+
+interface ValidacionResult {
+  esValida: boolean;
+  errores: Array<{ docente: string; mensaje: string }>;
+}
 
 @Component({
   selector: 'app-manage-grupo-asignatura-docente',
@@ -29,6 +35,7 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
   grupos: any[] = [];
   asignaturas: any[] = [];
   docentes: any[] = [];
+  grupoIdInicial?: number; // ID del grupo a preseleccionar (desde query params)
 
   constructor(
     private route: ActivatedRoute,
@@ -40,7 +47,8 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
     private authService: AuthService,
     private toastService: ToastService,
     private carreraService: CarreraService,
-    private planService: PlanService
+    private planService: PlanService,
+    private cargoDocenteService: CargoDocenteService
   ) {}
 
   ngOnInit(): void {
@@ -50,8 +58,18 @@ export class ManageGrupoAsignaturaDocentePage implements OnInit {
         this.loadAsignacion(Number(params['id']));
       } else if (this.route.snapshot.url[0]?.path === 'bulk-create') {
         this.mode = 'bulk-create';
+        // Verificar si hay un grupo en los query params
+        const grupoId = this.route.snapshot.queryParams['grupo'];
+        if (grupoId) {
+          this.grupoIdInicial = Number(grupoId);
+        }
       } else {
         this.mode = 'create';
+        // Verificar si hay un grupo en los query params para asignación individual
+        const grupoId = this.route.snapshot.queryParams['grupo'];
+        if (grupoId) {
+          this.grupoIdInicial = Number(grupoId);
+        }
       }
     });
 
@@ -476,6 +494,32 @@ onSubmitBulkForm(dto: CreateBulkGrupoAsignaturaDocente): void {
     }))
   };
 
+  // Validar asignaciones de docentes según su cargo
+  this.validarAsignacionesDocentes(bulkDto).subscribe({
+    next: (validacion: ValidacionResult) => {
+      if (!validacion.esValida) {
+        this.loading = false;
+        // Mostrar mensajes de error detallados
+        let mensaje = 'Se encontraron problemas con las asignaciones:\n\n';
+        validacion.errores.forEach((error: { docente: string; mensaje: string }) => {
+          mensaje += `• ${error.docente}: ${error.mensaje}\n`;
+        });
+        this.toastService.showError('Validación de asignaciones', mensaje);
+        return;
+      }
+      
+      // Si la validación es exitosa, proceder con la creación
+      this.crearAsignacionesBulk(bulkDto);
+    },
+    error: (error: any) => {
+      console.error('Error en validación:', error);
+      this.loading = false;
+      this.toastService.showError('Error de validación', 'No se pudo validar las asignaciones. Por favor, intente nuevamente.');
+    }
+  });
+}
+
+private crearAsignacionesBulk(bulkDto: CreateBulkGrupoAsignaturaDocente): void {
   this.grupoAsignaturaDocenteService.createBulk(bulkDto).subscribe({
     next: (response: BulkCreateResponse) => {
       this.loading = false;
@@ -547,5 +591,130 @@ onSubmitBulkForm(dto: CreateBulkGrupoAsignaturaDocente): void {
 
   onCancel(): void {
     this.router.navigate(['/grupo-asignatura-docente']);
+  }
+
+  /**
+   * Valida las asignaciones de docentes según su cargo (máximo y mínimo de asignaturas)
+   */
+  private validarAsignacionesDocentes(dto: CreateBulkGrupoAsignaturaDocente): any {
+    // Agrupar asignaciones por docente
+    const asignacionesPorDocente = new Map<number, number[]>();
+    dto.asignaturas_docentes.forEach(item => {
+      const idDocente = item.id_docente;
+      if (!asignacionesPorDocente.has(idDocente)) {
+        asignacionesPorDocente.set(idDocente, []);
+      }
+      asignacionesPorDocente.get(idDocente)!.push(item.id_asignatura);
+    });
+
+    // Obtener docentes únicos
+    const docentesIds = Array.from(asignacionesPorDocente.keys());
+    
+    // Crear observables para obtener información de cada docente
+    const observables = docentesIds.map(idDocente => {
+      return forkJoin({
+        docente: this.docenteService.findOne(idDocente).pipe(
+          catchError(() => of(null))
+        ),
+        asignacionesActuales: this.grupoAsignaturaDocenteService.findByDocente(idDocente).pipe(
+          catchError(() => of([]))
+        )
+      }).pipe(
+        switchMap(({ docente, asignacionesActuales }) => {
+          if (!docente) {
+            return of({
+              idDocente,
+              error: {
+                docente: `Docente ID ${idDocente}`,
+                mensaje: 'No se pudo obtener información del docente.'
+              }
+            });
+          }
+
+          // Obtener el cargo del docente (usar any para acceder a propiedades que pueden venir del backend)
+          const docenteAny = docente as any;
+          const idCargo = docenteAny.id_cargo || docenteAny.cargo?.id_cargo;
+          if (!idCargo) {
+            return of({
+              idDocente,
+              error: {
+                docente: `${docente.nombres} ${docente.apellidos}`,
+                mensaje: 'El docente no tiene un cargo asignado.'
+              }
+            });
+          }
+
+          // Obtener información del cargo
+          return this.cargoDocenteService.findOne(idCargo).pipe(
+            map((cargo: any) => {
+              const cargoData = cargo.data || cargo;
+              const maxAsignaturas = cargoData.max_asignaturas || 0;
+              const minAsignaturas = cargoData.min_asignaturas || 0;
+              
+              // Contar asignaciones actuales (solo activas)
+              const asignacionesArray = Array.isArray(asignacionesActuales) ? asignacionesActuales : [];
+              const asignacionesActivas = asignacionesArray.filter(
+                (a: GrupoAsignaturaDocente) => a.estado === 'activa'
+              ).length;
+              
+              // Contar nuevas asignaciones que se van a agregar
+              const nuevasAsignaciones = asignacionesPorDocente.get(idDocente) || [];
+              const totalAsignaciones = asignacionesActivas + nuevasAsignaciones.length;
+              
+              const errores: Array<{ docente: string; mensaje: string }> = [];
+              
+              // Validar máximo
+              if (maxAsignaturas > 0 && totalAsignaciones > maxAsignaturas) {
+                errores.push({
+                  docente: `${docente.nombres} ${docente.apellidos}`,
+                  mensaje: `Excede el máximo de asignaturas permitidas (${maxAsignaturas}). Actualmente tiene ${asignacionesActivas} y se intentan agregar ${nuevasAsignaciones.length} (total: ${totalAsignaciones}).`
+                });
+              }
+              
+              // Validar mínimo (solo si se define)
+              if (minAsignaturas > 0 && totalAsignaciones < minAsignaturas) {
+                errores.push({
+                  docente: `${docente.nombres} ${docente.apellidos}`,
+                  mensaje: `No cumple con el mínimo de asignaturas requeridas (${minAsignaturas}). Después de esta asignación tendrá ${totalAsignaciones} asignatura(s).`
+                });
+              }
+              
+              return {
+                idDocente,
+                errores
+              };
+            }),
+            catchError(() => {
+              return of({
+                idDocente,
+                errores: [{
+                  docente: `${docente.nombres} ${docente.apellidos}`,
+                  mensaje: 'No se pudo obtener información del cargo del docente.'
+                }]
+              });
+            })
+          );
+        })
+      );
+    });
+
+    return forkJoin(observables).pipe(
+      map((resultados) => {
+        const errores: Array<{ docente: string; mensaje: string }> = [];
+        
+        resultados.forEach((resultado: any) => {
+          if (resultado.error) {
+            errores.push(resultado.error);
+          } else if (resultado.errores && resultado.errores.length > 0) {
+            errores.push(...resultado.errores);
+          }
+        });
+        
+        return {
+          esValida: errores.length === 0,
+          errores
+        } as ValidacionResult;
+      })
+    );
   }
 }

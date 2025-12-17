@@ -3,14 +3,14 @@
   <div class="list-header">
     <h2>Gestión de Carga Docente</h2>
     <div class="header-actions">
-      <button *ngIf="!loading && !error && grupos.length > 0 && getTotalAsignaciones() > 0" 
+      <button *ngIf="activeTab === 'con-carga' && !loading && !error && grupos.length > 0 && getTotalAsignaciones() > 0" 
               class="btn btn-export-csv" 
               (click)="exportToCSV()"
               title="Exportar a CSV">
         <i class="fa-solid fa-file-csv"></i>
         Exportar CSV
       </button>
-      <button *ngIf="!loading && !error && grupos.length > 0 && getTotalAsignaciones() > 0" 
+      <button *ngIf="activeTab === 'con-carga' && !loading && !error && grupos.length > 0 && getTotalAsignaciones() > 0" 
               class="btn btn-export-pdf" 
               (click)="exportToPDF()"
               title="Exportar a PDF">
@@ -28,6 +28,26 @@
     </div>
   </div>
 
+  <!-- Pestañas -->
+  <div class="tabs-container" *ngIf="isCoordinador || isJefe || isDirector">
+    <div class="tabs">
+      <button class="tab-button" 
+              [class.active]="activeTab === 'con-carga'"
+              (click)="switchTab('con-carga')">
+        <i class="fa-solid fa-check-circle"></i>
+        Grupos con Carga Docente
+      </button>
+      <button class="tab-button" 
+              [class.active]="activeTab === 'sin-carga'"
+              (click)="switchTab('sin-carga')">
+        <i class="fa-solid fa-exclamation-circle"></i>
+        Grupos sin Carga Docente
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenido de pestaña: Grupos con Carga Docente -->
+  <div *ngIf="activeTab === 'con-carga'">
   <!-- Filtros -->
   <div class="filtros-container" *ngIf="!loading && !error && grupos.length > 0">
     <div class="filtros-header">
@@ -41,6 +61,23 @@
       </button>
     </div>
     <div class="filtros-grid">
+      <!-- Filtro por Departamento -->
+      <div class="filtro-item">
+        <label for="filtro-departamento">
+          <i class="fa-solid fa-building"></i>
+          Departamento
+        </label>
+        <select id="filtro-departamento" 
+                class="filtro-select"
+                [(ngModel)]="filtroDepartamento"
+                (change)="onFiltroDepartamentoChange(filtroDepartamento)">
+          <option value="">Todos los departamentos</option>
+          <option *ngFor="let departamento of getDepartamentosUnicos()" [value]="departamento">
+            {{ departamento }}
+          </option>
+        </select>
+      </div>
+
       <!-- Filtro por Carrera -->
       <div class="filtro-item">
         <label for="filtro-carrera">
@@ -253,6 +290,72 @@
             <i class="fa-solid fa-plus"></i>
             Agregar primera asignación
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Contenido de pestaña: Grupos sin Carga Docente -->
+  <div *ngIf="activeTab === 'sin-carga'">
+    <!-- Loading -->
+    <div *ngIf="loadingGruposSinAsignaciones" class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando grupos sin asignaciones...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !loadingGruposSinAsignaciones" class="error-state">
+      <i class="fa-solid fa-exclamation-triangle"></i>
+      <p>{{ error }}</p>
+      <button class="btn btn-secondary" (click)="loadGruposSinAsignaciones()">Reintentar</button>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loadingGruposSinAsignaciones && !error && gruposSinAsignacionesFiltrados.length === 0 && gruposSinAsignaciones.length === 0" class="empty-state">
+      <i class="fa-solid fa-check-circle"></i>
+      <p>No hay grupos sin asignaciones de docentes</p>
+    </div>
+
+    <!-- Empty State (filtrado) -->
+    <div *ngIf="!loadingGruposSinAsignaciones && !error && gruposSinAsignacionesFiltrados.length === 0 && gruposSinAsignaciones.length > 0" class="empty-state">
+      <i class="fa-solid fa-filter"></i>
+      <p>No hay grupos sin asignaciones disponibles según tu rol</p>
+    </div>
+
+    <!-- Grupos sin Asignaciones Grid -->
+    <div *ngIf="!loadingGruposSinAsignaciones && !error && gruposSinAsignacionesFiltrados.length > 0" class="grupos-grid">
+      <div *ngFor="let grupo of gruposSinAsignacionesFiltrados" class="grupo-card grupo-sin-asignacion">
+        <!-- Header del Grupo -->
+        <div class="grupo-card-header">
+          <div class="grupo-title-section">
+            <h3>{{ grupo.nombre_grupo || 'Grupo sin nombre' }}</h3>
+            <div class="grupo-meta-info">
+              <span *ngIf="grupo.codigo_grupo" class="grupo-code">
+                {{ grupo.codigo_grupo }}
+              </span>
+              <span *ngIf="grupo.carrera && grupo.carrera.nombre_carrera && grupo.carrera.nombre_carrera !== 'Carrera no especificada'" class="carrera-badge">
+                <i class="fa-solid fa-graduation-cap"></i>
+                {{ grupo.carrera.nombre_carrera }}
+              </span>
+              <span *ngIf="!grupo.carrera || !grupo.carrera.nombre_carrera || grupo.carrera.nombre_carrera === 'Carrera no especificada'" class="carrera-badge carrera-no-especificada">
+                <i class="fa-solid fa-graduation-cap"></i>
+                Carrera no especificada
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cuerpo del Grupo -->
+        <div class="grupo-card-body">
+          <div class="grupo-sin-asignacion-content">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+            <p>Este grupo no tiene asignaciones de docentes</p>
+            <button class="btn btn-primary" (click)="onAsignarDocente(grupo.id_grupo)">
+              <i class="fa-solid fa-user-plus"></i>
+              Asignar Docente
+            </button>
+          </div>
         </div>
       </div>
     </div>

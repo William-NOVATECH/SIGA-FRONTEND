@@ -186,6 +186,35 @@
   color: white;
 }
 
+/* Badge de Asignaturas */
+.asignaturas-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.asignaturas-badge.asignaturas-zero {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.asignaturas-badge.asignaturas-normal {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.asignaturas-badge.asignaturas-high {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
 /* Acciones */
 .actions {
   display: flex;
